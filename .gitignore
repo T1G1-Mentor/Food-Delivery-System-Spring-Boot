@@ -1,0 +1,10 @@
+.DS_Store
+
+# Maven build output
+target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
