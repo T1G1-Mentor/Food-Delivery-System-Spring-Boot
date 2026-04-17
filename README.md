@@ -73,6 +73,80 @@ Manages a customer's shopping cart — adding and modifying items, viewing cart 
 | POST | `/cart/checkout` | Checkout |
 | PATCH | `/cart/items/{itemId}/quantity` | Update item quantity |
 
+#### 3.1 Add to cart flowchart
+
+```mermaid
+flowchart TB
+    n1([Start]) --> n2["Get user"]
+    n2 --> n12{"Is user authenticated?"}
+
+    n12 -- No --> n13([Return to login page])
+    n12 -- Yes --> n3{"Does user have a cart?"}
+
+    n3 -- No --> n10["Create new cart"]
+    n3 -- Yes --> n11["Get user cart"]
+
+    n10 --> n5
+    n11 --> n5
+
+    n5{"Same restaurant (if cart not empty)?"}
+    n5 -- Not valid --> n6([Return error: clear cart first])
+    n5 -- Valid --> n7{"Is item available?"}
+
+    n7 -- Not valid --> n8([Return item unavailable])
+    n7 -- Valid --> n9{"Item already in cart?"}
+
+    n9 -- No --> n14["Add item to cart"]
+    n9 -- Yes --> n15["Update item quantity"]
+
+    n14 --> n16([Return success message])
+    n15 --> n16
+```
+
+### 3.2 Increase item quantity flowchart
+
+```mermaid
+flowchart TB
+    n1([Start]) --> n2["Get user"]
+    n2 --> n3{"Is user authenticated?"}
+
+    n3 -- No --> n4([Return to login page])
+    n3 -- Yes --> n5["Get user cart"]
+
+    n5 --> n6{"Does cart contain the target item?"}
+    n6 -- No --> n7([Return error message])
+    n6 -- Yes --> n8{"Is item with target quantity available?"}
+
+    n8 -- No --> n9([Return unavailable message])
+    n8 -- Yes --> n10["Increase item quantity by one"]
+
+    n10 --> n11([Return])
+```
+
+### 3.3 Decrease item quantity flowchart
+
+```mermaid
+flowchart TB
+    n1([Start]) --> n2["Get user"]
+    n2 --> n3{"Is user authenticated?"}
+
+    n3 -- No --> n4([Return to login page])
+    n3 -- Yes --> n5["Get user cart"]
+
+    n5 --> n6{"Does cart contain the target item?"}
+    n6 -- No --> n7([Return error message])
+    n6 -- Yes --> n8{"Is item with target quantity available?"}
+
+    n8 -- No --> n9([Return unavailable message])
+    n8 -- Yes --> n10["Decrease item quantity by one"]
+
+    n10 --> n12{"Is cart item quantity <= 0?"}
+    n12 -- No --> n13([Return])
+    n12 -- Yes --> n14["Remove cart item"]
+
+    n14 --> n13
+```
+
 ---
 
 ### 4. Order Management
