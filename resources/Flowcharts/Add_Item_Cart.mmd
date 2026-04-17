@@ -1,0 +1,28 @@
+flowchart TB
+    n1["Start"] --> n2["Get user"]
+    n2 --> n12["Is user authenticated?"]
+    n3["Does user have a cart?"] -- No --> n10["Create new cart"]
+    n3 -- Yes --> n11["Get user cart"]
+    n5["Validate item belongs to the same cart restaurant if cart is not empty"] -- Not valid --> n6["Return error message to clear the cart first"]
+    n5 -- Valid --> n7["Validate item availability"]
+    n7 -- Not valid --> n8["Return item is unavailable"]
+    n7 -- Valid --> n9["Does cart contain the item?"]
+    n11 --> n5
+    n10 --> n5
+    n12 -- No --> n13["Return to login page"]
+    n12 -- Yes --> n3
+    n9 -- No --> n14["Add item to the cart"]
+    n9 -- Yes --> n15["Update item quantity"]
+    n15 --> n16(["Return success message"])
+    n14 --> n16
+
+    n1@{ shape: start}
+    n12@{ shape: diam}
+    n3@{ shape: diam}
+    n5@{ shape: diam}
+    n6@{ shape: terminal}
+    n7@{ shape: diam}
+    n8@{ shape: terminal}
+    n9@{ shape: diam}
+    n13@{ shape: terminal}
+    n14@{ shape: proc}

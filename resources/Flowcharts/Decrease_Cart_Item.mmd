@@ -1,0 +1,20 @@
+flowchart TB
+    n1["Start"] --> n2["Get user"]
+    n2 --> n3["Is user authenticated?"]
+    n3 -- No --> n4(["Return to login page"])
+    n3 -- Yes --> n5["Get user cart"]
+    n5 --> n6["Does cart contain the target item?"]
+    n6 -- No --> n7(["Return error message"])
+    n6 -- Yes --> n8["Is item with target quantity available?"]
+    n8 -- No --> n9(["Return unavailable message"])
+    n8 -- Yes --> n10["Decrease item quantity by one"]
+    n10 --> n12["Is cart item quantity &lt;= 0?"]
+    n12 -- No --> n13(["Return"])
+    n12 -- Yes --> n14["Remove cart item"]
+    n14 --> n13
+
+    n1@{ shape: start}
+    n3@{ shape: diam}
+    n6@{ shape: diam}
+    n8@{ shape: diam}
+    n12@{ shape: diam}
