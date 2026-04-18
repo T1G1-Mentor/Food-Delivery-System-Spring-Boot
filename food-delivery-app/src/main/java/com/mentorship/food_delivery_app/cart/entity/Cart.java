@@ -28,7 +28,7 @@ public class Cart {
     @JoinColumn(name = "cart_customer_id", nullable = false)
     private Customer customer;
 
-    @ManyToOne(optional = false)
+    @ManyToOne()
     @JoinColumn(name = "cart_current_rest_id")
     private Restaurant currentRestaurant;
 
