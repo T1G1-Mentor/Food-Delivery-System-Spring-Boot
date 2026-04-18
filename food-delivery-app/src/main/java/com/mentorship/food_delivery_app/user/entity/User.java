@@ -49,7 +49,7 @@ public class User {
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    @Column(name = "is_enabled")
+    @Column(name = "is_enabled", columnDefinition = "BIT(1)")
     private boolean isEnabled;
 
     @ManyToMany(fetch = FetchType.EAGER) // Cant be lazy (required by spring security)

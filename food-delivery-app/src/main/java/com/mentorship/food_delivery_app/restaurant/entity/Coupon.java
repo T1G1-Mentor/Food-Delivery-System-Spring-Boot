@@ -37,7 +37,7 @@ public class Coupon {
     @Column(name = "coupon_available_to", nullable = false)
     private Instant availableTo;
 
-    @Column(name = "coupon_is_active", nullable = false, columnDefinition = "BIT")
+    @Column(name = "coupon_is_active", nullable = false, columnDefinition = "BIT(1)")
     private boolean isActive;
 
     @CreatedDate
