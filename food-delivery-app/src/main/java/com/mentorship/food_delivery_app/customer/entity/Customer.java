@@ -29,6 +29,10 @@ public class Customer {
     @JoinColumn(name = "customer_default_address_id")
     private CustomerAddress defaultAddress;
 
+    @ManyToOne()
+    @JoinColumn(name = "customer_preferred_payment_id")
+    private PaymentTypeConfig preferredPaymentId;
+
     @OneToMany(mappedBy = "customer", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<CustomerAddress> addresses;
 }
