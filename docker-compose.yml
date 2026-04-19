@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:18.3-alpine
+    restart: unless-stopped
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./food-delivery-app/src/main/resources/food_delivery.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      db-net:
+
+  application:
+    container_name: food-deliver
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - db-net
+      - api-net
+
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  db-net:
+    driver: bridge
+    internal: true
+  api-net:
+    driver: bridge
