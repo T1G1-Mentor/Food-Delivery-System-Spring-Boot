@@ -27,9 +27,9 @@ public class RestaurantRate {
     @JoinColumn(name = "restaurant_rate_restaurant_id", nullable = false)
     private Restaurant restaurant;
 
-    @ManyToOne()
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_rate_customer_id", nullable = false)
-    private Customer customerId;
+    private Customer customer;
 
     @Column(name = "restaurant_rate_rating")
     private Integer rating;

@@ -45,7 +45,7 @@ public class RestaurantBranch extends Auditable {
     private Integer estimatedDeliveryTime;
 
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private User admin;
 
