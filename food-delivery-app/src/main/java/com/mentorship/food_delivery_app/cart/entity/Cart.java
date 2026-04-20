@@ -24,11 +24,11 @@ public class Cart {
     @Column(name = "is_locked", columnDefinition = "BIT(1)")
     private boolean isLocked;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_customer_id", nullable = false)
     private Customer customer;
 
-    @ManyToOne()
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_current_rest_id")
     private Restaurant currentRestaurant;
 
