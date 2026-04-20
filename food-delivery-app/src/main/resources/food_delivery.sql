@@ -138,21 +138,23 @@ CREATE TABLE IF NOT EXISTS cart(
     cart_current_rest_id UUID --REFERENCES restaurant_branch(branch_id)
 );
 CREATE TABLE IF NOT EXISTS cart_item(
+    cart_item_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY ,
     cart_item_cart_id UUID ,--REFERENCES cart(cart_id)
     menu_item_id UUID, --REFERENCES menu_item(menu_item_id)
     cart_item_quantity INT CHECK ( cart_item_quantity > 0 ),
-    cart_item_note VARCHAR(255),
-    PRIMARY KEY (cart_item_cart_id,menu_item_id)
+    cart_item_note VARCHAR(255)
 );
 
 ------------------------------ORDER---------------------
 
 CREATE TABLE IF NOT EXISTS order_status(
-    status VARCHAR(20) PRIMARY KEY
+    order_status_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    order_status_name VARCHAR(20),
+    order_status_description VARCHAR(255) NOT NULL
 );
 CREATE TABLE IF NOT EXISTS order_tracking(
     order_tracking_id UUID PRIMARY KEY DEFAULT uuidv7(),
-    order_tracking_status VARCHAR(20),-- REFERENCES order_status(status)
+    order_tracking_status_id INT NOT NULL,-- REFERENCES order_status(order_status_id)
     order_tracking_order_id UUID NOT NULL, --REFERENCES orders(order_id)
     order_tracking_description VARCHAR(50) NOT NULL ,
     order_tracking_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -160,19 +162,19 @@ CREATE TABLE IF NOT EXISTS order_tracking(
 
 );
 -- REMOVED ORDER_STATUS COL SINCE IT IS ALREADY IN ORDER TRACKING
--- REMOVED ORDER_DISCOUNT_VALUE SINCE IT IS ALREADY IN COUPON (IF YOU HAVE ANOTHER OPINION PLEASE LET ME KNOW)
 CREATE TABLE IF NOT EXISTS orders(
     order_id UUID PRIMARY KEY DEFAULT uuidv7(),
     order_address_id UUID NOT NULL , --REFERENCES customer_address(customer_address_id)
     order_customer_id UUID NOT NULL ,--REFERENCES customer(customer_id)
     order_restaurant_branch_id UUID NOT NULL , --REFERENCES restaurant_branch(branch_id)
     order_coupon_id UUID,-- REFERENCES coupon(coupon_id)
-
+    order_discount_value DECIMAL(6,2),
     order_subtotal DECIMAL(7,2) CHECK ( order_subtotal > 0 ),
     order_fee DECIMAL(6,2) DEFAULT 0,
     order_total DECIMAL(10,2) NOT NULL ,
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    order_note VARCHAR(255)
+    order_note VARCHAR(255),
+    order_status_id INT NOT NULL --REFERENCES order_status(order_status_id)
 );
 
 CREATE TABLE IF NOT EXISTS order_item(
@@ -199,7 +201,7 @@ CREATE TABLE IF NOT EXISTS transaction_status(
 status VARCHAR(20) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS transaction(
+CREATE TABLE IF NOT EXISTS transactions(
     transaction_id UUID PRIMARY KEY DEFAULT uuidv7(),
     transaction_status VARCHAR(20) NOT NULL , --REFERENCES transaction_status(status)
     transaction_order_id UUID NOT NULL ,--REFERENCES orders(order_id)
