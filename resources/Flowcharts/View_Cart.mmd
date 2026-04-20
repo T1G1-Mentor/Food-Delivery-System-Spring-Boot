@@ -1,0 +1,13 @@
+flowchart TB
+    n1([Start]) --> n2["Get user"]
+    n2 --> n3{"Is user authenticated?"}
+
+    n3 -- No --> n4([Return to login page])
+    n3 -- Yes --> n5{"Does user have a cart?"}
+
+    n5 -- No --> n6([Return empty cart])
+    n5 -- Yes --> n7["Get cart with all items"]
+
+    n7 --> n8{"Is cart empty?"}
+    n8 -- Yes --> n6
+    n8 -- No --> n9([Return cart items with totals])
