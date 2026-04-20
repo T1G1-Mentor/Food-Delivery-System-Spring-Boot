@@ -29,7 +29,7 @@ public class Customer {
     @JoinColumn(name = "customer_default_address_id")
     private CustomerAddress defaultAddress;
 
-    @ManyToOne()
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_preferred_payment_id")
     private PaymentTypeConfig preferredPaymentType;
 
