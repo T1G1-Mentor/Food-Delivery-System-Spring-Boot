@@ -47,12 +47,15 @@ public interface CartService {
 
 
     /**
-     * checks for the parameter existence (should take only one cart)
-     * if it does not exist we fetch the logged in customer data
-     * if it does exist we don't fetch our logged in customer data.
-     *
-     * @param carts optional var args of the cart entity.
+     * Clears the cart immediately and sets {@code isLocked} to {@code false}
+     * @param cart cart entity to be cleared.
      *
      */
-    void clearCart(Cart... carts);
+    void clearCart(Cart cart);
+
+    /**
+     * Calls method the fetches the logged in customer by user id along with his cart.
+     * clears the cart immediately and sets {@code isLocked} to {@code false}
+     * */
+    void clearLoggedInCustomerCart();
 }

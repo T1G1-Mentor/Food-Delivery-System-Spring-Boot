@@ -37,7 +37,12 @@ public class CartServiceImp implements CartService {
     }
 
     @Override
-    public void clearCart(Cart... carts) {
+    public void clearCart(Cart cart) {
+
+    }
+
+    @Override
+    public void clearLoggedInCustomerCart() {
 
     }
 }
