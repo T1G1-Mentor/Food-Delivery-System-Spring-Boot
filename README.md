@@ -147,6 +147,55 @@ flowchart TB
     n14 --> n13
 ```
 
+### 3.4 View cart flowchart
+
+```mermaid
+flowchart TB
+    n1([Start]) --> n2["Get user"]
+    n2 --> n3{"Is user authenticated?"}
+
+    n3 -- No --> n4([Return to login page])
+    n3 -- Yes --> n5{"Does user have a cart?"}
+
+    n5 -- No --> n6([Return empty cart])
+    n5 -- Yes --> n7["Get cart with all items"]
+
+    n7 --> n8{"Is cart empty?"}
+    n8 -- Yes --> n6
+    n8 -- No --> n9([Return cart items with totals])
+```
+
+### 3.5 Clear all items flowchart
+
+```mermaid
+flowchart TB
+    n1([Start]) --> n2["Fetch customer with cart by user ID"]
+    n2 --> n3{"Is cart null?"}
+
+    n3 -- Yes --> n4([Return error: cart not found])
+    n3 -- No --> n5["Clear the cart"]
+
+    n5 --> n6([Return success message])
+```
+
+### 3.6 Remove item flowchart
+
+```mermaid
+flowchart TB
+    n1([Start]) --> n2["Get user"]
+    n2 --> n3{"Is user authenticated?"}
+
+    n3 -- No --> n4([Return to login page])
+    n3 -- Yes --> n5["Get user cart"]
+
+    n5 --> n6{"Does cart contain the target item?"}
+    n6 -- No --> n7([Return error: item not found in cart])
+    n6 -- Yes --> n8["Remove item from cart"]
+
+    n8 --> n9([Return success message])
+
+```
+
 ---
 
 ### 4. Order Management

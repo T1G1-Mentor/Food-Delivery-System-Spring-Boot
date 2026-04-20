@@ -1,0 +1,8 @@
+flowchart TB
+    n1([Start]) --> n2["Fetch customer with cart by user ID"]
+    n2 --> n3{"Is cart null?"}
+
+    n3 -- Yes --> n4([Return error: cart not found])
+    n3 -- No --> n5["Clear the cart"]
+
+    n5 --> n6([Return success message])
