@@ -25,13 +25,13 @@ public class Customer {
     @JoinColumn(name = "customer_user_id", nullable = false, unique = true)
     private User user;
 
-    @OneToOne(mappedBy = "customer")
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_default_address_id")
     private CustomerAddress defaultAddress;
 
     @ManyToOne()
     @JoinColumn(name = "customer_preferred_payment_id")
-    private PaymentTypeConfig preferredPaymentId;
+    private PaymentTypeConfig preferredPaymentType;
 
     @OneToMany(mappedBy = "customer", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<CustomerAddress> addresses;
