@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS restaurant_category(
 );
 CREATE TABLE IF NOT EXISTS restaurant_menu(
     restaurant_menu_id UUID PRIMARY KEY DEFAULT uuidv7(),
-    restaurant_menu_rest_id UUID NOT NULL, --  REFERENCES restaurant(restaurant_id)
+    restaurant_menu_rest_branch_id UUID NOT NULL, --  REFERENCES restaurant_branch(branch_id)
     restaurant_menu_name VARCHAR(30) NOT NULL ,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP,
