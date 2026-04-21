@@ -19,7 +19,7 @@ import java.util.UUID;
 public class CartController {
     private final CartService cartService;
 
-    @PatchMapping("/cart-item/remove/{menuItemId}")
+    @DeleteMapping("/cart-item/{menuItemId}")
     public ResponseEntity<CartResponseDto> removeCartItem(@PathVariable UUID menuItemId){
         return ResponseEntity.ok(
                 cartService.removeCartItem(menuItemId)
