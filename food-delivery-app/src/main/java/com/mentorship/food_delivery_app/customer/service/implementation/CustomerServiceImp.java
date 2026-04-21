@@ -24,4 +24,12 @@ public class CustomerServiceImp implements CustomerService {
                         ()->new ResourceNotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND.getMessage()
                         ));
     }
+
+    @Override
+    public Customer fetchCustomerWithCartOnlyByUserId(UUID userId) {
+        return customerRepository.fetchCustomerWithCartOnlyByUserId(userId)
+                .orElseThrow(
+                        ()->new ResourceNotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND.getMessage()
+                        ));
+    }
 }

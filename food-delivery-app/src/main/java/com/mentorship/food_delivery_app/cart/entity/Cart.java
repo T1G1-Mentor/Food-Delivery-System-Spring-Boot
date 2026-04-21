@@ -4,7 +4,10 @@ import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.boot.model.source.spi.JdbcDataType;
 
+import java.sql.JDBCType;
 import java.util.Set;
 import java.util.UUID;
 
@@ -21,11 +24,11 @@ public class Cart {
     @Column(name = "cart_id")
     private UUID id;
 
-    @Column(name = "is_locked", columnDefinition = "BIT(1)")
+    @Column(name = "is_locked" )
     private boolean isLocked;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cart_customer_id", nullable = false)
+    @JoinColumn(name = "cart_customer_id", nullable = false,updatable = false)
     private Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
