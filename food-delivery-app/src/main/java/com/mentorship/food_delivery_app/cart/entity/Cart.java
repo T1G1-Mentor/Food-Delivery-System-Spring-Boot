@@ -1,7 +1,7 @@
 package com.mentorship.food_delivery_app.cart.entity;
 
 import com.mentorship.food_delivery_app.customer.entity.Customer;
-import com.mentorship.food_delivery_app.restaurant.entity.Restaurant;
+import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,7 +30,7 @@ public class Cart {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_current_rest_id")
-    private Restaurant currentRestaurant;
+    private RestaurantBranch currentRestaurant;
 
     @OneToMany(mappedBy = "cart")
     private Set<CartItem> cartItems;
