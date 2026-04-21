@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.customer.entity;
 
+import com.mentorship.food_delivery_app.cart.entity.Cart;
 import com.mentorship.food_delivery_app.payment.entity.PaymentTypeConfig;
 import com.mentorship.food_delivery_app.user.entity.User;
 import jakarta.persistence.*;

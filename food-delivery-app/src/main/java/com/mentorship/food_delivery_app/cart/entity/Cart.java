@@ -29,9 +29,9 @@ public class Cart {
     private Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cart_current_rest_id")
+    @JoinColumn(name = "cart_current_rest_branch_id")
     private RestaurantBranch currentRestaurant;
 
-    @OneToMany(mappedBy = "cart")
+    @OneToMany(mappedBy = "cart", cascade = {CascadeType.PERSIST,CascadeType.MERGE,CascadeType.REFRESH}, orphanRemoval = true)
     private Set<CartItem> cartItems;
 }
