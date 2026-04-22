@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.cart.service.implementation;
 
+import com.mentorship.food_delivery_app.cart.dto.request.CartItemModifyRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.request.CartItemRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.response.CartResponseDto;
 import com.mentorship.food_delivery_app.cart.entity.Cart;
@@ -25,19 +26,21 @@ import java.util.Optional;
 import java.util.UUID;
 
 
-@Service
 @RequiredArgsConstructor
+@Service
 public class CartServiceImp implements CartService {
-    @Value("${app.test.user-id}")
-    private String userId;
-
-    private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final CartRepository cartRepository;
     private final CartMapper cartMapper;
     private final CustomerService customerService;
     private final MenuItemRepository menuItemRepository;
 
     @Transactional
+    @Value("${app.test.user-id}")
+    private String userId;
+
+
+
     @Override
     public CartResponseDto addToCart(CartItemRequestDto cartItemRequest) {
         Customer customer = customerService.fetchCustomerWithCartInfoByUserId(UUID.fromString(userId));
@@ -88,7 +91,13 @@ public class CartServiceImp implements CartService {
 
     @Override
     public CartResponseDto viewCartItems() {
-        return null;
+        Customer customer = customerService.
+                fetchCustomerWithCartInfoByUserId(UUID.fromString(userId));
+        Cart cart = customer.getCart();
+        if (cart == null) {
+            return CartResponseDto.emptyCart();
+        }
+        return cartMapper.toResponse(cart);
     }
 
     @Override
@@ -99,6 +108,34 @@ public class CartServiceImp implements CartService {
     @Override
     public CartResponseDto decreaseCartItemQuantity(UUID itemId) {
         return null;
+    }
+
+    @Transactional
+    @Override
+    public CartResponseDto modifyCartItem(CartItemModifyRequestDto cartItemRequest) {
+        // 1- get the user cart
+        Customer customer = customerService.
+                fetchCustomerWithCartInfoByUserId(UUID.fromString(userId));
+        Cart cart = customer.getCart();
+
+        if (cart == null) throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND_TO_REMOVE_FROM.getMessage());
+
+        // 2- Check if the item exists in the cart or not
+        CartItem cartItem = cartItemRepository.findByIdAndCart(cartItemRequest.cartItemId(), cart)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage()));
+
+        // 3- update the quantity and note of the item
+        if (cartItemRequest.quantity() != null) {
+            cartItem.setQuantity(cartItemRequest.quantity());
+        }
+
+        if (cartItemRequest.note() != null) {
+            cartItem.setNote(cartItemRequest.note());
+        }
+
+        cartItemRepository.save(cartItem);
+
+        return cartMapper.toResponse(cart);
     }
 
     @Transactional
