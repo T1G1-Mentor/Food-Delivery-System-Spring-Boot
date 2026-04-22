@@ -1,11 +1,13 @@
 package com.mentorship.food_delivery_app.cart.controller;
 
+import com.mentorship.food_delivery_app.cart.dto.request.CartItemRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.request.CartItemModifyRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.request.CartItemRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.response.CartResponseDto;
 import com.mentorship.food_delivery_app.cart.dto.response.CartItemResponseDto;
 import com.mentorship.food_delivery_app.cart.dto.response.CartResponseDto;
 import com.mentorship.food_delivery_app.cart.service.contract.CartService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,6 +26,11 @@ import java.util.UUID;
 public class CartController {
     private final CartService cartService;
 
+    @PostMapping
+    public ResponseEntity<CartResponseDto> addToCart(@Valid @RequestBody CartItemRequestDto cartItemRequest) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                cartService.addToCart(cartItemRequest)
+        );
     @PatchMapping("/items/{itemId}")
     public ResponseEntity<?> modifyCartItem(CartItemModifyRequestDto request) {
         CartResponseDto response = cartService.modifyCartItem(request);
@@ -34,7 +41,6 @@ public class CartController {
     public ResponseEntity<CartResponseDto> removeCartItem(@PathVariable UUID menuItemId){
         return ResponseEntity.ok(
                 cartService.removeCartItem(menuItemId)
-
         );
     }
 

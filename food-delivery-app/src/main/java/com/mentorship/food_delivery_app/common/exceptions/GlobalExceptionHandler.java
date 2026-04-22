@@ -28,4 +28,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponseDto> handleBadRequest(BadRequestException ex){
+        log.error("Bad Request Exception was thrown with cause: {}", ex.getLocalizedMessage());
+        ErrorResponseDto response=ErrorResponseDto.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(ex.getMessage())
+                .build();
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
 }
