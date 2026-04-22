@@ -1,20 +1,10 @@
-package com.mentorship.food_delivery_app.cart.dto.response;
+package com.mentorship.food_delivery_app.cart.mapper;
 
+import com.mentorship.food_delivery_app.cart.dto.response.CartItemResponseDto;
 import com.mentorship.food_delivery_app.cart.entity.CartItem;
 
-import java.math.BigDecimal;
-import java.util.UUID;
-
-public record CartItemResponseDto(
-        UUID menuItemId,
-        Integer quantity,
-        String note,
-        String menuItemName,
-        String menuItemDescription,
-        BigDecimal subTotal
-) {
-
-    public static CartItemResponseDto fromCartItem(CartItem cartItem) {
+public class CartItemMapper {
+    public CartItemResponseDto toResponse(CartItem cartItem) {
         return new CartItemResponseDto(
                 cartItem.getMenuItem().getId(),
                 cartItem.getQuantity(),

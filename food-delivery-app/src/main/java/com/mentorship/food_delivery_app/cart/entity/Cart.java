@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.boot.model.source.spi.JdbcDataType;
 
+import java.math.BigDecimal;
 import java.sql.JDBCType;
 import java.util.Set;
 import java.util.UUID;
@@ -37,4 +38,11 @@ public class Cart {
 
     @OneToMany(mappedBy = "cart", cascade = {CascadeType.PERSIST,CascadeType.MERGE,CascadeType.REFRESH}, orphanRemoval = true)
     private Set<CartItem> cartItems;
+
+    public BigDecimal calculateTotal() {
+        return this.getCartItems()
+                .stream()
+                .map(CartItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }
