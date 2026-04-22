@@ -25,10 +25,6 @@ public class Restaurant {
     @Column(name = "restaurant_description", nullable = false)
     private String description;
 
-    @OneToMany(mappedBy = "restaurant",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, orphanRemoval = true)
-    private Set<RestaurantMenu> menus;
-
     @OneToMany(mappedBy = "restaurant", orphanRemoval = true)
     private Set<RestaurantRate> ratings;
 
@@ -37,7 +33,6 @@ public class Restaurant {
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, orphanRemoval = true)
     private Set<Coupon> coupons;
 
-    // NO Cascading: Deleting a restaurant should NOT delete the Category.
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "restaurant_category",

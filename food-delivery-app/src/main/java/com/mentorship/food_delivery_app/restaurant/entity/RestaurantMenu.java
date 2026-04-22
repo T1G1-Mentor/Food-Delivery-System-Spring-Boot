@@ -21,8 +21,8 @@ public class RestaurantMenu extends Auditable {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "restaurant_menu_rest_id", nullable = false)
-    private Restaurant restaurant;
+    @JoinColumn(name = "restaurant_menu_rest_branch_id", nullable = false)
+    private RestaurantBranch restaurantBranch;
 
     @Column(name = "restaurant_menu_name", nullable = false, length = 30)
     private String name;

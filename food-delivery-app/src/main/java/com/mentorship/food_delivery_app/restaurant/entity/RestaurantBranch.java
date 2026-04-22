@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -52,4 +53,9 @@ public class RestaurantBranch extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_rest_id", nullable = false)
     private Restaurant restaurant;
+
+
+    @OneToMany(mappedBy = "restaurantBranch",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, orphanRemoval = true)
+    private Set<RestaurantMenu> menus;
 }

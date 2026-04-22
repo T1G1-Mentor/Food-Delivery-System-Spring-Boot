@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS users(
 --     user_gender CHAR(1),
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_login TIMESTAMP,
-  is_enabled BIT DEFAULT CAST(1 AS BIT)
+  is_enabled BOOLEAN DEFAULT TRUE
 );
 CREATE TABLE IF NOT EXISTS user_role(
     role_id INT NOT NULL, --REFERENCES role(role_id)
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS restaurant_category(
 );
 CREATE TABLE IF NOT EXISTS restaurant_menu(
     restaurant_menu_id UUID PRIMARY KEY DEFAULT uuidv7(),
-    restaurant_menu_rest_id UUID NOT NULL, --  REFERENCES restaurant(restaurant_id)
+    restaurant_menu_rest_branch_id UUID NOT NULL, --  REFERENCES restaurant_branch(branch_id)
     restaurant_menu_name VARCHAR(30) NOT NULL ,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP,
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS coupon(
 --     coupon_discount_percent, WHAT DOES THIS COLUMN DO
     coupon_available_from TIMESTAMP NOT NULL ,
     coupon_available_to TIMESTAMP NOT NULL ,
-    coupon_is_active BIT NOT NULL ,
+    coupon_is_active BOOLEAN NOT NULL ,
     coupon_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     coupon_last_modified TIMESTAMP
 
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS coupon(
 CREATE TABLE IF NOT EXISTS cart(
     cart_id UUID PRIMARY KEY DEFAULT uuidv7(),
     cart_customer_id UUID NOT NULL , -- REFERENCES customer(customer_id)
-    is_locked BIT DEFAULT CAST(0 AS BIT),
+    is_locked BOOLEAN DEFAULT FALSE,
     cart_current_rest_id UUID --REFERENCES restaurant_branch(branch_id)
 );
 CREATE TABLE IF NOT EXISTS cart_item(
