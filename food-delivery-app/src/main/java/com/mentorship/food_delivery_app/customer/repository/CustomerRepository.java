@@ -17,4 +17,11 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
             WHERE c.user.id = :userId
             """)
     Optional<Customer> fetchCustomerWithCartInfoByUserId(UUID userId);
+
+    @Query("""
+            SELECT c FROM Customer c
+            LEFT JOIN FETCH c.cart cr
+            WHERE c.user.id = :userId
+            """)
+    Optional<Customer> fetchCustomerWithCartOnlyByUserId(UUID userId);
 }

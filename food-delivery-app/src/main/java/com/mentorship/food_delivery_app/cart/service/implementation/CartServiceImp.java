@@ -5,12 +5,15 @@ import com.mentorship.food_delivery_app.cart.dto.response.CartResponseDto;
 import com.mentorship.food_delivery_app.cart.entity.Cart;
 import com.mentorship.food_delivery_app.cart.entity.CartItem;
 import com.mentorship.food_delivery_app.cart.mapper.CartMapper;
+import com.mentorship.food_delivery_app.cart.repository.CartItemRepository;
 import com.mentorship.food_delivery_app.cart.repository.CartRepository;
 import com.mentorship.food_delivery_app.cart.service.contract.CartService;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.common.exceptions.ResourceNotFoundException;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
+import jakarta.validation.constraints.NotNull;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -27,6 +30,7 @@ public class CartServiceImp implements CartService {
     private String userId;
 
     private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
     private final CartMapper cartMapper;
     private final CustomerService customerService;
 
@@ -76,11 +80,17 @@ public class CartServiceImp implements CartService {
 
     @Override
     public void clearCart(Cart cart) {
-
+        if (cart==null)
+            throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
+        cartItemRepository.deleteCartItemsByCartId(cart.getId());
+        cart.setLocked(false);
+        cart.setCurrentRestaurant(null);
     }
 
+    @Transactional
     @Override
     public void clearLoggedInCustomerCart() {
-
+        Customer customer=customerService.fetchCustomerWithCartOnlyByUserId(UUID.fromString(userId));
+        clearCart(customer.getCart());
     }
 }

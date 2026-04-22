@@ -13,4 +13,11 @@ public interface CustomerService {
      * */
     Customer fetchCustomerWithCartInfoByUserId(UUID userId);
 
+    /**
+     * Fetches customer with {@code userId}
+     * @return Required {@code Custoemr} with his {@code Cart}
+     * @param userId The loggedIn userId.
+     * */
+    Customer fetchCustomerWithCartOnlyByUserId(UUID userId);
+
 }
