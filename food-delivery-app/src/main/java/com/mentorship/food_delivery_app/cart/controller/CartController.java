@@ -31,6 +31,8 @@ public class CartController {
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 cartService.addToCart(cartItemRequest)
         );
+    }
+
     @PatchMapping("/items/{itemId}")
     public ResponseEntity<?> modifyCartItem(CartItemModifyRequestDto request) {
         CartResponseDto response = cartService.modifyCartItem(request);

@@ -35,7 +35,6 @@ public class CartServiceImp implements CartService {
     private final CustomerService customerService;
     private final MenuItemRepository menuItemRepository;
 
-    @Transactional
     @Value("${app.test.user-id}")
     private String userId;
 
