@@ -22,28 +22,28 @@ public interface CartService {
     /**
      * Increases Cart item quantity by one.
      *
-     * @param cartItemId The UUID value of the cart item id.
+     * @param menuItemId The UUID value of the menu item id.
      *
      */
-    CartResponseDto increaseCartItemQuantity(UUID cartItemId);
+    CartResponseDto increaseCartItemQuantity(UUID menuItemId);
 
 
     /**
      * Decreases Cart item quantity by one.
      *
-     * @param cartItemId The UUID value of the cart item id.
+     * @param menuItemId The UUID value of the menu item id.
      *
      */
-    CartResponseDto decreaseCartItemQuantity(UUID cartItemId);
+    CartResponseDto decreaseCartItemQuantity(UUID menuItemId);
 
 
     /**
      * Permanently removes item from the cart.
      *
-     * @param cartItemId The UUID value of the cart item id.
+     * @param menuItemId The UUID value of the cart item id.
      *
      */
-    void removeCartItem(UUID cartItemId);
+    CartResponseDto removeCartItem(UUID menuItemId);
 
 
     /**
