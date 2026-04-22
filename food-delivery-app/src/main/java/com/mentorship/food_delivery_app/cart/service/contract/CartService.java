@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.cart.service.contract;
 
+import com.mentorship.food_delivery_app.cart.dto.request.CartItemModifyRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.request.CartItemRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.response.CartResponseDto;
 import com.mentorship.food_delivery_app.cart.entity.Cart;
@@ -35,6 +36,8 @@ public interface CartService {
      *
      */
     CartResponseDto decreaseCartItemQuantity(UUID cartItemId);
+
+    CartResponseDto modifyCartItem(CartItemModifyRequestDto cartItemRequest);
 
 
     /**

@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "cart_item")
 @Getter
@@ -34,4 +36,7 @@ public class CartItem {
     @JoinColumn(name = "menu_item_id")
     private MenuItem menuItem;
 
+    public BigDecimal getTotalPrice() {
+        return this.menuItem.getPrice().multiply(BigDecimal.valueOf(this.quantity));
+    }
 }
