@@ -26,6 +26,13 @@ import java.util.UUID;
 public class CartController {
     private final CartService cartService;
 
+    @GetMapping
+    public ResponseEntity<CartResponseDto> viewCart(){
+        return ResponseEntity.ok(
+                cartService.viewCartItems()
+        );
+    }
+
     @PostMapping
     public ResponseEntity<CartResponseDto> addToCart(@Valid @RequestBody CartItemRequestDto cartItemRequest) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
@@ -34,7 +41,7 @@ public class CartController {
     }
 
     @PatchMapping("/items/{itemId}")
-    public ResponseEntity<?> modifyCartItem(CartItemModifyRequestDto request) {
+    public ResponseEntity<CartResponseDto> modifyCartItem(CartItemModifyRequestDto request) {
         CartResponseDto response = cartService.modifyCartItem(request);
         return ResponseEntity.ok().body(response);
     }
