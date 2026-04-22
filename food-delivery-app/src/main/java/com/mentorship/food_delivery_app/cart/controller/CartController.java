@@ -1,8 +1,9 @@
 package com.mentorship.food_delivery_app.cart.controller;
 
-import com.mentorship.food_delivery_app.cart.dto.response.CartItemResponseDto;
+import com.mentorship.food_delivery_app.cart.dto.request.CartItemRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.response.CartResponseDto;
 import com.mentorship.food_delivery_app.cart.service.contract.CartService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +17,17 @@ import java.util.UUID;
 public class CartController {
     private final CartService cartService;
 
+    @PostMapping
+    public ResponseEntity<CartResponseDto> addToCart(@Valid @RequestBody CartItemRequestDto cartItemRequest) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                cartService.addToCart(cartItemRequest)
+        );
+    }
+
     @DeleteMapping("/cart-item/{menuItemId}")
     public ResponseEntity<CartResponseDto> removeCartItem(@PathVariable UUID menuItemId){
         return ResponseEntity.ok(
                 cartService.removeCartItem(menuItemId)
-
         );
     }
 
