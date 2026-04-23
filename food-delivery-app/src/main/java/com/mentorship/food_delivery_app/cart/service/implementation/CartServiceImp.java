@@ -17,6 +17,7 @@ import com.mentorship.food_delivery_app.customer.service.contract.CustomerServic
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.repository.MenuItemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +26,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
 
-
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class CartServiceImp implements CartService {
@@ -99,16 +100,6 @@ public class CartServiceImp implements CartService {
         return cartMapper.toResponse(cart);
     }
 
-    @Override
-    public CartResponseDto increaseCartItemQuantity(UUID itemId) {
-        return null;
-    }
-
-    @Override
-    public CartResponseDto decreaseCartItemQuantity(UUID itemId) {
-        return null;
-    }
-
     @Transactional
     @Override
     public CartResponseDto modifyCartItem(CartItemModifyRequestDto cartItemRequest) {
@@ -147,6 +138,8 @@ public class CartServiceImp implements CartService {
         if (cart == null)
             throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND_TO_REMOVE_FROM.getMessage());
 
+        log.info("Removing item from cart with id {}",cart.getId());
+
         Optional<CartItem> existingItem = cart.
                 getCartItems().
                 stream().
@@ -156,15 +149,23 @@ public class CartServiceImp implements CartService {
         if (existingItem.isEmpty())
             throw new ResourceNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage());
 
-        cart.getCartItems().remove(existingItem.get());
+        CartItem item=existingItem.get();
+
+        log.info("Removing item from cart: menu item id {}, cart id {}",item.getMenuItem().getId(), cart.getId() );
+
+        cart.getCartItems().remove(item);
 
         return cartMapper.toResponse(cart);
     }
 
+//    Transactional annotation required (the method will be called from order domain)
+    @Transactional
     @Override
     public void clearCart(Cart cart) {
         if (cart==null)
             throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
+
+        log.info("Clearing cart with id {}", cart.getId());
         cartItemRepository.deleteCartItemsByCartId(cart.getId());
         cart.setLocked(false);
         cart.setCurrentRestaurant(null);
