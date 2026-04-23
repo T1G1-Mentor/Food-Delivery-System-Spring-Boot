@@ -20,23 +20,6 @@ public interface CartService {
 
     CartResponseDto viewCartItems();
 
-    /**
-     * Increases Cart item quantity by one.
-     *
-     * @param menuItemId The UUID value of the menu item id.
-     *
-     */
-    CartResponseDto increaseCartItemQuantity(UUID menuItemId);
-
-
-    /**
-     * Decreases Cart item quantity by one.
-     *
-     * @param menuItemId The UUID value of the menu item id.
-     *
-     */
-    CartResponseDto decreaseCartItemQuantity(UUID menuItemId);
-
     CartResponseDto modifyCartItem(CartItemModifyRequestDto cartItemRequest);
 
 
