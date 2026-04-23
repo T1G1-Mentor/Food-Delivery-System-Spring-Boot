@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.UUID;
 
 public interface CartItemRepository extends CrudRepository<CartItem, Long> {
-    Optional<CartItem> findByIdAndCart(@NotNull(message = "Item id must be provided.") UUID cartItemId, Cart userCart);
+    Optional<CartItem> findByMenuItemIdAndCart(@NotNull(message = "Menu item id must be provided.") UUID menuItemId, Cart userCart);
 
     @Modifying
     @Query("""
