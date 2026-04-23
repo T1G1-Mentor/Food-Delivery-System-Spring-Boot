@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS menu_item(
     menu_item_description VARCHAR(255),
     menu_item_name VARCHAR(50) NOT NULL ,
     menu_item_price DECIMAL(9,2) NOT NULL CHECK ( menu_item_price > 0 ),
+    is_available BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP,
     created_by UUID NOT NULL , --REFERENCES users(user_id)
