@@ -29,6 +29,9 @@ public class MenuItem extends Auditable {
     @Column(name = "menu_item_price", nullable = false, precision = 9, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "is_available")
+    private boolean isAvailable;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_menu_id", nullable = false)
     private RestaurantMenu menu;
