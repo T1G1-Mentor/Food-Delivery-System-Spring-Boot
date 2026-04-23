@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
 public record CartItemModifyRequestDto (
-        @NotNull(message = "Item id must be provided.")
-        UUID cartItemId,
+        @NotNull(message = "Menu item id must be provided.")
+        UUID menuItemId,
 
         @Positive(message = "Quantity cannot be less than 1.")
         Integer quantity,
