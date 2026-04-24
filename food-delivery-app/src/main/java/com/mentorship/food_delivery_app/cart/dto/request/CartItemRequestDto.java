@@ -1,6 +1,5 @@
 package com.mentorship.food_delivery_app.cart.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -9,7 +8,6 @@ import java.util.UUID;
 
 public record CartItemRequestDto(
         @NotNull(message = "Item id cannot be empty.")
-        @NotBlank(message = "Item id cannot be empty.")
         UUID menuItemId,
 
         @NotNull

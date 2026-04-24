@@ -20,7 +20,7 @@ public interface CartService {
 
     CartResponseDto viewCartItems();
 
-    CartResponseDto modifyCartItem(CartItemModifyRequestDto cartItemRequest);
+    CartResponseDto modifyCartItem(UUID menuItemId, CartItemModifyRequestDto cartItemRequest);
 
 
     /**

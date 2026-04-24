@@ -102,7 +102,7 @@ public class CartServiceImp implements CartService {
 
     @Transactional
     @Override
-    public CartResponseDto modifyCartItem(CartItemModifyRequestDto cartItemRequest) {
+    public CartResponseDto modifyCartItem(UUID menuItemId, CartItemModifyRequestDto cartItemRequest) {
         // 1- get the user cart
         Customer customer = customerService.
                 fetchCustomerWithCartInfoByUserId(UUID.fromString(userId));
@@ -111,7 +111,7 @@ public class CartServiceImp implements CartService {
         if (cart == null) throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND_TO_REMOVE_FROM.getMessage());
 
         // 2- Check if the item exists in the cart or not
-        CartItem cartItem = cartItemRepository.findByMenuItemIdAndCart(cartItemRequest.menuItemId(), cart)
+        CartItem cartItem = cartItemRepository.findByMenuItemIdAndCart(menuItemId, cart.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage()));
 
         // 3- update the quantity and note of the item
