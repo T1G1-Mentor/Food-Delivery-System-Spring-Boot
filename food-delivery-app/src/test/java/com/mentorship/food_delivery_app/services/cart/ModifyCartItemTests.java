@@ -8,7 +8,6 @@ import com.mentorship.food_delivery_app.cart.entity.Cart;
 import com.mentorship.food_delivery_app.cart.entity.CartItem;
 import com.mentorship.food_delivery_app.cart.mapper.CartMapper;
 import com.mentorship.food_delivery_app.cart.repository.CartItemRepository;
-import com.mentorship.food_delivery_app.cart.service.contract.CartService;
 import com.mentorship.food_delivery_app.cart.service.implementation.CartServiceImp;
 import com.mentorship.food_delivery_app.common.exceptions.ResourceNotFoundException;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
