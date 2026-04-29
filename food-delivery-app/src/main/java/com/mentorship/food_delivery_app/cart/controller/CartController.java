@@ -40,9 +40,9 @@ public class CartController {
         );
     }
 
-    @PatchMapping("/items/{itemId}")
-    public ResponseEntity<CartResponseDto> modifyCartItem(CartItemModifyRequestDto request) {
-        CartResponseDto response = cartService.modifyCartItem(request);
+    @PatchMapping("/items/{menuItemId}")
+    public ResponseEntity<CartResponseDto> modifyCartItem(@PathVariable UUID menuItemId, @Valid @RequestBody CartItemModifyRequestDto request){
+        CartResponseDto response = cartService.modifyCartItem(menuItemId, request);
         return ResponseEntity.ok().body(response);
     }
 

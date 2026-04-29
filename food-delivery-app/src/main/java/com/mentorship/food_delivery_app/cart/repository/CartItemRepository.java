@@ -1,8 +1,6 @@
 package com.mentorship.food_delivery_app.cart.repository;
 
-import com.mentorship.food_delivery_app.cart.entity.Cart;
 import com.mentorship.food_delivery_app.cart.entity.CartItem;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -10,10 +8,13 @@ import org.springframework.data.repository.CrudRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-import java.util.UUID;
-
 public interface CartItemRepository extends CrudRepository<CartItem, Long> {
-    Optional<CartItem> findByMenuItemIdAndCart(@NotNull(message = "Menu item id must be provided.") UUID menuItemId, Cart userCart);
+
+    @Query("""
+            SELECT ci FROM CartItem ci
+            WHERE ci.menuItem.id = :menuItemId AND ci.cart.id = :cartId
+            """)
+    Optional<CartItem> findByMenuItemIdAndCart(UUID menuItemId, UUID cartId);
 
     @Modifying
     @Query("""

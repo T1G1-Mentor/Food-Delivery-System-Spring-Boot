@@ -91,39 +91,22 @@ public class CartServiceImp implements CartService {
 
     @Override
     public CartResponseDto viewCartItems() {
-        Customer customer = customerService.
-                fetchCustomerWithCartInfoByUserId(UUID.fromString(userId));
-        Cart cart = customer.getCart();
-        if (cart == null) {
-            return CartResponseDto.emptyCart();
-        }
+        Cart cart = customerService.fetchCustomerWithCartInfoByUserId(UUID.fromString(userId)).getCart();
+        if (cart == null) return CartResponseDto.emptyCart();
         return cartMapper.toResponse(cart);
     }
 
     @Transactional
     @Override
-    public CartResponseDto modifyCartItem(CartItemModifyRequestDto cartItemRequest) {
-        // 1- get the user cart
-        Customer customer = customerService.
-                fetchCustomerWithCartInfoByUserId(UUID.fromString(userId));
-        Cart cart = customer.getCart();
+    public CartResponseDto modifyCartItem(UUID menuItemId, CartItemModifyRequestDto cartItemRequest) {
+        log.info("Modifying cart item with menu item id {} for user id {}", menuItemId, userId);
+        Cart cart = customerService.fetchCustomerWithCartInfoByUserId(UUID.fromString(userId)).getCart();
+        if (cart == null) throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
 
-        if (cart == null) throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND_TO_REMOVE_FROM.getMessage());
-
-        // 2- Check if the item exists in the cart or not
-        CartItem cartItem = cartItemRepository.findByMenuItemIdAndCart(cartItemRequest.menuItemId(), cart)
+        CartItem cartItem = cartItemRepository.findByMenuItemIdAndCart(menuItemId, cart.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage()));
-
-        // 3- update the quantity and note of the item
-        if (cartItemRequest.quantity() != null) {
-            cartItem.setQuantity(cartItemRequest.quantity());
-        }
-
-        if (cartItemRequest.note() != null) {
-            cartItem.setNote(cartItemRequest.note());
-        }
-
-        cartItemRepository.save(cartItem);
+        // If the cart item has a lot of fields, we can create a command class to encapsulate the modifications and arguments.
+        cartItem.applyModifications(cartItemRequest.quantity(), cartItemRequest.note());
 
         return cartMapper.toResponse(cart);
     }

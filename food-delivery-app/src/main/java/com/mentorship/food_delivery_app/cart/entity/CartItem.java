@@ -36,6 +36,15 @@ public class CartItem {
     @JoinColumn(name = "menu_item_id")
     private MenuItem menuItem;
 
+    public void applyModifications(Integer newQuantity, String newNote) {
+        if (newQuantity != null && newQuantity > 0) {
+            this.quantity = newQuantity;
+        }
+        if (newNote != null) {
+            this.note = newNote;
+        }
+    }
+
     public BigDecimal getTotalPrice() {
         return this.menuItem.getPrice().multiply(BigDecimal.valueOf(this.quantity));
     }
