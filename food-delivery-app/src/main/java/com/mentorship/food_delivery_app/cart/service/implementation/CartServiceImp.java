@@ -15,7 +15,8 @@ import com.mentorship.food_delivery_app.common.exceptions.ResourceNotFoundExcept
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
-import com.mentorship.food_delivery_app.restaurant.repository.MenuItemRepository;
+import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
+import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,57 +35,28 @@ public class CartServiceImp implements CartService {
     private final CartRepository cartRepository;
     private final CartMapper cartMapper;
     private final CustomerService customerService;
-    private final MenuItemRepository menuItemRepository;
+    private final RestaurantService restaurantService;
 
     @Value("${app.test.user-id}")
     private String userId;
 
 
-
+    @Transactional
     @Override
     public CartResponseDto addToCart(CartItemRequestDto cartItemRequest) {
         Customer customer = customerService.fetchCustomerWithCartInfoByUserId(UUID.fromString(userId));
 
-        Cart cart = customer.getCart();
-        if (cart == null) {
-            cart = Cart.builder()
-                    .customer(customer)
-                    .isLocked(false)
-                    .cartItems(new HashSet<>())
-                    .build();
-            cartRepository.save(cart);
-            customer.setCart(cart);
-        }
+        Cart cart = getOrCreateCustomerCart(customer);
 
-        MenuItem menuItem = menuItemRepository.findById(cartItemRequest.menuItemId())
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessage.ITEM_NOT_FOUND.getMessage()));
+        MenuItem menuItem = restaurantService.getMenuItemById(cartItemRequest.menuItemId());
+        validateCartCurrentRestaurant(cart.getCurrentRestaurant(), menuItem.getMenu().getRestaurantBranch().getId());
 
-        if (cart.getCurrentRestaurant() != null) {
-            UUID itemBranchId = menuItem.getMenu().getRestaurantBranch().getId();
-            if (!itemBranchId.equals(cart.getCurrentRestaurant().getId())) {
-                throw new BadRequestException(ErrorMessage.ITEM_DIFFERENT_RESTAURANT.getMessage());
-            }
-        }
+        Optional<CartItem> existingItem = searchExistingItem(cart, cartItemRequest.menuItemId());
 
-        Optional<CartItem> existingItem = cart.getCartItems().stream()
-                .filter(item -> item.getMenuItem().getId().equals(cartItemRequest.menuItemId()))
-                .findFirst();
-
-        if (existingItem.isPresent()) {
+        if (existingItem.isPresent())
             existingItem.get().setQuantity(existingItem.get().getQuantity() + cartItemRequest.quantity());
-        } else {
-            CartItem newItem = CartItem.builder()
-                    .cart(cart)
-                    .menuItem(menuItem)
-                    .quantity(cartItemRequest.quantity())
-                    .note(cartItemRequest.note())
-                    .build();
-            cart.getCartItems().add(newItem);
-
-            if (cart.getCurrentRestaurant() == null) {
-                cart.setCurrentRestaurant(menuItem.getMenu().getRestaurantBranch());
-            }
-        }
+        else
+            validateAndCreateNewCartItem(cart, cartItemRequest, menuItem);
 
         return cartMapper.toResponse(cart);
     }
@@ -100,11 +72,11 @@ public class CartServiceImp implements CartService {
     @Override
     public CartResponseDto modifyCartItem(UUID menuItemId, CartItemModifyRequestDto cartItemRequest) {
         log.info("Modifying cart item with menu item id {} for user id {}", menuItemId, userId);
-        Cart cart = customerService.fetchCustomerWithCartInfoByUserId(UUID.fromString(userId)).getCart();
-        if (cart == null) throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
+        Cart cart = validateAndGetLoggedInCustomerCart();
 
         CartItem cartItem = cartItemRepository.findByMenuItemIdAndCart(menuItemId, cart.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage()));
+
         // If the cart item has a lot of fields, we can create a command class to encapsulate the modifications and arguments.
         cartItem.applyModifications(cartItemRequest.quantity(), cartItemRequest.note());
 
@@ -114,38 +86,30 @@ public class CartServiceImp implements CartService {
     @Transactional
     @Override
     public CartResponseDto removeCartItem(UUID menuItemId) {
-        Customer customer = customerService.
-                fetchCustomerWithCartInfoByUserId(UUID.fromString(userId));
-        Cart cart = customer.getCart();
+        Cart cart = validateAndGetLoggedInCustomerCart();
 
-        if (cart == null)
-            throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND_TO_REMOVE_FROM.getMessage());
+        log.info("Removing item from cart with id {}", cart.getId());
 
-        log.info("Removing item from cart with id {}",cart.getId());
+        Optional<CartItem> existingItem = searchExistingItem(cart, menuItemId);
 
-        Optional<CartItem> existingItem = cart.
-                getCartItems().
-                stream().
-                filter(item -> item.getMenuItem().getId().equals(menuItemId))
-                .findFirst();
 
         if (existingItem.isEmpty())
             throw new ResourceNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage());
 
-        CartItem item=existingItem.get();
+        CartItem item = existingItem.get();
 
-        log.info("Removing item from cart: menu item id {}, cart id {}",item.getMenuItem().getId(), cart.getId() );
+        log.info("Removing item from cart: menu item id {}, cart id {}", item.getMenuItem().getId(), cart.getId());
 
         cart.getCartItems().remove(item);
 
         return cartMapper.toResponse(cart);
     }
 
-//    Transactional annotation required (the method will be called from order domain)
+    //    Transactional annotation required (the method will be called from order domain)
     @Transactional
     @Override
     public void clearCart(Cart cart) {
-        if (cart==null)
+        if (cart == null)
             throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
 
         log.info("Clearing cart with id {}", cart.getId());
@@ -157,7 +121,64 @@ public class CartServiceImp implements CartService {
     @Transactional
     @Override
     public void clearLoggedInCustomerCart() {
-        Customer customer=customerService.fetchCustomerWithCartOnlyByUserId(UUID.fromString(userId));
+        Customer customer = customerService.fetchCustomerWithCartOnlyByUserId(UUID.fromString(userId));
         clearCart(customer.getCart());
+    }
+
+    private Cart validateAndGetLoggedInCustomerCart() {
+        Cart cart = customerService.
+                fetchCustomerWithCartInfoByUserId(UUID.fromString(userId)).
+                getCart();
+
+        if (cart == null)
+            throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
+
+        return cart;
+    }
+
+    private void validateCartCurrentRestaurant(RestaurantBranch currentRestaurant, UUID menuItemRestaurantBranchId) {
+
+        if (currentRestaurant != null && !menuItemRestaurantBranchId.equals(currentRestaurant.getId()))
+            throw new BadRequestException(ErrorMessage.ITEM_DIFFERENT_RESTAURANT.getMessage());
+
+    }
+
+    private Optional<CartItem> searchExistingItem(Cart cart, UUID menuItemId) {
+        return cart.
+                getCartItems()
+                .stream()
+                .filter(item -> item.getMenuItem().getId().equals(menuItemId))
+                .findFirst();
+    }
+
+    private Cart getOrCreateCustomerCart(Customer customer) {
+        Cart cart = customer.getCart();
+        if (cart != null)
+            return cart;
+
+        cart = Cart.builder()
+                .customer(customer)
+                .isLocked(false)
+                .cartItems(new HashSet<>())
+                .build();
+        customer.setCart(cart);
+        return cartRepository.save(cart);
+
+    }
+
+    private void validateAndCreateNewCartItem(Cart cart, CartItemRequestDto cartItemRequest, MenuItem menuItem) {
+        if (!menuItem.isAvailable())
+            throw new BadRequestException(ErrorMessage.MENU_ITEM_NOT_AVAILABLE.getMessage());
+        CartItem newItem = CartItem.builder()
+                .cart(cart)
+                .menuItem(menuItem)
+                .quantity(cartItemRequest.quantity())
+                .note(cartItemRequest.note())
+                .build();
+        cart.getCartItems().add(newItem);
+
+        if (cart.getCurrentRestaurant() == null) {
+            cart.setCurrentRestaurant(menuItem.getMenu().getRestaurantBranch());
+        }
     }
 }
