@@ -49,14 +49,18 @@ public class CartServiceImp implements CartService {
         Cart cart = getOrCreateCustomerCart(customer);
 
         MenuItem menuItem = restaurantService.getMenuItemById(cartItemRequest.menuItemId());
-        validateCartCurrentRestaurant(cart.getCurrentRestaurant(), menuItem.getMenu().getRestaurantBranch().getId());
+        validateCartCurrentRestaurant(cart.getCurrentRestaurant(), menuItem.getRestaurantBranch().getId());
 
-        Optional<CartItem> existingItem = searchExistingItem(cart, cartItemRequest.menuItemId());
+        Optional<CartItem> existingItem =cart.searchExistingItem(cartItemRequest.menuItemId());
 
-        if (existingItem.isPresent())
-            existingItem.get().setQuantity(existingItem.get().getQuantity() + cartItemRequest.quantity());
-        else
-            validateAndCreateNewCartItem(cart, cartItemRequest, menuItem);
+        existingItem.
+                ifPresentOrElse(item->
+                                item.setQuantity(cartItemRequest.quantity()
+                                ),
+                ()->
+                        validateAndCreateNewCartItem(cart,cartItemRequest,menuItem
+                        ));
+
 
         return cartMapper.toResponse(cart);
     }
@@ -90,17 +94,12 @@ public class CartServiceImp implements CartService {
 
         log.info("Removing item from cart with id {}", cart.getId());
 
-        Optional<CartItem> existingItem = searchExistingItem(cart, menuItemId);
-
-
-        if (existingItem.isEmpty())
-            throw new ResourceNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage());
-
-        CartItem item = existingItem.get();
+        CartItem item  = cart.searchExistingItem(menuItemId)
+                .orElseThrow(()->new ResourceNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage()));
 
         log.info("Removing item from cart: menu item id {}, cart id {}", item.getMenuItem().getId(), cart.getId());
 
-        cart.getCartItems().remove(item);
+        cart.removeCartItem(item);
 
         return cartMapper.toResponse(cart);
     }
@@ -143,13 +142,6 @@ public class CartServiceImp implements CartService {
 
     }
 
-    private Optional<CartItem> searchExistingItem(Cart cart, UUID menuItemId) {
-        return cart.
-                getCartItems()
-                .stream()
-                .filter(item -> item.getMenuItem().getId().equals(menuItemId))
-                .findFirst();
-    }
 
     private Cart getOrCreateCustomerCart(Customer customer) {
         Cart cart = customer.getCart();
@@ -178,7 +170,7 @@ public class CartServiceImp implements CartService {
         cart.getCartItems().add(newItem);
 
         if (cart.getCurrentRestaurant() == null) {
-            cart.setCurrentRestaurant(menuItem.getMenu().getRestaurantBranch());
+            cart.setCurrentRestaurant(menuItem.getRestaurantBranch());
         }
     }
 }
