@@ -35,4 +35,8 @@ public class MenuItem extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_menu_id", nullable = false)
     private RestaurantMenu menu;
+
+    public RestaurantBranch getRestaurantBranch() {
+        return this.menu.getRestaurantBranch();
+    }
 }
