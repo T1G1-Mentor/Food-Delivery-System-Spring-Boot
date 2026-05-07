@@ -149,15 +149,13 @@ CREATE TABLE IF NOT EXISTS cart_item(
 ------------------------------ORDER---------------------
 
 CREATE TABLE IF NOT EXISTS order_status(
-    order_status_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    order_status_name VARCHAR(20),
-    order_status_description VARCHAR(255) NOT NULL
+    order_status VARCHAR(20) PRIMARY KEY
 );
 CREATE TABLE IF NOT EXISTS order_tracking(
     order_tracking_id UUID PRIMARY KEY DEFAULT uuidv7(),
-    order_tracking_status_id INT NOT NULL,-- REFERENCES order_status(order_status_id)
+    order_tracking_status VARCHAR(20) NOT NULL,-- REFERENCES order_status(order_status)
     order_tracking_order_id UUID NOT NULL, --REFERENCES orders(order_id)
-    order_tracking_description VARCHAR(50) NOT NULL ,
+    order_tracking_description VARCHAR(255) NOT NULL ,
     order_tracking_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 --  CHANGED THE COL CHANGED AT TO CREATED AT SINCE IT WILL ONLY CHANGE ONCE
 
@@ -175,7 +173,7 @@ CREATE TABLE IF NOT EXISTS orders(
     order_total DECIMAL(10,2) NOT NULL ,
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     order_note VARCHAR(255),
-    order_status_id INT NOT NULL --REFERENCES order_status(order_status_id)
+    order_status VARCHAR(20) NOT NULL --REFERENCES order_status(order_status)
 );
 
 CREATE TABLE IF NOT EXISTS order_item(
@@ -213,3 +211,10 @@ CREATE TABLE IF NOT EXISTS transactions(
     transaction_time TIMESTAMP DEFAULT  CURRENT_TIMESTAMP
 );
 
+INSERT INTO order_status  (order_status)
+    VALUES
+         ('PENDING'),
+         ('IN_PROGRESS'),
+         ('ON_THE_WAY'),
+         ('DELIVERED'),
+         ('CANCELLED');

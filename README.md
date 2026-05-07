@@ -123,7 +123,7 @@ flowchart TB
     n10 --> n11([Return])
 ```
 
-### 3.3 Decrease item quantity flowchart
+#### 3.3 Decrease item quantity flowchart
 
 ```mermaid
 flowchart TB
@@ -147,7 +147,7 @@ flowchart TB
     n14 --> n13
 ```
 
-### 3.4 View cart flowchart
+#### 3.4 View cart flowchart
 
 ```mermaid
 flowchart TB
@@ -165,7 +165,7 @@ flowchart TB
     n8 -- No --> n9([Return cart items with totals])
 ```
 
-### 3.5 Clear all items flowchart
+#### 3.5 Clear all items flowchart
 
 ```mermaid
 flowchart TB
@@ -178,7 +178,7 @@ flowchart TB
     n5 --> n6([Return success message])
 ```
 
-### 3.6 Remove item flowchart
+#### 3.6 Remove item flowchart
 
 ```mermaid
 flowchart TB
@@ -212,6 +212,23 @@ Handles the full order lifecycle from placement to completion, including cancell
 | GET | `/orders/{id}` | Order details |
 
 > **Notifications:** Order confirmation is sent via email / SMS upon placement. Customers are notified on every order status change via push notification and SMS/email.
+#### 4.1 Update order status flowchart
+```mermaid
+flowchart TB
+    db([Database])
+
+    start(["Start"]) --> auth{"Has Admin Role"}
+    auth -- YES --> update{"Fetch required order with restaurant <br>branch admin validation"}
+    update --> db
+    db -- result --> update
+    auth -- "NO - 403" ----> en
+    update -- "NOT - FOUND " --> en(["End"])
+    update -- YES -->  tracking["New order tracking"]
+    tracking --> mail["Send email Asynchronously"]
+    mail -- "Transaction committed - 204" --> en
+
+
+```
 
 ---
 
