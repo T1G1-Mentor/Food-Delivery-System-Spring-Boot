@@ -1,10 +1,10 @@
 package com.mentorship.food_delivery_app.services.order;
 
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
+import com.mentorship.food_delivery_app.common.exceptions.BadRequestException;
 import com.mentorship.food_delivery_app.common.exceptions.ResourceNotFoundException;
 import com.mentorship.food_delivery_app.common.services.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
-import com.mentorship.food_delivery_app.order.dto.request.UpdateOrderStatusRequestDto;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
 import com.mentorship.food_delivery_app.order.repository.OrderRepository;
@@ -46,7 +46,6 @@ class UpdateOrderStatusTest {
     private Order order;
     private UUID orderId;
     private UUID userId;
-    private UpdateOrderStatusRequestDto validRequest;
     private User dummyUser;
 
     @BeforeEach
@@ -54,11 +53,6 @@ class UpdateOrderStatusTest {
         orderId = UUID.randomUUID();
         userId = UUID.randomUUID();
 
-        validRequest = new UpdateOrderStatusRequestDto(
-                orderId,
-                "Driver has picked up your food",
-                OrderStatus.ON_THE_WAY
-        );
 
         dummyUser = new User();
         dummyUser.setId(userId);
@@ -71,6 +65,7 @@ class UpdateOrderStatusTest {
         order = new Order();
         order.setOrderId(orderId);
         order.setCustomer(customer);
+        order.setStatus(OrderStatus.PENDING);
         order.setTrackingHistory(new HashSet<>());
         order.setStatus(OrderStatus.PENDING);
 
@@ -83,23 +78,23 @@ class UpdateOrderStatusTest {
             THEN: state is updated, tracking is appended to the Set, and email is sent
             """)
     void updateOrderStatus_ShouldUpdateStatusAndSendEmail_WhenValid() {
-        String exposableName = OrderStatus.ON_THE_WAY.getExposableName();
+        String exposableName = OrderStatus.IN_PROGRESS.getExposableName();
 
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        orderService.updateOrderStatus(validRequest);
+        orderService.updateOrderStatus(orderId);
 
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.ON_THE_WAY);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.IN_PROGRESS);
 
 
         assertThat(order.getTrackingHistory())
                 .hasSize(1)
                 .singleElement()
                 .satisfies(appendedTracking -> {
-                    assertThat(appendedTracking.getStatus()).isEqualTo(validRequest.status());
-                    assertThat(appendedTracking.getDescription()).isEqualTo(validRequest.description());
+                    assertThat(appendedTracking.getStatus()).isEqualTo(OrderStatus.IN_PROGRESS);
+                    assertThat(appendedTracking.getDescription()).isEqualTo(OrderStatus.IN_PROGRESS.getDescription());
                     assertThat(appendedTracking.getOrder()).isEqualTo(order); // Validates Bidirectional mapping!
                 });
 
@@ -123,12 +118,55 @@ class UpdateOrderStatusTest {
         when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.updateOrderStatus(validRequest))
+        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_NOT_FOUND.getMessage());
 
         verifyNoInteractions(emailService);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getTrackingHistory()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("""
+            GIVEN: Trying to update order which already been delivered
+            WHEN: updateOrderStatus is called
+            THEN: BadRequestException is thrown and no side effects occur
+            """)
+    void updateOrderStatus_ShouldThrowException_WhenTryingToUpdateOrderAlreadyDelivered() {
+        order.setStatus(OrderStatus.DELIVERED);
+        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
+        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+                .thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
+
+        verifyNoInteractions(emailService);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.DELIVERED);
+        assertThat(order.getTrackingHistory()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("""
+            GIVEN: Trying to update order which already been cancelled
+            WHEN: updateOrderStatus is called
+            THEN: BadRequestException is thrown and no side effects occur
+            """)
+    void updateOrderStatus_ShouldThrowException_WhenTryingToUpdateOrderAlreadyCancelled() {
+        order.setStatus(OrderStatus.CANCELLED);
+
+        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
+        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+                .thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
+
+        verifyNoInteractions(emailService);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
         assertThat(order.getTrackingHistory()).isEmpty();
     }
 }
