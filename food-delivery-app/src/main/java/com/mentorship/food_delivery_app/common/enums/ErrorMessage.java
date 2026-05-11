@@ -7,8 +7,9 @@ public enum ErrorMessage {
     ITEM_NOT_FOUND("Menu item not found."),
     ITEM_DIFFERENT_RESTAURANT("This item belongs to a different restaurant. Please clear your cart first."),
     MENU_ITEM_NOT_AVAILABLE("This menu item not available at the moment. Please try again later."),
-    ORDER_NOT_FOUND("The order you are looking for does not exist.");
-
+    ORDER_NOT_FOUND("The order you are looking for does not exist."),
+    ORDER_ALREADY_DELIVERED("The order has already been delivered"),
+    ORDER_ALREADY_CANCELLED("The order has already been cancelled");
     private final String message;
 
      ErrorMessage(String message){
