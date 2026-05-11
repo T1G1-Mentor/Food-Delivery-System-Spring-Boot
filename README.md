@@ -212,7 +212,40 @@ Handles the full order lifecycle from placement to completion, including cancell
 | GET | `/orders/{id}` | Order details |
 
 > **Notifications:** Order confirmation is sent via email / SMS upon placement. Customers are notified on every order status change via push notification and SMS/email.
-#### 4.1 Update order status flowchart
+
+#### <div align="center"> Diagrams</div>
+##### Order State Diagram
+```mermaid
+
+stateDiagram-v2
+    direction TB
+    
+    [*] --> PENDING : Order Created
+
+    PENDING --> IN_PROGRESS : Advance Status
+    IN_PROGRESS --> ON_THE_WAY : Advance Status
+    ON_THE_WAY --> DELIVERED : Advance Status
+
+    PENDING --> CANCELLED : Cancel Order (Restaurant)
+    IN_PROGRESS --> CANCELLED : Cancel Order (Restaurant)
+    ON_THE_WAY --> CANCELLED : Cancel Order (Restaurant)
+    DELIVERED --> CANCELLED : Could be cancelled as <br>a refund (Restaurant)
+    note right of DELIVERED
+        Terminal State:
+        Throws BadRequestException
+        if advanced.
+    end note
+    
+    note right of CANCELLED
+        Terminal State:
+        Throws BadRequestException
+        if advanced.
+    end note
+
+    DELIVERED --> [*]
+    CANCELLED --> [*]
+```
+##### 4.2.1 Update order status flowchart
 ```mermaid
 flowchart TB
     db([Database])

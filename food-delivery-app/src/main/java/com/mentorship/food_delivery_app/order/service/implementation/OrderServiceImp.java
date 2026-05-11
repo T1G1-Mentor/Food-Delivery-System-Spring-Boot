@@ -1,9 +1,9 @@
 package com.mentorship.food_delivery_app.order.service.implementation;
 
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
+import com.mentorship.food_delivery_app.common.exceptions.BadRequestException;
 import com.mentorship.food_delivery_app.common.exceptions.ResourceNotFoundException;
 import com.mentorship.food_delivery_app.common.services.contract.EmailService;
-import com.mentorship.food_delivery_app.order.dto.request.UpdateOrderStatusRequestDto;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.entity.OrderTracking;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
@@ -28,17 +28,19 @@ public class OrderServiceImp implements OrderService {
 
     @Transactional
     @Override
-    public void updateOrderStatus(UpdateOrderStatusRequestDto request) {
-        log.info("Initiating status update for Order ID: {} to Status: {}", request.orderId(), request.status());
+    public void updateOrderStatus(UUID orderId) {
 
-        Order order = getAndValidateOrder(request.orderId());
+        Order order = getAndValidateOrder(orderId);
+        OrderStatus newStatus = getNextStatus(order.getStatus());
 
-        createNewOrderTracking(request.status(), request.description(), order);
+        log.info("Initiating status update for Order ID: {} to Status: {}", orderId, newStatus);
+
+        createNewOrderTracking(newStatus, newStatus.getDescription(), order);
 
         log.debug("Dispatching asynchronous status update email to: {}", order.getCustomerEmail());
-        sendStatusUpdateEmail(order.getCustomerEmail(), request.status().getExposableName());
+        sendStatusUpdateEmail(order.getCustomerEmail(), newStatus.getDescription());
 
-        log.info("Successfully completed status update for Order ID: {}", request.orderId());
+        log.info("Successfully completed status update for Order ID: {}", orderId);
     }
 
     private Order getAndValidateOrder(UUID orderId) {
@@ -66,10 +68,21 @@ public class OrderServiceImp implements OrderService {
 
     }
 
+    private OrderStatus getNextStatus(OrderStatus status) {
+        return switch (status) {
+            case PENDING -> OrderStatus.IN_PROGRESS;
+            case IN_PROGRESS -> OrderStatus.ON_THE_WAY;
+            case ON_THE_WAY -> OrderStatus.DELIVERED;
+            case DELIVERED -> throw new BadRequestException(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
+            case CANCELLED -> throw new BadRequestException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
+        };
+
+    }
+
     //    dummy template
     private void sendStatusUpdateEmail(String email, String staus) {
         emailService.sendEmailAsync(email, "Order Status Update", String.format
-                ("Your order status just got updated, and its now %s.", staus));
+                ("Your order status just got updated, %s",staus));
     }
 
 }
