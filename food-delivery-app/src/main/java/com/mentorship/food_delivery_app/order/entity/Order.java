@@ -2,6 +2,7 @@ package com.mentorship.food_delivery_app.order.entity;
 
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.entity.CustomerAddress;
+import com.mentorship.food_delivery_app.order.enums.OrderStatus;
 import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import jakarta.persistence.*;
@@ -9,9 +10,11 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,12 +25,13 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@DynamicUpdate
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "order_id")
-    private UUID id;
+    private UUID orderId;
 
     @PositiveOrZero(message = "Order discount cannot be negative")
     @Column(name = "order_discount_value", precision = 6, scale = 2)
@@ -48,6 +52,10 @@ public class Order {
     @CreationTimestamp
     @Column(name = "order_date", updatable = false)
     private Instant orderDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_status", nullable = false)
+    private OrderStatus status;
 
     @Column(name = "order_note")
     private String note;
@@ -77,12 +85,22 @@ public class Order {
     private Coupon coupon;
 
     public void addOrderItem(OrderItem item) {
-        items.add(item);
+        if(this.items==null)
+            this.items=new HashSet<>();
+
+        this.items.add(item);
         item.setOrder(this);
     }
 
     public void addTrackingEvent(OrderTracking tracking) {
-        trackingHistory.add(tracking);
+        if (this.trackingHistory==null)
+            this.trackingHistory=new HashSet<>();
+
+        this.trackingHistory.add(tracking);
         tracking.setOrder(this);
     }
+    public String getCustomerEmail(){
+        return this.customer.getUser().getEmail();
+    }
+
 }
