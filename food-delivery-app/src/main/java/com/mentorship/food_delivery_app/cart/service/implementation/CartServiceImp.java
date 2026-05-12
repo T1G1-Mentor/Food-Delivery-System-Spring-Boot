@@ -124,6 +124,13 @@ public class CartServiceImp implements CartService {
         clearCart(customer.getCart());
     }
 
+    @Override
+    public void lockCart(UUID cartId) {
+        log.info("Locking cart with id {}", cartId);
+        cartRepository.findByIdWithLock(cartId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage()));
+    }
+
     private Cart validateAndGetLoggedInCustomerCart() {
         Cart cart = customerService.
                 fetchCustomerWithCartInfoByUserId(UUID.fromString(userId)).
