@@ -47,4 +47,9 @@ public class Coupon {
     @LastModifiedDate
     @Column(name = "coupon_last_modified")
     private Instant lastModified;
+
+    public boolean isValid() {
+        Instant now = Instant.now();
+        return this.isActive() && !now.isBefore(this.getAvailableFrom()) && !now.isAfter(this.getAvailableTo());
+    }
 }
