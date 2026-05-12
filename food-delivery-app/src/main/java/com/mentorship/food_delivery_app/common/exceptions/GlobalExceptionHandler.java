@@ -14,7 +14,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,8 +79,29 @@ public class GlobalExceptionHandler {
     // -------------------------------------------------------------------
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponseDto> handleHttpMessageNotReadable(
+    public ResponseEntity<?> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpServletRequest request) {
+
+        if (ex.getCause() instanceof InvalidFormatException invalidFormatException) {
+
+            Map<String, String> errors = new HashMap<>();
+
+            String fieldName = invalidFormatException.getPath().get(0).getFieldName();
+
+            if (invalidFormatException.getTargetType() != null && invalidFormatException.getTargetType().isEnum()) {
+                String allowedValues = java.util.Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
+                errors.put(fieldName, "Invalid value: '" + invalidFormatException.getValue() + "'. Allowed values are: " + allowedValues);
+            } else {
+                errors.put(fieldName, "Invalid data type provided.");
+            }
+
+            return buildValidationResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "JSON parsing failed due to invalid data formatting",
+                    errors
+            );
+
+        }
 
         log.warn("Malformed JSON payload on {} {}: {}",
                 request.getMethod(), request.getRequestURI(), ex.getMessage());
