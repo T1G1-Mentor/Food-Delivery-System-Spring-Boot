@@ -5,9 +5,11 @@ import com.mentorship.food_delivery_app.order.dto.request.DeliveryAddressDto;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Embeddable
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -39,4 +39,8 @@ public class Customer {
 
     @OneToOne(mappedBy = "customer")
     private Cart cart;
+
+    public String getFullName() {
+        return this.user.getFullName();
+    }
 }

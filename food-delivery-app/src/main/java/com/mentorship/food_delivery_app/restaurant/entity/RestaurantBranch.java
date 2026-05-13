@@ -68,4 +68,8 @@ public class RestaurantBranch extends Auditable {
         return !currentTime.isBefore(openTime)
                 || currentTime.isBefore(closeTime);
     }
+
+    public String getRestaurantName(){
+        return this.restaurant.getName();
+    }
 }

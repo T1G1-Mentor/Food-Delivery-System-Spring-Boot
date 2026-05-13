@@ -53,10 +53,10 @@ public class User {
     private boolean isEnabled;
 
     @ManyToMany(fetch = FetchType.EAGER) // Cant be lazy (required by spring security)
-    @JoinTable(
-            name = "user_role",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
+    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
+
+    public String getFullName() {
+        return this.firstName + " " + this.lastName;
+    }
 }

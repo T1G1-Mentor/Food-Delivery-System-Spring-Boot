@@ -15,6 +15,8 @@ import com.mentorship.food_delivery_app.order.dto.request.DeliveryAddressDto;
 import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
 import com.mentorship.food_delivery_app.order.entity.DeliveryAddress;
+import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
+import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.entity.OrderItem;
 import com.mentorship.food_delivery_app.order.entity.OrderTracking;
@@ -31,11 +33,11 @@ import com.mentorship.food_delivery_app.user.service.contract.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -187,12 +189,54 @@ public class OrderServiceImp implements OrderService {
         return DeliveryAddress.from(deliveryAddressDto);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public Page<OrderListItemDto> listOrders(UUID restaurantBranchId, OrderStatus status, Pageable pageable) {
+        log.debug("Fetching orders for branch ID: {} with status filter: {}", restaurantBranchId, status);
+
+        Page<Order> orders = (status != null)
+                ? orderRepository.findOrdersByBranchIdAndStatus(restaurantBranchId, status, pageable)
+                : orderRepository.findOrdersByBranchId(restaurantBranchId, pageable);
+
+        log.info("Fetched {} orders for branch ID: {}", orders.getTotalElements(), restaurantBranchId);
+        return orders.map(orderMapper::toListItem);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public OrderDetailsDto getOrderDetails(UUID orderId) {
+        UUID userId = userService.getDummyLoggedInUser().getId();
+        log.debug("Fetching order details for Order ID: {} by customer user ID: {}", orderId, userId);
+
+        Order order = orderRepository.fetchOrderDetailsForCustomer(orderId, userId)
+                .orElseThrow(() -> {
+                    log.warn("Order details not found. Order ID: {} for user ID: {}", orderId, userId);
+                    return new ResourceNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
+                });
+
+        log.info("Successfully fetched details for Order ID: {}", orderId);
+        return orderMapper.toDetails(order);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable) {
+        UUID userId = userService.getDummyLoggedInUser().getId();
+        log.debug("Fetching order history for user ID: {} with status filter: {}", userId, status);
+
+        Page<Order> orders = (status != null)
+                ? orderRepository.findOrdersByUserIdAndStatus(userId, status, pageable)
+                : orderRepository.findOrdersByUserId(userId, pageable);
+
+        log.info("Fetched {} orders in history for user ID: {}", orders.getTotalElements(), userId);
+        return orders.map(orderMapper::toHistoryItem);
+    }
 
     private Order getAndValidateOrder(UUID orderId) {
         User user = userService.getDummyLoggedInUser();
         log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, user.getId());
 
-        return orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, user.getId())
+        return orderRepository.findOrderByIdAndAdminId(orderId, user.getId())
                 .orElseThrow(() -> {
                     log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, user.getId());
                     return new ResourceNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());

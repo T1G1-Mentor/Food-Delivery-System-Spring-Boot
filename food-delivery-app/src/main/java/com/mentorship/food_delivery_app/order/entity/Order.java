@@ -106,11 +106,40 @@ public class Order {
         this.trackingHistory.add(tracking);
         tracking.setOrder(this);
     }
+
+    public String getDeliveryCity() {
+        return this.deliveryAddress.getCity();
+    }
+
+    public String getDeliveryStreet() {
+        return this.deliveryAddress.getStreet();
+    }
+
+    public String getDeliveryBuilding() {
+        return this.deliveryAddress.getBuilding();
+    }
+
+    public String getDeliveryApartment() {
+        return this.deliveryAddress.getApartment();
+    }
+
+    public BigDecimal getCouponAmount() {
+        return this.coupon != null ? this.coupon.getAmount() : null;
+    }
+
+    public String getCustomerFullName() {
+        return this.customer.getFullName();
+    }
+
     public String getCustomerEmail(){
         return this.customer.getUser().getEmail();
     }
 
     public boolean isCancelled(){
         return this.status.equals(OrderStatus.CANCELLED);
+    }
+
+    public String getRestaurantBranchName(){
+        return this.branch.getRestaurantName();
     }
 }
