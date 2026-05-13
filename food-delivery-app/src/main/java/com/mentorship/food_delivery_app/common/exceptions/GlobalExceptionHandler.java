@@ -226,6 +226,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
 
+    @ExceptionHandler(ResourceUnavailableException.class)
+    public ResponseEntity<ErrorResponseDto> handleResourceNotFound(ResourceUnavailableException ex) {
+        log.warn("Resource Unavailable Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponseDto> handleBadRequest(BadRequestException ex) {
         log.warn("Bad Request Exception was thrown with cause: {}", ex.getLocalizedMessage());

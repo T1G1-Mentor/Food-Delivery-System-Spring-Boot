@@ -68,9 +68,16 @@ public class Order {
             cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private Set<OrderTracking> trackingHistory;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_address_id", nullable = false)
-    private CustomerAddress address;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "city",        column = @Column(name = "order_delivery_city",         length = 20)),
+            @AttributeOverride(name = "street",      column = @Column(name = "order_delivery_street",       length = 20)),
+            @AttributeOverride(name = "building",    column = @Column(name = "order_delivery_building",     length = 20)),
+            @AttributeOverride(name = "apartment",   column = @Column(name = "order_delivery_apartment",    length = 20)),
+            @AttributeOverride(name = "phoneNumber", column = @Column(name = "order_delivery_phone_number", length = 15)),
+            @AttributeOverride(name = "note",        column = @Column(name = "order_delivery_note",         length = 500))
+    })
+    private DeliveryAddress deliveryAddress;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_customer_id", nullable = false)

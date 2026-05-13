@@ -44,4 +44,6 @@ public interface CartService {
      * clears the cart immediately and sets {@code isLocked} to {@code false}
      * */
     void clearLoggedInCustomerCart();
+
+    void lockCart(UUID cartId);
 }

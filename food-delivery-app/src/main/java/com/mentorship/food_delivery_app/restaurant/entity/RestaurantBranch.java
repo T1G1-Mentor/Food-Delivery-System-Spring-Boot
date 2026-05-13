@@ -58,4 +58,14 @@ public class RestaurantBranch extends Auditable {
     @OneToMany(mappedBy = "restaurantBranch",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, orphanRemoval = true)
     private Set<RestaurantMenu> menus;
+
+    public boolean isOpen() {
+        LocalTime currentTime = LocalTime.now();
+        if (openTime.isBefore(closeTime)) {
+            return !currentTime.isBefore(openTime)
+                    && currentTime.isBefore(closeTime);
+        }
+        return !currentTime.isBefore(openTime)
+                || currentTime.isBefore(closeTime);
+    }
 }

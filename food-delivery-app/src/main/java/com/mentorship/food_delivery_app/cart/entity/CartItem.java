@@ -45,6 +45,10 @@ public class CartItem {
         }
     }
 
+    public boolean isAvailable() {
+        return this.menuItem.isAvailable();
+    }
+
     public BigDecimal getTotalPrice() {
         return this.menuItem.getPrice().multiply(BigDecimal.valueOf(this.quantity));
     }
