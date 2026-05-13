@@ -4,15 +4,21 @@ import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.common.exceptions.BadRequestException;
 import com.mentorship.food_delivery_app.common.exceptions.ResourceNotFoundException;
 import com.mentorship.food_delivery_app.common.services.contract.EmailService;
+import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
+import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
+import com.mentorship.food_delivery_app.order.dto.response.OrderSummaryDto;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.entity.OrderTracking;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
+import com.mentorship.food_delivery_app.order.mapper.OrderMapper;
 import com.mentorship.food_delivery_app.order.repository.OrderRepository;
 import com.mentorship.food_delivery_app.order.service.contract.OrderService;
 import com.mentorship.food_delivery_app.user.entity.User;
 import com.mentorship.food_delivery_app.user.service.contract.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +31,7 @@ public class OrderServiceImp implements OrderService {
     private final OrderRepository orderRepository;
     private final UserService userService;
     private final EmailService emailService;
+    private final OrderMapper orderMapper;
 
     @Transactional
     @Override
@@ -41,6 +48,66 @@ public class OrderServiceImp implements OrderService {
         sendStatusUpdateEmail(order.getCustomerEmail(), newStatus.getDescription());
 
         log.info("Successfully completed status update for Order ID: {}", orderId);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<OrderListItemDto> listOrders(OrderStatus status, Pageable pageable) {
+        UUID adminId = userService.getDummyLoggedInUser().getId();
+        log.debug("Fetching orders for admin ID: {} with status filter: {}", adminId, status);
+
+        Page<Order> orders = (status != null)
+                ? orderRepository.findOrdersByAdminAndStatus(adminId, status, pageable)
+                : orderRepository.findOrdersByAdmin(adminId, pageable);
+
+        log.info("Fetched {} orders for admin ID: {}", orders.getTotalElements(), adminId);
+        return orders.map(orderMapper::toListItem);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public OrderDetailsDto getOrderDetails(UUID orderId) {
+        UUID adminId = userService.getDummyLoggedInUser().getId();
+        log.debug("Fetching order details for Order ID: {} by admin ID: {}", orderId, adminId);
+
+        Order order = orderRepository.fetchOrderDetailsForAdmin(orderId, adminId)
+                .orElseThrow(() -> {
+                    log.warn("Order details not found. Order ID: {} for admin ID: {}", orderId, adminId);
+                    return new ResourceNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
+                });
+
+        log.info("Successfully fetched details for Order ID: {}", orderId);
+        return orderMapper.toDetails(order);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public OrderSummaryDto getOrderSummary(UUID orderId) {
+        UUID adminId = userService.getDummyLoggedInUser().getId();
+        log.debug("Fetching order summary for Order ID: {} by admin ID: {}", orderId, adminId);
+
+        Order order = orderRepository.fetchOrderSummaryForAdmin(orderId, adminId)
+                .orElseThrow(() -> {
+                    log.warn("Order summary not found. Order ID: {} for admin ID: {}", orderId, adminId);
+                    return new ResourceNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
+                });
+
+        log.info("Successfully fetched summary for Order ID: {}", orderId);
+        return orderMapper.toSummary(order);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable) {
+        UUID userId = userService.getDummyLoggedInUser().getId();
+        log.debug("Fetching order history for user ID: {} with status filter: {}", userId, status);
+
+        Page<Order> orders = (status != null)
+                ? orderRepository.findOrdersByUserIdAndStatus(userId, status, pageable)
+                : orderRepository.findOrdersByUserId(userId, pageable);
+
+        log.info("Fetched {} orders in history for user ID: {}", orders.getTotalElements(), userId);
+        return orders.map(orderMapper::toHistoryItem);
     }
 
     private Order getAndValidateOrder(UUID orderId) {
