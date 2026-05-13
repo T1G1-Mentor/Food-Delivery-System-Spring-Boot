@@ -163,7 +163,12 @@ CREATE TABLE IF NOT EXISTS order_tracking(
 -- REMOVED ORDER_STATUS COL SINCE IT IS ALREADY IN ORDER TRACKING
 CREATE TABLE IF NOT EXISTS orders(
     order_id UUID PRIMARY KEY DEFAULT uuidv7(),
-    order_address_id UUID NOT NULL , --REFERENCES customer_address(customer_address_id)
+    order_delivery_city VARCHAR(20)  NOT NULL,
+    order_delivery_street VARCHAR(20)  NOT NULL,
+    order_delivery_building VARCHAR(20)  NOT NULL,
+    order_delivery_apartment VARCHAR(20)  NOT NULL,
+    order_delivery_phone_number VARCHAR(15)  NOT NULL,
+    order_delivery_note VARCHAR(500) NOT NULL,
     order_customer_id UUID NOT NULL ,--REFERENCES customer(customer_id)
     order_restaurant_branch_id UUID NOT NULL , --REFERENCES restaurant_branch(branch_id)
     order_coupon_id UUID,-- REFERENCES coupon(coupon_id)
