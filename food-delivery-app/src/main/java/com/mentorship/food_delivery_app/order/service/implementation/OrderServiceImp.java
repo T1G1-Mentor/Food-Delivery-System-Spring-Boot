@@ -28,6 +28,26 @@ public class OrderServiceImp implements OrderService {
 
     @Transactional
     @Override
+    public void cancelOrder(UUID orderId) {
+        Order order =getAndValidateOrder(orderId);
+
+        if (order.isCancelled())
+            throw new BadRequestException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
+
+        OrderStatus status=OrderStatus.CANCELLED;
+        log.info("Initiating status update for Order ID: {} to Status: {}", orderId, status);
+
+        createNewOrderTracking(status,status.getDescription(),order);
+
+        log.debug("Dispatching asynchronous status update email to: {}", order.getCustomerEmail());
+        sendStatusUpdateEmail(order.getCustomerEmail(), status.getDescription());
+
+        log.info("Successfully completed status update for Order ID: {}", orderId);
+
+    }
+
+    @Transactional
+    @Override
     public void updateOrderStatus(UUID orderId) {
 
         Order order = getAndValidateOrder(orderId);

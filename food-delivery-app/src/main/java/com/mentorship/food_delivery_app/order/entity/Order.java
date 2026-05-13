@@ -103,4 +103,7 @@ public class Order {
         return this.customer.getUser().getEmail();
     }
 
+    public boolean isCancelled(){
+        return this.status.equals(OrderStatus.CANCELLED);
+    }
 }

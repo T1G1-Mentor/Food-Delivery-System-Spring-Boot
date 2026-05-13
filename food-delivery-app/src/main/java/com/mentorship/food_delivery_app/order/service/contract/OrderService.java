@@ -5,4 +5,6 @@ import java.util.UUID;
 public interface OrderService {
 
     void updateOrderStatus(UUID orderId);
+
+    void cancelOrder(UUID orderId);
 }

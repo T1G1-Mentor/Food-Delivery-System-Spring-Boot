@@ -4,10 +4,7 @@ import com.mentorship.food_delivery_app.order.service.contract.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -23,4 +20,12 @@ public class OrderController {
         orderService.updateOrderStatus(orderId);
         return ResponseEntity.noContent().build();
     }
+
+    //    @PreAuthorize("hasRole('ADMIN')") // spring security is not enabled yet
+    @DeleteMapping("/{orderId}/status")
+    public ResponseEntity<Void> cancelOrder(@PathVariable UUID orderId) {
+        orderService.cancelOrder(orderId);
+        return ResponseEntity.noContent().build();
+    }
+
 }
