@@ -7,6 +7,9 @@ import com.mentorship.food_delivery_app.common.services.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
+import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
+import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
+import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
 import com.mentorship.food_delivery_app.order.repository.OrderRepository;
 import com.mentorship.food_delivery_app.order.service.implementation.OrderServiceImp;
 import com.mentorship.food_delivery_app.user.entity.User;
@@ -81,7 +84,7 @@ class UpdateOrderStatusTest {
         String exposableName = OrderStatus.IN_PROGRESS.getExposableName();
 
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
-        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+        when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
         orderService.updateOrderStatus(orderId);
@@ -111,15 +114,15 @@ class UpdateOrderStatusTest {
     @DisplayName("""
             GIVEN: invalid order or unauthorized user
             WHEN: updateOrderStatus is called
-            THEN: ResourceNotFoundException is thrown and no side effects occur
+            THEN: OrderNotFoundException is thrown and no side effects occur
             """)
     void updateOrderStatus_ShouldThrowException_WhenOrderNotFoundOrUnauthorized() {
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
-        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+        when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
-                .isInstanceOf(ResourceNotFoundException.class)
+                .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_NOT_FOUND.getMessage());
 
         verifyNoInteractions(emailService);
@@ -131,16 +134,16 @@ class UpdateOrderStatusTest {
     @DisplayName("""
             GIVEN: Trying to update order which already been delivered
             WHEN: updateOrderStatus is called
-            THEN: BadRequestException is thrown and no side effects occur
+            THEN: DeliveredOrderException is thrown and no side effects occur
             """)
     void updateOrderStatus_ShouldThrowException_WhenTryingToUpdateOrderAlreadyDelivered() {
         order.setStatus(OrderStatus.DELIVERED);
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
-        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+        when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
         assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
-                .isInstanceOf(BadRequestException.class)
+                .isInstanceOf(DeliveredOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
 
         verifyNoInteractions(emailService);
@@ -152,17 +155,17 @@ class UpdateOrderStatusTest {
     @DisplayName("""
             GIVEN: Trying to update order which already been cancelled
             WHEN: updateOrderStatus is called
-            THEN: BadRequestException is thrown and no side effects occur
+            THEN: CancelledOrderException is thrown and no side effects occur
             """)
     void updateOrderStatus_ShouldThrowException_WhenTryingToUpdateOrderAlreadyCancelled() {
         order.setStatus(OrderStatus.CANCELLED);
 
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
-        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+        when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
         assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
-                .isInstanceOf(BadRequestException.class)
+                .isInstanceOf(CancelledOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 
         verifyNoInteractions(emailService);
