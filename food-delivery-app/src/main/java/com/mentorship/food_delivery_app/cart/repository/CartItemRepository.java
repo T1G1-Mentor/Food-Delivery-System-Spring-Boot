@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface CartItemRepository extends CrudRepository<CartItem, Long> {
@@ -21,4 +22,11 @@ public interface CartItemRepository extends CrudRepository<CartItem, Long> {
             DELETE FROM CartItem ci WHERE ci.cart.id = :cartId
             """)
     void deleteCartItemsByCartId(UUID cartId);
+
+    @Query("""
+                SELECT ci FROM CartItem ci
+                JOIN FETCH ci.menuItem
+                WHERE ci.cart.id = :cartId
+            """)
+    Set<CartItem> findAllByCartId(UUID cartId);
 }

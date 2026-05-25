@@ -11,17 +11,9 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
     @Query("""
             SELECT c FROM Customer c
-            LEFT JOIN FETCH c.cart cr
-            LEFT JOIN FETCH cr.cartItems ci
-            LEFT JOIN FETCH ci.menuItem
             WHERE c.user.id = :userId
             """)
-    Optional<Customer> fetchCustomerWithCartInfoByUserId(UUID userId);
+    Optional<Customer> findByUserId(UUID userId);
 
-    @Query("""
-            SELECT c FROM Customer c
-            LEFT JOIN FETCH c.cart cr
-            WHERE c.user.id = :userId
-            """)
-    Optional<Customer> fetchCustomerWithCartOnlyByUserId(UUID userId);
+
 }

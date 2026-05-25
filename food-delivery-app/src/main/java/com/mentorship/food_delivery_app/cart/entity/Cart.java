@@ -7,7 +7,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -46,12 +45,11 @@ public class Cart {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    public Optional<CartItem> searchExistingItem(UUID menuItemId) {
-        return this.
-                cartItems
+    public BigDecimal calculateTotal(Set<CartItem> cartItems) {
+        return cartItems
                 .stream()
-                .filter(item -> item.getMenuItem().getId().equals(menuItemId))
-                .findFirst();
+                .map(CartItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public void removeCartItem(CartItem item) {
