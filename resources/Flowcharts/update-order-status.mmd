@@ -1,0 +1,12 @@
+flowchart TB
+    db([Database])
+
+    start(["Start"]) --> auth{"Has Admin Role"}
+    auth -- YES --> update{"Fetch required order with restaurant <br>branch admin validation"}
+    update --> db
+    db -- result --> update
+    update -- "NOT - FOUND " --> en(["End"])
+    auth -- "NO - 403" ----> en
+    update -- YES -->  tracking["New order tracking"]
+    tracking --> mail["Send email Asynchronously"]
+    mail -- "Transaction committed - 204" --> en

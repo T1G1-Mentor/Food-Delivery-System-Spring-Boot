@@ -1,6 +1,8 @@
 package com.mentorship.food_delivery_app.restaurant.service.contract;
 
+import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
+import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 
 import java.util.UUID;
 
@@ -14,4 +16,6 @@ public interface RestaurantService {
      *
      */
     MenuItem getMenuItemById(UUID menuItemId);
+
+    Coupon getRestaurantCoupon(UUID couponId, RestaurantBranch branch);
 }

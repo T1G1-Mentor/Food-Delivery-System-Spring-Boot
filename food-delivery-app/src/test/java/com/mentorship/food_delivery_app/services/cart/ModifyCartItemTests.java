@@ -8,20 +8,18 @@ import com.mentorship.food_delivery_app.cart.entity.Cart;
 import com.mentorship.food_delivery_app.cart.entity.CartItem;
 import com.mentorship.food_delivery_app.cart.mapper.CartMapper;
 import com.mentorship.food_delivery_app.cart.repository.CartItemRepository;
+import com.mentorship.food_delivery_app.cart.repository.CartRepository;
 import com.mentorship.food_delivery_app.cart.service.implementation.CartServiceImp;
-import com.mentorship.food_delivery_app.common.exceptions.ResourceNotFoundException;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import com.mentorship.food_delivery_app.user.exceptions.CartItemNotFoundException;
+import com.mentorship.food_delivery_app.user.exceptions.CartNotFoundException;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -42,6 +40,9 @@ class ModifyCartItemTests {
     private CartItemRepository cartItemRepository;
 
     @Mock
+    private CartRepository cartRepository;
+
+    @Mock
     private CartMapper cartMapper;
 
     @InjectMocks
@@ -52,14 +53,14 @@ class ModifyCartItemTests {
     private UUID cartId;
     private Cart cart;
     private CartItem cartItem;
-    private MenuItem menuItem;
-    private Customer customer;
+
+    private Set<CartItem> cartItems;
 
     @BeforeEach
     void setUp() {
         menuItemId = UUID.randomUUID();
-        cartId     = UUID.randomUUID();
-
+        cartId = UUID.randomUUID();
+        MenuItem menuItem;
         menuItem = new MenuItem();
         menuItem.setId(menuItemId);
         menuItem.setName("Burger");
@@ -70,15 +71,11 @@ class ModifyCartItemTests {
         cartItem.setMenuItem(menuItem);
         cartItem.setQuantity(1);
         cartItem.setNote("No onions");
+        cartItems = Set.of(cartItem);
 
         cart = new Cart();
         cart.setId(cartId);
         cart.setCartItems(Set.of(cartItem));
-
-        customer = new Customer();
-        customer.setCart(cart);
-
-        ReflectionTestUtils.setField(cartService, "userId", "019dac9d-de24-7d35-b386-2844f5d5bd84");
     }
 
     // ------------------------------------------------------------------ //
@@ -87,22 +84,34 @@ class ModifyCartItemTests {
     @Nested
     @DisplayName("Successful modification")
     class SuccessScenarios {
+        @BeforeEach
+        void assumptions() {
+            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
+            when(cartRepository.findByCustomerId(any()))
+                    .thenReturn(Optional.of(cart));
+            when(cartItemRepository.findAllByCartId(cartId))
+                    .thenReturn(cartItems);
+            when(cartMapper.toResponse(cart, cartItems)).thenReturn(buildCartResponse());
+
+        }
+
+        @AfterEach
+        void verifications() {
+            verify(cartMapper, times(1))
+                    .toResponse(cart, cartItems);
+        }
 
         @Test
         @DisplayName("Updates quantity when a valid positive quantity is provided")
         void shouldUpdateQuantity_whenValidQuantityProvided() {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(3, null);
-            CartResponseDto expectedResponse = buildCartResponse();
 
-            when(customerService.fetchCustomerWithCartInfoByUserId(any())).thenReturn(customer);
-            when(cartItemRepository.findByMenuItemIdAndCart(menuItemId, cartId))
-                    .thenReturn(Optional.of(cartItem));
-            when(cartMapper.toResponse(cart)).thenReturn(expectedResponse);
 
             CartResponseDto result = cartService.modifyCartItem(menuItemId, request);
 
             assertThat(cartItem.getQuantity()).isEqualTo(3);
-            assertThat(result).isEqualTo(expectedResponse);
+            assertThat(result).isEqualTo(buildCartResponse());
+
         }
 
         @Test
@@ -110,14 +119,11 @@ class ModifyCartItemTests {
         void shouldUpdateNote_whenNoteProvided() {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(null, "Extra spicy");
 
-            when(customerService.fetchCustomerWithCartInfoByUserId(any())).thenReturn(customer);
-            when(cartItemRepository.findByMenuItemIdAndCart(menuItemId, cartId))
-                    .thenReturn(Optional.of(cartItem));
-            when(cartMapper.toResponse(cart)).thenReturn(buildCartResponse());
 
             cartService.modifyCartItem(menuItemId, request);
 
             assertThat(cartItem.getNote()).isEqualTo("Extra spicy");
+
         }
 
         @Test
@@ -125,15 +131,12 @@ class ModifyCartItemTests {
         void shouldUpdateBothFields_whenBothProvided() {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(5, "Well done");
 
-            when(customerService.fetchCustomerWithCartInfoByUserId(any())).thenReturn(customer);
-            when(cartItemRepository.findByMenuItemIdAndCart(menuItemId, cartId))
-                    .thenReturn(Optional.of(cartItem));
-            when(cartMapper.toResponse(cart)).thenReturn(buildCartResponse());
 
             cartService.modifyCartItem(menuItemId, request);
 
             assertThat(cartItem.getQuantity()).isEqualTo(5);
             assertThat(cartItem.getNote()).isEqualTo("Well done");
+
         }
 
         @Test
@@ -141,14 +144,10 @@ class ModifyCartItemTests {
         void shouldClearNote_whenEmptyStringProvided() {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(null, "");
 
-            when(customerService.fetchCustomerWithCartInfoByUserId(any())).thenReturn(customer);
-            when(cartItemRepository.findByMenuItemIdAndCart(menuItemId, cartId))
-                    .thenReturn(Optional.of(cartItem));
-            when(cartMapper.toResponse(cart)).thenReturn(buildCartResponse());
-
             cartService.modifyCartItem(menuItemId, request);
 
             assertThat(cartItem.getNote()).isEmpty();
+
         }
     }
 
@@ -203,44 +202,44 @@ class ModifyCartItemTests {
     @DisplayName("Exception scenarios")
     class ExceptionScenarios {
 
-        @Test
-        @DisplayName("Throws ResourceNotFoundException when customer has no cart")
-        void shouldThrowException_whenCartIsNull() {
-            customer.setCart(null);
-            when(customerService.fetchCustomerWithCartInfoByUserId(any())).thenReturn(customer);
-
-            CartItemModifyRequestDto request = new CartItemModifyRequestDto(1, null);
-
-            assertThatThrownBy(() -> cartService.modifyCartItem(menuItemId, request))
-                    .isInstanceOf(ResourceNotFoundException.class);
-        }
-
-        @Test
-        @DisplayName("Throws ResourceNotFoundException when cart item is not found")
-        void shouldThrowException_whenCartItemNotFound() {
-            when(customerService.fetchCustomerWithCartInfoByUserId(any())).thenReturn(customer);
-            when(cartItemRepository.findByMenuItemIdAndCart(menuItemId, cartId))
-                    .thenReturn(Optional.empty());
-
-            CartItemModifyRequestDto request = new CartItemModifyRequestDto(1, null);
-
-            assertThatThrownBy(() -> cartService.modifyCartItem(menuItemId, request))
-                    .isInstanceOf(ResourceNotFoundException.class);
-        }
-
-        @Test
-        @DisplayName("Does not call cartMapper when cart is null")
-        void shouldNotCallMapper_whenCartIsNull() {
-            customer.setCart(null);
-            when(customerService.fetchCustomerWithCartInfoByUserId(any())).thenReturn(customer);
-
-            CartItemModifyRequestDto request = new CartItemModifyRequestDto(1, null);
-
-            assertThatThrownBy(() -> cartService.modifyCartItem(menuItemId, request))
-                    .isInstanceOf(ResourceNotFoundException.class);
-
+        @AfterEach
+        void verifications() {
             verifyNoInteractions(cartMapper);
         }
+
+        @Test
+        @DisplayName("Throws CartNotFoundException when customer has no cart")
+        void shouldThrowException_whenCartIsNull() {
+            CartItemModifyRequestDto request =
+                    new CartItemModifyRequestDto(1, null);
+
+            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
+            when(cartRepository.findByCustomerId(any()))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> cartService.modifyCartItem(menuItemId, request))
+                    .isInstanceOf(CartNotFoundException.class);
+
+        }
+
+        @Test
+        @DisplayName("Throws CartItemNotFoundException when cart item is not found")
+        void shouldThrowException_whenCartItemNotFound() {
+            CartItemModifyRequestDto request
+                    = new CartItemModifyRequestDto(1, null);
+
+            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
+            when(cartRepository.findByCustomerId(any()))
+                    .thenReturn(Optional.of(cart));
+            when(cartItemRepository.findAllByCartId(any()))
+                    .thenReturn(Set.of());
+
+            assertThatThrownBy(() -> cartService.modifyCartItem(menuItemId, request))
+                    .isInstanceOf(CartItemNotFoundException.class);
+
+        }
+
+
     }
 
     // ------------------------------------------------------------------ //
@@ -251,18 +250,22 @@ class ModifyCartItemTests {
     class CollaborationTests {
 
         @Test
-        @DisplayName("Fetches the cart item using the correct menuItemId and cartId")
+        @DisplayName("Fetches the cart items using the correct cartId")
         void shouldFetchCartItem_withCorrectIds() {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(2, null);
 
-            when(customerService.fetchCustomerWithCartInfoByUserId(any())).thenReturn(customer);
-            when(cartItemRepository.findByMenuItemIdAndCart(menuItemId, cartId))
-                    .thenReturn(Optional.of(cartItem));
-            when(cartMapper.toResponse(cart)).thenReturn(buildCartResponse());
+            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
+            when(cartRepository.findByCustomerId(any()))
+                    .thenReturn(Optional.of(cart));
+            when(cartItemRepository.findAllByCartId(cartId))
+                    .thenReturn(cartItems);
+            when(cartMapper.toResponse(cart, cartItems)).
+                    thenReturn(buildCartResponse());
 
             cartService.modifyCartItem(menuItemId, request);
 
-            verify(cartItemRepository).findByMenuItemIdAndCart(menuItemId, cartId);
+            verify(cartItemRepository, times(1))
+                    .findAllByCartId(cartId);
         }
 
         @Test
@@ -270,14 +273,16 @@ class ModifyCartItemTests {
         void shouldCallMapper_exactlyOnce() {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(2, null);
 
-            when(customerService.fetchCustomerWithCartInfoByUserId(any())).thenReturn(customer);
-            when(cartItemRepository.findByMenuItemIdAndCart(menuItemId, cartId))
-                    .thenReturn(Optional.of(cartItem));
-            when(cartMapper.toResponse(cart)).thenReturn(buildCartResponse());
+            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
+            when(cartRepository.findByCustomerId(any()))
+                    .thenReturn(Optional.of(cart));
+            when(cartItemRepository.findAllByCartId(cartId))
+                    .thenReturn(cartItems);
 
             cartService.modifyCartItem(menuItemId, request);
 
-            verify(cartMapper, times(1)).toResponse(cart);
+            verify(cartMapper, times(1))
+                    .toResponse(cart, cartItems);
         }
     }
 

@@ -8,3 +8,4 @@ target/
 *.iml
 *.iws
 *.ipr
+secret.env

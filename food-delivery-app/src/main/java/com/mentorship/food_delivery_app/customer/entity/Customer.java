@@ -37,6 +37,7 @@ public class Customer {
     @OneToMany(mappedBy = "customer", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<CustomerAddress> addresses;
 
-    @OneToOne(mappedBy = "customer")
-    private Cart cart;
+    public String getFullName() {
+        return this.user.getFullName();
+    }
 }

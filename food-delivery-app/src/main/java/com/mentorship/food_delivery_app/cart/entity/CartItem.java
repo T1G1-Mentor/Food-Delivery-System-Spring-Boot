@@ -4,6 +4,7 @@ import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 
@@ -14,6 +15,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@DynamicUpdate
 public class CartItem {
 
     @Id
@@ -43,6 +45,10 @@ public class CartItem {
         if (newNote != null) {
             this.note = newNote;
         }
+    }
+
+    public boolean isAvailable() {
+        return this.menuItem.isAvailable();
     }
 
     public BigDecimal getTotalPrice() {

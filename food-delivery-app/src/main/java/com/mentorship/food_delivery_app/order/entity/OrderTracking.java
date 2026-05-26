@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.order.entity;
 
+import com.mentorship.food_delivery_app.order.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,11 +22,11 @@ public class OrderTracking {
     @Column(name = "order_tracking_id")
     private UUID id;
 
-    @Column(name = "order_tracking_description", length = 50, nullable = false)
+    @Column(name = "order_tracking_description", nullable = false)
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_tracking_status_id")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_tracking_status", nullable = false)
     private OrderStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
