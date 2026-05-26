@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -24,5 +25,12 @@ public class UserServiceImp implements UserService {
 
         return userRepository.findById(UUID.fromString(userId)).get();
 
+    }
+
+    @Transactional
+    @Override
+    public void deactivateByUserId(UUID userId) {
+        log.info("Deactivating account for user with id {}", userId);
+        userRepository.deactivateByUserId(userId);
     }
 }
