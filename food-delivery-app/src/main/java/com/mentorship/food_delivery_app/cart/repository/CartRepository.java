@@ -16,4 +16,12 @@ public interface CartRepository extends CrudRepository<Cart, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Cart c WHERE c.id = :id")
     Optional<Cart> findByIdWithLock(@Param("id") UUID id);
+
+    @Query("""
+                SELECT c FROM Cart c
+                LEFT JOIN FETCH c.cartItems ci
+                JOIN FETCH ci.menuItem mi
+                WHERE c.customer.id= :customerId
+            """)
+    Optional<Cart> findWithCartItemsAndMenuItemsByCustomerId(UUID customerId);
 }

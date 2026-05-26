@@ -4,7 +4,9 @@ import com.mentorship.food_delivery_app.cart.dto.request.CartItemModifyRequestDt
 import com.mentorship.food_delivery_app.cart.dto.request.CartItemRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.response.CartResponseDto;
 import com.mentorship.food_delivery_app.cart.entity.Cart;
+import com.mentorship.food_delivery_app.cart.entity.CartItem;
 
+import java.util.Set;
 import java.util.UUID;
 
 public interface CartService {
@@ -29,11 +31,12 @@ public interface CartService {
      * @param menuItemId The UUID value of the cart item id.
      *
      */
-    CartResponseDto removeCartItem(UUID menuItemId);
+    void removeCartItem(UUID menuItemId);
 
 
     /**
      * Clears the cart immediately and sets {@code isLocked} to {@code false}
+     *
      * @param cart cart entity to be cleared.
      *
      */
@@ -42,8 +45,13 @@ public interface CartService {
     /**
      * Calls method the fetches the logged in customer by user id along with his cart.
      * clears the cart immediately and sets {@code isLocked} to {@code false}
-     * */
+     *
+     */
     void clearLoggedInCustomerCart();
 
     void lockCart(UUID cartId);
+
+    Cart getCartByCustomerId(UUID customerId);
+
+    Set<CartItem> getCartItemsWithMenuItemsByCartId(UUID cartId);
 }

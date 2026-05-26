@@ -4,8 +4,6 @@ import com.mentorship.food_delivery_app.cart.entity.Cart;
 import com.mentorship.food_delivery_app.cart.entity.CartItem;
 import com.mentorship.food_delivery_app.cart.service.contract.CartService;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
-import com.mentorship.food_delivery_app.common.exceptions.BadRequestException;
-import com.mentorship.food_delivery_app.common.exceptions.ResourceNotFoundException;
 import com.mentorship.food_delivery_app.common.exceptions.ResourceUnavailableException;
 import com.mentorship.food_delivery_app.common.services.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
@@ -13,14 +11,17 @@ import com.mentorship.food_delivery_app.customer.service.contract.CustomerServic
 import com.mentorship.food_delivery_app.order.dto.OrderPricing;
 import com.mentorship.food_delivery_app.order.dto.request.DeliveryAddressDto;
 import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
-import com.mentorship.food_delivery_app.order.entity.DeliveryAddress;
 import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
+import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
+import com.mentorship.food_delivery_app.order.entity.DeliveryAddress;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.entity.OrderItem;
 import com.mentorship.food_delivery_app.order.entity.OrderTracking;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
+import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
+import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
+import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
 import com.mentorship.food_delivery_app.order.mapper.OrderMapper;
 import com.mentorship.food_delivery_app.order.repository.OrderRepository;
 import com.mentorship.food_delivery_app.order.service.contract.OrderService;
@@ -32,7 +33,6 @@ import com.mentorship.food_delivery_app.user.entity.User;
 import com.mentorship.food_delivery_app.user.service.contract.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -56,25 +56,27 @@ public class OrderServiceImp implements OrderService {
     private final CartService cartService;
     private final OrderMapper orderMapper;
 
-    @Value("${app.test.user-id}")
-    private String userId;
 
     @Transactional
     @Override
     public OrderResponseDto placeOrder(PlaceOrderRequestDto request) {
-        Customer customer = customerService.fetchCustomerWithCartInfoByUserId(UUID.fromString(userId));
-        Cart cart = validateCartExists(customer);
+        Customer customer = customerService.getLoggedinCustomer();
+
+        Cart cart = cartService.getCartByCustomerId(customer.getId());
         cartService.lockCart(cart.getId());
 
+        Set<CartItem> cartItems = cartService.getCartItemsWithMenuItemsByCartId(cart.getId());
 //        validateRestaurantIsOpen(cart);
-        validateCartItemsAvailability(cart);
+        validateCartItemsAvailability(cartItems);
 
         Coupon coupon = restaurantService.getRestaurantCoupon(request.couponId(), cart.getCurrentRestaurant());
-        OrderPricing pricing = OrderPricing.calculate(cart, coupon);
+        OrderPricing pricing = OrderPricing.calculate(cart, cartItems, coupon);
 
         paymentService.processPayment(); // dummy template for processing payment
 
-        Order savedOrder = createAndPersistOrder(customer, cart, pricing, request.deliveryAddress());
+        Order savedOrder = createAndPersistOrder(customer,
+                cartItems, cart.getCurrentRestaurant(), pricing, request.deliveryAddress());
+
         notifyOrderPlaced(savedOrder);
 
         return orderMapper.toResponse(savedOrder);
@@ -84,15 +86,15 @@ public class OrderServiceImp implements OrderService {
     @Transactional
     @Override
     public void cancelOrder(UUID orderId) {
-        Order order =getAndValidateOrder(orderId);
+        Order order = getAndValidateOrder(orderId);
 
         if (order.isCancelled())
-            throw new BadRequestException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
+            throw new CancelledOrderException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 
-        OrderStatus status=OrderStatus.CANCELLED;
+        OrderStatus status = OrderStatus.CANCELLED;
         log.info("Initiating status update for Order ID: {} to Status: {}", orderId, status);
 
-        createNewOrderTracking(status,status.getDescription(),order);
+        createNewOrderTracking(status, status.getDescription(), order);
 
         log.debug("Dispatching asynchronous status update email to: {}", order.getCustomerEmail());
         sendStatusUpdateEmail(order.getCustomerEmail(), status.getDescription());
@@ -118,36 +120,40 @@ public class OrderServiceImp implements OrderService {
         log.info("Successfully completed status update for Order ID: {}", orderId);
     }
 
-    private void validateRestaurantIsOpen(Cart cart) {
-        RestaurantBranch branch = cart.getCurrentRestaurant();
-        if (!branch.isOpen()) {
-            log.error("Restaurant {} is closed", branch.getId());
-            throw new ResourceUnavailableException(ErrorMessage.RESTAURANT_CLOSED.getMessage());
-        }
-    }
+//    private void validateRestaurantIsOpen(Cart cart) {
+//        RestaurantBranch branch = cart.getCurrentRestaurant();
+//        if (!branch.isOpen()) {
+//            log.error("Restaurant {} is closed", branch.getId());
+//            throw new ResourceUnavailableException(ErrorMessage.RESTAURANT_CLOSED.getMessage());
+//        }
+//    }
+//
+//    private Cart validateCartExists(Customer customer) {
+//        Cart cart = customer.getCart();
+//        if (cart == null) {
+//            log.error("Cart not found for user {}", userId);
+//            throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
+//        }
+//        return cart;
+//    }
 
-    private Cart validateCartExists(Customer customer) {
-        Cart cart = customer.getCart();
-        if (cart == null) {
-            log.error("Cart not found for user {}", userId);
-            throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
-        }
-        return cart;
-    }
+    private void validateCartItemsAvailability(Set<CartItem> cartItems) {
+        List<String> unavailableItemNames = cartItems
+                .stream()
+                .filter(item -> !item.isAvailable())
+                .map(item -> item.getMenuItem().getName())
+                .toList();
 
-    private void validateCartItemsAvailability(Cart cart) {
-        Set<CartItem> unavailableItems = cart.getUnavailableItems();
-        if (!unavailableItems.isEmpty()) {
-            List<String> unavailableItemNames = unavailableItems.stream()
-                    .map(item -> item.getMenuItem().getName())
-                    .toList();
+        if (!unavailableItemNames.isEmpty()) {
             log.error("Unavailable cart items: {}", unavailableItemNames);
             throw new ResourceUnavailableException("Some items in the cart are not available: " + unavailableItemNames);
         }
     }
 
-    private Order createAndPersistOrder(Customer customer, Cart cart, OrderPricing pricing, DeliveryAddressDto deliveryAddress) {
-        RestaurantBranch branch = cart.getCurrentRestaurant();
+    private Order createAndPersistOrder
+            (Customer customer, Set<CartItem> cartItems, RestaurantBranch branch
+                    , OrderPricing pricing, DeliveryAddressDto deliveryAddress) {
+
 
         DeliveryAddress deliveryAddressToPersist = resolveDeliveryAddress(customer, deliveryAddress);
 
@@ -163,15 +169,15 @@ public class OrderServiceImp implements OrderService {
                 .build();
 
         Order savedOrder = orderRepository.save(order);
-        savedOrder.setItems(buildOrderItems(cart, savedOrder));
+        savedOrder.setItems(buildOrderItems(cartItems, savedOrder));
 
         createNewOrderTracking(OrderStatus.PENDING, OrderStatus.PENDING.getDescription(), savedOrder);
 
         return savedOrder;
     }
 
-    private Set<OrderItem> buildOrderItems(Cart cart, Order order) {
-        return cart.getCartItems().stream()
+    private Set<OrderItem> buildOrderItems(Set<CartItem> cartItems, Order order) {
+        return cartItems.stream()
                 .map(cartItem -> OrderItem.builder()
                         .menuItem(cartItem.getMenuItem())
                         .quantity(cartItem.getQuantity())
@@ -211,7 +217,7 @@ public class OrderServiceImp implements OrderService {
         Order order = orderRepository.fetchOrderDetailsForCustomer(orderId, userId)
                 .orElseThrow(() -> {
                     log.warn("Order details not found. Order ID: {} for user ID: {}", orderId, userId);
-                    return new ResourceNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
+                    return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
                 });
 
         log.info("Successfully fetched details for Order ID: {}", orderId);
@@ -239,7 +245,7 @@ public class OrderServiceImp implements OrderService {
         return orderRepository.findOrderByIdAndAdminId(orderId, user.getId())
                 .orElseThrow(() -> {
                     log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, user.getId());
-                    return new ResourceNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
+                    return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
                 });
     }
 
@@ -262,8 +268,8 @@ public class OrderServiceImp implements OrderService {
             case PENDING -> OrderStatus.IN_PROGRESS;
             case IN_PROGRESS -> OrderStatus.ON_THE_WAY;
             case ON_THE_WAY -> OrderStatus.DELIVERED;
-            case DELIVERED -> throw new BadRequestException(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
-            case CANCELLED -> throw new BadRequestException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
+            case DELIVERED -> throw new DeliveredOrderException(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
+            case CANCELLED -> throw new CancelledOrderException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
         };
 
     }
@@ -271,19 +277,17 @@ public class OrderServiceImp implements OrderService {
     //    dummy template
     private void sendStatusUpdateEmail(String email, String staus) {
         emailService.sendEmailAsync(email, "Order Status Update", String.format
-                ("Your order status just got updated, %s",staus));
+                ("Your order status just got updated, %s", staus));
     }
 
     private void notifyOrderPlaced(Order order) {
-        try {
-            emailService.sendEmailAsync(
-                    order.getCustomer().getUser().getEmail(),
-                    "Order Confirmation",
-                    "Your order has been placed. Order ID: " + order.getOrderId()
-            );
-        } catch (Throwable e) {
-            log.warn("Failed to send order confirmation email for order {}", order.getOrderId(), e);
-        }
+
+        emailService.sendEmailAsync(
+                order.getCustomer().getUser().getEmail(),
+                "Order Confirmation",
+                "Your order has been placed. Order ID: " + order.getOrderId()
+        );
+
     }
 
 }

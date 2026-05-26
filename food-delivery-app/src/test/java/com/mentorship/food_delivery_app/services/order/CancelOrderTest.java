@@ -1,11 +1,11 @@
 package com.mentorship.food_delivery_app.services.order;
 
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
-import com.mentorship.food_delivery_app.common.exceptions.BadRequestException;
 import com.mentorship.food_delivery_app.common.services.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
+import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
 import com.mentorship.food_delivery_app.order.repository.OrderRepository;
 import com.mentorship.food_delivery_app.order.service.implementation.OrderServiceImp;
 import com.mentorship.food_delivery_app.user.entity.User;
@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CancelOrderTest {
+class CancelOrderTest {
     @Mock
     private OrderRepository orderRepository;
     @Mock
@@ -78,7 +78,7 @@ public class CancelOrderTest {
         order.setStatus(OrderStatus.PENDING);
 
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
-        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+        when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
         orderService.cancelOrder(orderId);
@@ -115,7 +115,7 @@ public class CancelOrderTest {
         order.setStatus(OrderStatus.IN_PROGRESS);
 
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
-        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+        when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
         orderService.cancelOrder(orderId);
@@ -152,7 +152,7 @@ public class CancelOrderTest {
         order.setStatus(OrderStatus.ON_THE_WAY);
 
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
-        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+        when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
         orderService.cancelOrder(orderId);
@@ -189,7 +189,7 @@ public class CancelOrderTest {
         order.setStatus(OrderStatus.DELIVERED);
 
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
-        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
+        when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
         orderService.cancelOrder(orderId);
@@ -219,16 +219,16 @@ public class CancelOrderTest {
     @DisplayName("""
             GIVEN: Trying to cancel order which already been cancelled
             WHEN: cancelOrder is called
-            THEN: BadRequestException is thrown and no side effects occur
+            THEN: CancelledOrderException is thrown and no side effects occur
             """)
     void cancelOrder_ShouldThrowException_WhenTryingToCancelACancelledOrder() {
         order.setStatus(OrderStatus.CANCELLED);
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
-        when(orderRepository.fetchOrderWithTrackingAndRestaurantBranchAndCustomer(orderId, userId))
-                .thenReturn(Optional.of(order));
 
+        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
+        when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
+                .thenReturn(Optional.of(order));
         assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
-                .isInstanceOf(BadRequestException.class)
+                .isInstanceOf(CancelledOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 
         verifyNoInteractions(emailService);

@@ -1,10 +1,12 @@
 package com.mentorship.food_delivery_app.order.dto;
 
 import com.mentorship.food_delivery_app.cart.entity.Cart;
+import com.mentorship.food_delivery_app.cart.entity.CartItem;
 import com.mentorship.food_delivery_app.common.exceptions.ResourceUnavailableException;
 import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 public record OrderPricing (
         BigDecimal subtotal,
@@ -15,6 +17,14 @@ public record OrderPricing (
 
     public static OrderPricing calculate(Cart cart, Coupon coupon) {
         BigDecimal subtotal = cart.calculateTotal();
+        BigDecimal fee = cart.getCurrentRestaurant().getDeliveryFee();
+        BigDecimal discount = resolveDiscount(coupon);
+        BigDecimal total = subtotal.add(fee).subtract(discount);
+        return new OrderPricing(subtotal, fee, discount, total);
+    }
+
+    public static OrderPricing calculate(Cart cart, Set<CartItem> cartItems, Coupon coupon) {
+        BigDecimal subtotal = cart.calculateTotal(cartItems);
         BigDecimal fee = cart.getCurrentRestaurant().getDeliveryFee();
         BigDecimal discount = resolveDiscount(coupon);
         BigDecimal total = subtotal.add(fee).subtract(discount);

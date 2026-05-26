@@ -1,7 +1,17 @@
 package com.mentorship.food_delivery_app.common.exceptions;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.mentorship.food_delivery_app.cart.exceptions.CartLockedException;
+import com.mentorship.food_delivery_app.cart.exceptions.ItemNotAvailableException;
+import com.mentorship.food_delivery_app.cart.exceptions.RestaurantMismatchException;
 import com.mentorship.food_delivery_app.common.dto.ErrorResponseDto;
 import com.mentorship.food_delivery_app.common.dto.ValidationErrorResponse;
+import com.mentorship.food_delivery_app.customer.exceptions.CustomerNotFoundException;
+import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
+import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
+import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
+import com.mentorship.food_delivery_app.restaurant.exceptions.CouponNotFoundException;
+import com.mentorship.food_delivery_app.restaurant.exceptions.ItemNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,7 +24,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +56,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 
+    private Map<String, String> getStringStringMap(InvalidFormatException invalidFormatException) {
+        Map<String, String> errors = new HashMap<>();
+
+        String fieldName = invalidFormatException.getPath().getFirst().getFieldName();
+
+        if (invalidFormatException.getTargetType() != null && invalidFormatException.getTargetType().isEnum()) {
+            String allowedValues = java.util.Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
+            errors.put(fieldName, "Invalid value: '" + invalidFormatException.getValue() + "'. Allowed values are: " + allowedValues);
+        } else {
+            errors.put(fieldName, "Invalid data type provided.");
+        }
+        return errors;
+    }
     // -------------------------------------------------------------------
     //  VALIDATION EXCEPTIONS,
     // -------------------------------------------------------------------
@@ -61,9 +84,9 @@ public class GlobalExceptionHandler {
                 request.getMethod(), request.getRequestURI(), ex.getErrorCount());
 
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error -> {
-            errors.put(error.getField(), error.getDefaultMessage());
-        });
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage())
+        );
 
 
         return buildValidationResponse(
@@ -84,16 +107,7 @@ public class GlobalExceptionHandler {
 
         if (ex.getCause() instanceof InvalidFormatException invalidFormatException) {
 
-            Map<String, String> errors = new HashMap<>();
-
-            String fieldName = invalidFormatException.getPath().get(0).getFieldName();
-
-            if (invalidFormatException.getTargetType() != null && invalidFormatException.getTargetType().isEnum()) {
-                String allowedValues = java.util.Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
-                errors.put(fieldName, "Invalid value: '" + invalidFormatException.getValue() + "'. Allowed values are: " + allowedValues);
-            } else {
-                errors.put(fieldName, "Invalid data type provided.");
-            }
+            final Map<String, String> errors = getStringStringMap(invalidFormatException);
 
             return buildValidationResponse(
                     HttpStatus.BAD_REQUEST,
@@ -241,4 +255,80 @@ public class GlobalExceptionHandler {
 
     }
 
+    // -------------------------------------------------------------------
+    //  CART EXCEPTIONS
+    // -------------------------------------------------------------------
+
+    @ExceptionHandler(CartLockedException.class)
+    public ResponseEntity<ErrorResponseDto> handleCartLocked(CartLockedException ex) {
+        log.warn("Cart Locked Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getLocalizedMessage());
+    }
+
+
+    @ExceptionHandler(ItemNotAvailableException.class)
+    public ResponseEntity<ErrorResponseDto> handleItemNotAvailable(ItemNotAvailableException ex) {
+        log.warn("Item Not Available Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(RestaurantMismatchException.class)
+    public ResponseEntity<ErrorResponseDto> handleRestaurantMismatch(RestaurantMismatchException ex) {
+        log.warn("Restaurant Mismatch Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getLocalizedMessage());
+    }
+
+    // -------------------------------------------------------------------
+    //  RESTAURANT EXCEPTIONS
+    // -------------------------------------------------------------------
+    @ExceptionHandler(CouponNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleCouponNotFound(CouponNotFoundException ex) {
+        log.warn("Coupon Not found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(ItemNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleRestaurantMismatch(ItemNotFoundException ex) {
+        log.warn("Item Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    // -------------------------------------------------------------------
+    //  CUSTOMER EXCEPTIONS
+    // -------------------------------------------------------------------
+    @ExceptionHandler(CustomerNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleCustomerNotFound(CustomerNotFoundException ex) {
+        log.warn("Customer Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    // -------------------------------------------------------------------
+    //  ORDER EXCEPTIONS
+    // -------------------------------------------------------------------
+    @ExceptionHandler(CancelledOrderException.class)
+    public ResponseEntity<ErrorResponseDto> handleCancelledOrder(CancelledOrderException ex) {
+        log.warn("Cancelled Order Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(DeliveredOrderException.class)
+    public ResponseEntity<ErrorResponseDto> handleDeliveredOrder(DeliveredOrderException ex) {
+        log.warn("Delivered Order Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleOrderNotFound(OrderNotFoundException ex) {
+        log.warn("Order Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
 }
