@@ -11,6 +11,8 @@ public interface CustomerService {
      * */
     Customer getLoggedinCustomer( );
 
-
+    /**
+     * Performs a soft delete operation on the customer's user account*/
+    void deactivateAccount();
 
 }
