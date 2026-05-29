@@ -11,7 +11,8 @@ public enum ErrorMessage {
     ORDER_NOT_FOUND("The order you are looking for does not exist."),
     ORDER_ALREADY_DELIVERED("The order has already been delivered"),
     ORDER_ALREADY_CANCELLED("The order has already been cancelled"),
-    RESTAURANT_CLOSED("The restaurant is currently closed. Please try again later.");
+    RESTAURANT_CLOSED("The restaurant is currently closed. Please try again later."),
+    ADDRESS_NOT_FOUND("The address you are locking for does not exist.");
 
     private final String message;
 
