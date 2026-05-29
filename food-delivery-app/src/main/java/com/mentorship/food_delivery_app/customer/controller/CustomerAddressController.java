@@ -37,14 +37,18 @@ public class CustomerAddressController {
 
     @DeleteMapping("/{addressId}")
     public ResponseEntity<Void> deleteCustomerAddress(@PathVariable UUID addressId) {
-        customerService.deleteCustomerAddress(addressId);
+        Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
+
+        customerService.deleteCustomerAddress(addressId, customer.getId());
 
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping()
     public ResponseEntity<Void> createCustomerAddress(@RequestBody @Valid CustomerAddressRequestDto addressRequestDto) {
-        UUID addressId = customerService.createCustomerAddress(addressRequestDto);
+        Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
+
+        UUID addressId = customerService.createCustomerAddress(addressRequestDto, customer.getId());
 
         return ResponseEntity.
                 created(URI.create("/api/v1/customers/addresses/" + addressId)).build();

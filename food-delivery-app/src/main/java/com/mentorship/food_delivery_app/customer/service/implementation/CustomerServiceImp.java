@@ -43,18 +43,19 @@ public class CustomerServiceImp implements CustomerService {
 
     @Transactional
     @Override
-    public void deactivateAccount() {
-        Customer customer =
-                this.getLoggedinCustomer();
-        log.info("Deactivating account for customer with id {}", customer.getId());
+    public void deactivateAccount(UUID customerId, UUID userId) {
 
-        userService.deactivateByUserId(UUID.fromString(userId));
+        log.info("Deactivating account for customer with id {}", customerId);
+
+        userService.deactivateByUserId(userId);
     }
 
     @Transactional
     @Override
-    public UUID createCustomerAddress(CustomerAddressRequestDto addressRequestDto) {
-        Customer customer = this.getLoggedinCustomer();
+    public UUID createCustomerAddress(CustomerAddressRequestDto addressRequestDto, UUID customerId) {
+        Customer customer = customerRepository.findByIdWithDefaultAddress(customerId)
+                .orElseThrow((() ->
+                        new CustomerNotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND.getMessage())));
 
         return customerAddressService.createCustomerAddress(addressRequestDto, customer);
     }
@@ -68,8 +69,11 @@ public class CustomerServiceImp implements CustomerService {
 
     @Transactional
     @Override
-    public void deleteCustomerAddress(UUID addressId) {
-        Customer customer = this.getLoggedinCustomer();
+    public void deleteCustomerAddress(UUID addressId, UUID customerId) {
+        Customer customer = customerRepository.findByIdWithDefaultAddress(customerId)
+                .orElseThrow((() ->
+                        new CustomerNotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND.getMessage())));
+
         CustomerAddress customerAddress = customer.getDefaultAddress();
 
         if (customerAddress != null && customerAddress.getId().equals(addressId))

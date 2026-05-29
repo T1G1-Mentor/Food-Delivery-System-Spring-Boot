@@ -19,13 +19,13 @@ public interface CustomerService {
     /**
      * Performs a soft delete operation on the customer's user account
      */
-    void deactivateAccount();
+    void deactivateAccount(UUID customerId, UUID userId);
 
-    UUID createCustomerAddress(CustomerAddressRequestDto addressRequestDto);
+    UUID createCustomerAddress(CustomerAddressRequestDto addressRequestDto, UUID customerId);
 
     void updateCustomerAddress(UUID addressId, UUID customerId, ModifyCustomerAddressRequestDto addressRequestDto);
 
-    void deleteCustomerAddress(UUID addressId);
+    void deleteCustomerAddress(UUID addressId, UUID customerId);
 
     CustomerAddressResponseDto getCustomerAddress(UUID addressId, UUID customerId);
 
