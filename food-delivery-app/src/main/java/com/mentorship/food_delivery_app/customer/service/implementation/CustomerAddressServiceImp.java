@@ -60,7 +60,7 @@ public class CustomerAddressServiceImp implements CustomerAddressService {
     }
 
     @Override
-    public CustomerAddressResponseDto getCustomerAddress(UUID addressId, UUID customerId) {
+    public CustomerAddressResponseDto getCustomerAddressDto(UUID addressId, UUID customerId) {
         return customerAddressRepository.findDtoByIdAndCustomerId(addressId, customerId)
                 .orElseThrow(() -> new AddressNotFoundException(ErrorMessage.ADDRESS_NOT_FOUND.getMessage()));
     }
@@ -69,6 +69,14 @@ public class CustomerAddressServiceImp implements CustomerAddressService {
     public List<CustomerAddressResponseDto> getAllCustomerAddresses(UUID customerId) {
         return customerAddressRepository.findAllDtoByCustomerId(customerId);
     }
+
+    @Override
+    public CustomerAddress getCustomerAddress(UUID addressId, UUID customerId) {
+        return customerAddressRepository.findByIdAndCustomerId(addressId, customerId)
+                .orElseThrow(() ->
+                        new AddressNotFoundException((ErrorMessage.ADDRESS_NOT_FOUND.getMessage())));
+    }
+
 
     private CustomerAddress buildAddress(CustomerAddressRequestDto addressRequestDto, Customer customer) {
         CustomerAddress address = CustomerAddress.builder()

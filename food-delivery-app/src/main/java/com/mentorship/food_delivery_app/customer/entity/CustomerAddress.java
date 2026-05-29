@@ -47,35 +47,35 @@ public class CustomerAddress {
     private String note;
 
     public void applyModifications(ModifyCustomerAddressRequestDto addressRequestDto) {
-        if (addressRequestDto.label()!=null
+        if (addressRequestDto.label() != null
                 && !addressRequestDto.label().isEmpty()
                 && !addressRequestDto.label().equals(this.label))
             this.label = addressRequestDto.label();
 
-        if (addressRequestDto.city()!=null
+        if (addressRequestDto.city() != null
                 && !addressRequestDto.city().isEmpty()
                 && !addressRequestDto.city().equals(this.city))
             this.city = addressRequestDto.city();
 
-        if (addressRequestDto.street()!=null
+        if (addressRequestDto.street() != null
                 && !addressRequestDto.street().isEmpty()
                 && !addressRequestDto.street().equals(this.street)
         )
             this.street = addressRequestDto.street();
 
-        if (addressRequestDto.building()!=null
+        if (addressRequestDto.building() != null
                 && !addressRequestDto.building().isEmpty()
                 && !addressRequestDto.building().equals(this.building)
         )
             this.building = addressRequestDto.building();
 
-        if (addressRequestDto.apartment()!=null
+        if (addressRequestDto.apartment() != null
                 && !addressRequestDto.apartment().isEmpty()
                 && !addressRequestDto.apartment().equals(this.apartment)
         )
             this.apartment = addressRequestDto.apartment();
 
-        if (addressRequestDto.addressPhoneNumber() !=null
+        if (addressRequestDto.addressPhoneNumber() != null
                 && !addressRequestDto.addressPhoneNumber().isEmpty()
                 && !addressRequestDto.addressPhoneNumber().equals(this.phoneNumber)
         )

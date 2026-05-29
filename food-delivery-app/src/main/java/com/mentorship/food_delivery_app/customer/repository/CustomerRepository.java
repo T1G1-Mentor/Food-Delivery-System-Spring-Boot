@@ -34,4 +34,10 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
             nativeQuery = true)
     void updateCustomerDefaultAddress(UUID customerId, UUID addressId);
 
+    @Query("""
+                SELECT c FROM Customer c
+                LEFT JOIN FETCH c.defaultAddress
+                WHERE c.id = :customerId
+            """)
+    Optional<Customer> findByIdWithDefaultAddress(UUID customerId);
 }

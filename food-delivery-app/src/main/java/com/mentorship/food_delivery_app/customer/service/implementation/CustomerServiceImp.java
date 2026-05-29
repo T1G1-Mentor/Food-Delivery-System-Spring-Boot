@@ -6,6 +6,7 @@ import com.mentorship.food_delivery_app.customer.dto.customeraddress.request.Mod
 import com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.entity.CustomerAddress;
+import com.mentorship.food_delivery_app.customer.exceptions.AddressNotFoundException;
 import com.mentorship.food_delivery_app.customer.exceptions.CustomerNotFoundException;
 import com.mentorship.food_delivery_app.customer.mapper.CustomerAddressMapper;
 import com.mentorship.food_delivery_app.customer.repository.CustomerRepository;
@@ -81,7 +82,7 @@ public class CustomerServiceImp implements CustomerService {
     @Override
     public CustomerAddressResponseDto getCustomerAddress(UUID addressId, UUID customerId) {
 
-                return this.customerAddressService.getCustomerAddress(addressId, customerId);
+        return this.customerAddressService.getCustomerAddressDto(addressId, customerId);
     }
 
     @Transactional(readOnly = true)
@@ -89,5 +90,31 @@ public class CustomerServiceImp implements CustomerService {
     public List<CustomerAddressResponseDto> getAllCustomerAddresses(UUID customerId) {
 
         return this.customerAddressService.getAllCustomerAddresses(customerId);
+    }
+
+    @Transactional
+    @Override
+    public void setCustomerDefaultAddress(UUID addressId, UUID customerId) {
+        Customer customer = customerRepository.findByIdWithDefaultAddress(customerId)
+                .orElseThrow((() ->
+                        new CustomerNotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND.getMessage())));
+        CustomerAddress customerAddress = customerAddressService.getCustomerAddress(addressId, customer.getId());
+
+        customer.setDefaultAddress(customerAddress);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public CustomerAddressResponseDto getCustomerDefaultAddress(UUID customerId) {
+        Customer customer = customerRepository.findByIdWithDefaultAddress(customerId)
+                .orElseThrow(() ->
+                        new CustomerNotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND.getMessage()));
+
+        CustomerAddress defaultAddress = customer.getDefaultAddress();
+
+        if (defaultAddress == null)
+            throw new AddressNotFoundException(ErrorMessage.NO_DEFAULT_ADDRESS_EXISTS.getMessage());
+
+        return addressMapper.toResponse(defaultAddress, true);
     }
 }

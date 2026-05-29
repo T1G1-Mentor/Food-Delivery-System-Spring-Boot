@@ -31,23 +31,23 @@ public interface CustomerAddressRepository extends CrudRepository<CustomerAddres
             """)
     Optional<CustomerAddress> findByIdAndCustomerId(UUID addressId, UUID customerId);
 
-@Query(
-    """
-            SELECT new com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto(
-                ca.id,
-                ca.label,
-                ca.city,
-                ca.street,
-                ca.building,
-                ca.apartment,
-                ca.phoneNumber,
-                ca.note,
-                        (CASE WHEN c.defaultAddress.id = ca.id THEN true ELSE false END)
-                        )
-                FROM CustomerAddress ca
-                JOIN ca.customer c
-                WHERE ca.id = :addressId AND c.id = :customerId
-            """)
+    @Query(
+            """
+                    SELECT new com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto(
+                        ca.id,
+                        ca.label,
+                        ca.city,
+                        ca.street,
+                        ca.building,
+                        ca.apartment,
+                        ca.phoneNumber,
+                        ca.note,
+                                (CASE WHEN c.defaultAddress.id = ca.id THEN true ELSE false END)
+                                )
+                        FROM CustomerAddress ca
+                        JOIN ca.customer c
+                        WHERE ca.id = :addressId AND c.id = :customerId
+                    """)
     Optional<CustomerAddressResponseDto> findDtoByIdAndCustomerId(UUID addressId, UUID customerId);
 
     @Query("""

@@ -59,4 +59,20 @@ public class CustomerAddressController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{addressId}/default")
+    public ResponseEntity<Void> setCustomerDefaultAddress(@PathVariable UUID addressId) {
+        Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
+
+        customerService.setCustomerDefaultAddress(addressId, customer.getId());
+        return ResponseEntity.
+                noContent().build();
+    }
+
+    @GetMapping("/default")
+    public ResponseEntity<CustomerAddressResponseDto> getCustomerDefaultAddress() {
+        Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
+
+        return ResponseEntity.ok(customerService.getCustomerDefaultAddress(customer.getId()));
+    }
 }

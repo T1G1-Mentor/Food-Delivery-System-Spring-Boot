@@ -15,7 +15,7 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @DeleteMapping("/account")
-    public ResponseEntity<Void> deactivateAccount(){
+    public ResponseEntity<Void> deactivateAccount() {
         customerService.deactivateAccount();
         return ResponseEntity.noContent().build();
     }

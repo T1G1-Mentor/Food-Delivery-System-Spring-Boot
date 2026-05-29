@@ -30,4 +30,8 @@ public interface CustomerService {
     CustomerAddressResponseDto getCustomerAddress(UUID addressId, UUID customerId);
 
     List<CustomerAddressResponseDto> getAllCustomerAddresses(UUID customerId);
+
+    void setCustomerDefaultAddress(UUID addressId, UUID customerId);
+
+    CustomerAddressResponseDto getCustomerDefaultAddress(UUID customerId);
 }
