@@ -4,6 +4,7 @@ import com.mentorship.food_delivery_app.payment.entity.PaymentTypeConfig;
 import com.mentorship.food_delivery_app.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@DynamicUpdate
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
