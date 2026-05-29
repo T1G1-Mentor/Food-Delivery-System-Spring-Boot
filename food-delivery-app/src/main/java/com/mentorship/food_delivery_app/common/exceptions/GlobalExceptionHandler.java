@@ -6,6 +6,7 @@ import com.mentorship.food_delivery_app.cart.exceptions.ItemNotAvailableExceptio
 import com.mentorship.food_delivery_app.cart.exceptions.RestaurantMismatchException;
 import com.mentorship.food_delivery_app.common.dto.ErrorResponseDto;
 import com.mentorship.food_delivery_app.common.dto.ValidationErrorResponse;
+import com.mentorship.food_delivery_app.customer.exceptions.AddressNotFoundException;
 import com.mentorship.food_delivery_app.customer.exceptions.CustomerNotFoundException;
 import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
@@ -304,6 +305,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomerNotFoundException.class)
     public ResponseEntity<ErrorResponseDto> handleCustomerNotFound(CustomerNotFoundException ex) {
         log.warn("Customer Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(AddressNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleAddressNotFound(AddressNotFoundException ex) {
+        log.warn("Address Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
 
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
