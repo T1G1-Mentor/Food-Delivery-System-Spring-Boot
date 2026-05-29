@@ -3,6 +3,7 @@ package com.mentorship.food_delivery_app.customer.service.implementation;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.customer.dto.customeraddress.request.CustomerAddressRequestDto;
 import com.mentorship.food_delivery_app.customer.dto.customeraddress.request.ModifyCustomerAddressRequestDto;
+import com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.entity.CustomerAddress;
 import com.mentorship.food_delivery_app.customer.exceptions.AddressNotFoundException;
@@ -59,14 +60,14 @@ public class CustomerAddressServiceImp implements CustomerAddressService {
     }
 
     @Override
-    public CustomerAddress getCustomerAddress(UUID addressId, UUID customerId) {
-        return customerAddressRepository.findByIdAndCustomerId(addressId, customerId)
+    public CustomerAddressResponseDto getCustomerAddress(UUID addressId, UUID customerId) {
+        return customerAddressRepository.findDtoByIdAndCustomerId(addressId, customerId)
                 .orElseThrow(() -> new AddressNotFoundException(ErrorMessage.ADDRESS_NOT_FOUND.getMessage()));
     }
 
     @Override
-    public List<CustomerAddress> getAllCustomerAddresses(UUID customerId) {
-        return customerAddressRepository.findAllByCustomerId(customerId);
+    public List<CustomerAddressResponseDto> getAllCustomerAddresses(UUID customerId) {
+        return customerAddressRepository.findAllDtoByCustomerId(customerId);
     }
 
     private CustomerAddress buildAddress(CustomerAddressRequestDto addressRequestDto, Customer customer) {

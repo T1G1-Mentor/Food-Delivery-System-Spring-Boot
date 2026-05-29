@@ -10,6 +10,7 @@ public record CustomerAddressResponseDto(
         String building,
         String apartment,
         String addressPhoneNumber,
-        String addressNote
+        String addressNote,
+        boolean isDefault
 ) {
 }

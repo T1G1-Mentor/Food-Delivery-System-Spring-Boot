@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CustomerAddressMapper {
-    public CustomerAddressResponseDto toResponse(CustomerAddress customerAddress) {
+    public CustomerAddressResponseDto toResponse(CustomerAddress customerAddress, boolean isDefault) {
         return new CustomerAddressResponseDto(customerAddress.getId(),
                 customerAddress.getLabel(),
                 customerAddress.getCity(),
@@ -14,6 +14,7 @@ public class CustomerAddressMapper {
                 customerAddress.getBuilding(),
                 customerAddress.getApartment(),
                 customerAddress.getPhoneNumber(),
-                customerAddress.getNote());
+                customerAddress.getNote(),
+                isDefault);
     }
 }

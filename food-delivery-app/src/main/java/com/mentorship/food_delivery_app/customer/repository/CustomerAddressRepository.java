@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.customer.repository;
 
+import com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto;
 import com.mentorship.food_delivery_app.customer.entity.CustomerAddress;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -29,4 +30,41 @@ public interface CustomerAddressRepository extends CrudRepository<CustomerAddres
                 WHERE ca.id = :addressId AND ca.customer.id = :customerId
             """)
     Optional<CustomerAddress> findByIdAndCustomerId(UUID addressId, UUID customerId);
+
+@Query(
+    """
+            SELECT new com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto(
+                ca.id,
+                ca.label,
+                ca.city,
+                ca.street,
+                ca.building,
+                ca.apartment,
+                ca.phoneNumber,
+                ca.note,
+                        (CASE WHEN c.defaultAddress.id = ca.id THEN true ELSE false END)
+                        )
+                FROM CustomerAddress ca
+                JOIN ca.customer c
+                WHERE ca.id = :addressId AND c.id = :customerId
+            """)
+    Optional<CustomerAddressResponseDto> findDtoByIdAndCustomerId(UUID addressId, UUID customerId);
+
+    @Query("""
+            SELECT new com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto(
+                               ca.id,
+                               ca.label,
+                               ca.city,
+                               ca.street,
+                               ca.building,
+                               ca.apartment,
+                               ca.phoneNumber,
+                               ca.note,
+                               (CASE WHEN c.defaultAddress.id = ca.id THEN true ELSE false END)
+                           )
+                           FROM CustomerAddress ca
+                           JOIN ca.customer c
+                           WHERE c.id = :customerId
+            """)
+    List<CustomerAddressResponseDto> findAllDtoByCustomerId(UUID customerId);
 }

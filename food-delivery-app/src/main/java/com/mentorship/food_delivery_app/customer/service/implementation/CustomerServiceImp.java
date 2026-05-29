@@ -81,16 +81,13 @@ public class CustomerServiceImp implements CustomerService {
     @Override
     public CustomerAddressResponseDto getCustomerAddress(UUID addressId, UUID customerId) {
 
-        return addressMapper.toResponse
-                (this.customerAddressService.getCustomerAddress(addressId, customerId));
+                return this.customerAddressService.getCustomerAddress(addressId, customerId);
     }
 
     @Transactional(readOnly = true)
     @Override
     public List<CustomerAddressResponseDto> getAllCustomerAddresses(UUID customerId) {
-        return this.customerAddressService.getAllCustomerAddresses(customerId)
-                .stream().
-                map(addressMapper::toResponse)
-                .toList();
+
+        return this.customerAddressService.getAllCustomerAddresses(customerId);
     }
 }
