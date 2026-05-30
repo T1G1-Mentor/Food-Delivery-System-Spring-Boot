@@ -1,9 +1,11 @@
 package com.mentorship.food_delivery_app.customer.entity;
 
 import com.mentorship.food_delivery_app.payment.entity.PaymentTypeConfig;
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentIntegrationType;
 import com.mentorship.food_delivery_app.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.Length;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.List;
@@ -31,9 +33,9 @@ public class Customer {
     @JoinColumn(name = "customer_default_address_id")
     private CustomerAddress defaultAddress;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_preferred_payment_id")
-    private PaymentTypeConfig preferredPaymentType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "customer_preferred_payment_type", length = 20)
+    private PaymentIntegrationType preferredPayment;
 
     @OneToMany(mappedBy = "customer", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<CustomerAddress> addresses;

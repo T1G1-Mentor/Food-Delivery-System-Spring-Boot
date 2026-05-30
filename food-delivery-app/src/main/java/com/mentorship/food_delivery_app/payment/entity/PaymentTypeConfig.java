@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.payment.entity;
 
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentIntegrationType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,8 +18,9 @@ public class PaymentTypeConfig {
     @Column(name = "payment_type_config_id")
     private Integer id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "payment_integration_type", length = 20, nullable = false)
-    private String paymentIntegrationType;
+    private PaymentIntegrationType paymentIntegrationType;
 
     @Column(name = "config_details", columnDefinition = "TEXT", nullable = false)
     private String configDetails;

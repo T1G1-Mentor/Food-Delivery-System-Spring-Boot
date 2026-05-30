@@ -8,10 +8,12 @@ import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.entity.CustomerAddress;
 import com.mentorship.food_delivery_app.customer.exceptions.AddressNotFoundException;
 import com.mentorship.food_delivery_app.customer.exceptions.CustomerNotFoundException;
+import com.mentorship.food_delivery_app.customer.exceptions.PreferredPaymentWasNotConfiguredException;
 import com.mentorship.food_delivery_app.customer.mapper.CustomerAddressMapper;
 import com.mentorship.food_delivery_app.customer.repository.CustomerRepository;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerAddressService;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentIntegrationType;
 import com.mentorship.food_delivery_app.user.service.contract.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -120,5 +123,28 @@ public class CustomerServiceImp implements CustomerService {
             throw new AddressNotFoundException(ErrorMessage.NO_DEFAULT_ADDRESS_EXISTS.getMessage());
 
         return addressMapper.toResponse(defaultAddress, true);
+    }
+
+    @Transactional
+    @Override
+    public void addCustomerPreferredPaymentType(PaymentIntegrationType paymentType, UUID customerId) {
+        Customer customer = getCustomerById(customerId);
+        customer.setPreferredPayment(paymentType);
+    }
+
+    @Override
+    public Customer getCustomerById(UUID customerId) {
+        return customerRepository.findById(customerId)
+                .orElseThrow(()->
+                        new CustomerNotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    public String getCustomerPreferredPaymentType(UUID customerId) {
+        PaymentIntegrationType preferredPayment =customerRepository.getPreferredPaymentById(customerId)
+                .orElseThrow(()->
+                        new PreferredPaymentWasNotConfiguredException(ErrorMessage.PREFERRED_PAYMENT_NOT_FOUND.getMessage()
+                        ));
+        return preferredPayment.getExposableName();
     }
 }

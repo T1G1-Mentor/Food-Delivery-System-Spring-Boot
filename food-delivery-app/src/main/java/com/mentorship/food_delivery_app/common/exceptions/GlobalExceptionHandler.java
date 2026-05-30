@@ -8,6 +8,7 @@ import com.mentorship.food_delivery_app.common.dto.ErrorResponseDto;
 import com.mentorship.food_delivery_app.common.dto.ValidationErrorResponse;
 import com.mentorship.food_delivery_app.customer.exceptions.AddressNotFoundException;
 import com.mentorship.food_delivery_app.customer.exceptions.CustomerNotFoundException;
+import com.mentorship.food_delivery_app.customer.exceptions.PreferredPaymentWasNotConfiguredException;
 import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
@@ -316,6 +317,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
 
+    @ExceptionHandler(PreferredPaymentWasNotConfiguredException.class)
+    public ResponseEntity<ErrorResponseDto> handlePreferredPaymentWasNotConfigured(PreferredPaymentWasNotConfiguredException ex) {
+        log.warn("Preferred Payment Was Not Configured Exception Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
+    }
     // -------------------------------------------------------------------
     //  ORDER EXCEPTIONS
     // -------------------------------------------------------------------
