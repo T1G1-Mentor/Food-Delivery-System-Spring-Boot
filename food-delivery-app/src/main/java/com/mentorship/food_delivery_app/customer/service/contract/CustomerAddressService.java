@@ -4,34 +4,22 @@ import com.mentorship.food_delivery_app.customer.dto.customeraddress.request.Cus
 import com.mentorship.food_delivery_app.customer.dto.customeraddress.request.ModifyCustomerAddressRequestDto;
 import com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
+import com.mentorship.food_delivery_app.customer.entity.CustomerAddress;
 
 import java.util.List;
 import java.util.UUID;
 
-public interface CustomerService {
+public interface CustomerAddressService {
 
-    /**
-     * @return Logged in customer {@code Custoemr}
-     *
-     */
-    Customer getLoggedinCustomer();
-
-    /**
-     * Performs a soft delete operation on the customer's user account
-     */
-    void deactivateAccount(UUID customerId, UUID userId);
-
-    UUID createCustomerAddress(CustomerAddressRequestDto addressRequestDto, UUID customerId);
+    UUID createCustomerAddress(CustomerAddressRequestDto addressRequestDto, Customer customer);
 
     void updateCustomerAddress(UUID addressId, UUID customerId, ModifyCustomerAddressRequestDto addressRequestDto);
 
     void deleteCustomerAddress(UUID addressId, UUID customerId);
 
-    CustomerAddressResponseDto getCustomerAddress(UUID addressId, UUID customerId);
+    CustomerAddressResponseDto getCustomerAddressDto(UUID addressId, UUID customerId);
 
     List<CustomerAddressResponseDto> getAllCustomerAddresses(UUID customerId);
 
-    void setCustomerDefaultAddress(UUID addressId, UUID customerId);
-
-    CustomerAddressResponseDto getCustomerDefaultAddress(UUID customerId);
+    CustomerAddress getCustomerAddress(UUID addressId, UUID customerId);
 }
