@@ -4,6 +4,7 @@ import com.mentorship.food_delivery_app.customer.dto.customeraddress.request.Cus
 import com.mentorship.food_delivery_app.customer.dto.customeraddress.request.ModifyCustomerAddressRequestDto;
 import com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentIntegrationType;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,4 +35,10 @@ public interface CustomerService {
     void setCustomerDefaultAddress(UUID addressId, UUID customerId);
 
     CustomerAddressResponseDto getCustomerDefaultAddress(UUID customerId);
+
+    void addCustomerPreferredPaymentType(PaymentIntegrationType paymentType, UUID customerId);
+
+    Customer getCustomerById(UUID customerId);
+
+    String getCustomerPreferredPaymentType(UUID customerId);
 }
