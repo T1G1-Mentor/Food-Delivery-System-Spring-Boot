@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS customer(
     customer_id  UUID PRIMARY KEY DEFAULT uuidv7(),
     customer_user_id UUID NOT NULL UNIQUE, -- REFERENCES users(user_id)
     customer_default_address_id UUID,  --REFERENCES customer_address(customer_address_id)
-    customer_preferred_payment_id INT --  REFERENCES payment_type_config(payment_type_config_id)
+    customer_preferred_payment_type VARCHAR(20) --  REFERENCES payment_integration_type(payment_integration_type_name)
 );
 CREATE TABLE IF NOT EXISTS customer_address(
     customer_address_id UUID PRIMARY KEY DEFAULT uuidv7(),
