@@ -1,6 +1,7 @@
 package com.mentorship.food_delivery_app.customer.repository;
 
 import com.mentorship.food_delivery_app.customer.entity.Customer;
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentIntegrationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -40,4 +41,10 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
                 WHERE c.id = :customerId
             """)
     Optional<Customer> findByIdWithDefaultAddress(UUID customerId);
+
+    @Query("""
+    SELECT c.preferredPayment FROM Customer c
+    WHERE c.id = :customerId
+""")
+    Optional<PaymentIntegrationType> getPreferredPaymentById(UUID customerId);
 }
