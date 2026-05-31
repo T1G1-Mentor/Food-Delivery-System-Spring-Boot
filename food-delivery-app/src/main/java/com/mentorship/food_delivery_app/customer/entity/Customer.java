@@ -1,11 +1,9 @@
 package com.mentorship.food_delivery_app.customer.entity;
 
-import com.mentorship.food_delivery_app.payment.entity.PaymentTypeConfig;
-import com.mentorship.food_delivery_app.payment.entity.enums.PaymentIntegrationType;
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentMethod;
 import com.mentorship.food_delivery_app.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.Length;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.List;
@@ -34,8 +32,8 @@ public class Customer {
     private CustomerAddress defaultAddress;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "customer_preferred_payment_type", length = 20)
-    private PaymentIntegrationType preferredPayment;
+    @Column(name = "customer_preferred_payment_method", length = 20)
+    private PaymentMethod preferredPayment;
 
     @OneToMany(mappedBy = "customer", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<CustomerAddress> addresses;

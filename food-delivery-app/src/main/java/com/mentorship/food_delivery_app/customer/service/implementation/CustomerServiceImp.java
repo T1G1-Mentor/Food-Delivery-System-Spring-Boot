@@ -13,7 +13,7 @@ import com.mentorship.food_delivery_app.customer.mapper.CustomerAddressMapper;
 import com.mentorship.food_delivery_app.customer.repository.CustomerRepository;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerAddressService;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
-import com.mentorship.food_delivery_app.payment.entity.enums.PaymentIntegrationType;
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentMethod;
 import com.mentorship.food_delivery_app.user.service.contract.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -127,7 +126,7 @@ public class CustomerServiceImp implements CustomerService {
 
     @Transactional
     @Override
-    public void addCustomerPreferredPaymentType(PaymentIntegrationType paymentType, UUID customerId) {
+    public void addCustomerPreferredPaymentType(PaymentMethod paymentType, UUID customerId) {
         Customer customer = getCustomerById(customerId);
         customer.setPreferredPayment(paymentType);
     }
@@ -141,7 +140,7 @@ public class CustomerServiceImp implements CustomerService {
 
     @Override
     public String getCustomerPreferredPaymentType(UUID customerId) {
-        PaymentIntegrationType preferredPayment =customerRepository.getPreferredPaymentById(customerId)
+        PaymentMethod preferredPayment =customerRepository.getPreferredPaymentById(customerId)
                 .orElseThrow(()->
                         new PreferredPaymentWasNotConfiguredException(ErrorMessage.PREFERRED_PAYMENT_NOT_FOUND.getMessage()
                         ));

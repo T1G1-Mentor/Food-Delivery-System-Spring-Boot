@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum PaymentIntegrationType {
+public enum PaymentMethod {
     @JsonAlias({"COD", "cash on delivery"})
     COD("Cash On Delivery");
 
