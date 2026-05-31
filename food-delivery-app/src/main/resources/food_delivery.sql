@@ -112,10 +112,15 @@ CREATE TABLE IF NOT EXISTS restaurant_rate(
     restaurant_rate_id UUID PRIMARY KEY DEFAULT uuidv7(),
     restaurant_rate_restaurant_id UUID NOT NULL,-- REFERENCES restaurant(restaurant_id)
     restaurant_rate_customer_id UUID NOT NULL,-- REFERENCES customer(customer_id)
-    restaurant_rate_rating INT,
-    restaurant_rate_comment VARCHAR(500) NOT NULL ,
+    restaurant_rate_title VARCHAR(100) NOT NULL,
+    restaurant_rate_rating DECIMAL(3,1) CHECK (restaurant_rate_rating >= 0 AND restaurant_rate_rating <= 5),
+    restaurant_rate_comment VARCHAR(500),
     restaurant_rate_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+-- Migration for existing installations:
+-- ALTER TABLE restaurant_rate ADD COLUMN IF NOT EXISTS restaurant_rate_title VARCHAR(100) NOT NULL DEFAULT '';
+-- ALTER TABLE restaurant_rate ALTER COLUMN restaurant_rate_rating TYPE DECIMAL(3,1);
+-- ALTER TABLE restaurant_rate ALTER COLUMN restaurant_rate_comment DROP NOT NULL;
 CREATE TABLE IF NOT EXISTS coupon(
     coupon_id UUID PRIMARY KEY DEFAULT uuidv7(),
     coupon_restaurant_id UUID NOT NULL,-- REFERENCES restaurant(restaurant_id)

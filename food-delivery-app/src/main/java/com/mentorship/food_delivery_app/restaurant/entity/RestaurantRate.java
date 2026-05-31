@@ -31,10 +31,13 @@ public class RestaurantRate {
     @JoinColumn(name = "restaurant_rate_customer_id", nullable = false)
     private Customer customer;
 
-    @Column(name = "restaurant_rate_rating")
-    private Integer rating;
+    @Column(name = "restaurant_rate_title", nullable = false, length = 100)
+    private String title;
 
-    @Column(name = "restaurant_rate_comment", nullable = false, length = 500)
+    @Column(name = "restaurant_rate_rating")
+    private Double rating;
+
+    @Column(name = "restaurant_rate_comment", length = 500)
     private String comment;
 
     @CreatedDate
