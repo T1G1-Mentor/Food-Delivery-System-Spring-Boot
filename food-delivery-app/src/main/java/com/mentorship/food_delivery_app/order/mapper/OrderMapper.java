@@ -58,7 +58,7 @@ public class OrderMapper {
                 .toList();
 
         List<OrderTrackingDto> tracking = order.getTrackingHistory().stream()
-                .sorted(Comparator.comparing(OrderTracking::getCreatedAt).reversed())
+                .sorted(Comparator.comparing(OrderTracking::getCreatedAt))
                 .map(orderTrackingMapper::toResponse)
                 .toList();
 

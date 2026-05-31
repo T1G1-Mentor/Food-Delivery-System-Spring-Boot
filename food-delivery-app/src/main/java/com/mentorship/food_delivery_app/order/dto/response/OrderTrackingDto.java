@@ -7,7 +7,6 @@ import java.time.Instant;
 public record OrderTrackingDto(
         OrderStatus status,
         String description,
-        Instant createdAt,
-        String changedBy
+        Instant createdAt
 ) {
 }

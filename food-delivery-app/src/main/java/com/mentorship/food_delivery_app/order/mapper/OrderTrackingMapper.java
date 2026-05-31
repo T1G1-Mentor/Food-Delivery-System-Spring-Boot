@@ -10,7 +10,6 @@ public class OrderTrackingMapper {
         return new OrderTrackingDto(
                 tracking.getStatus(),
                 tracking.getDescription(),
-                tracking.getCreatedAt(),
-                tracking.getChangedBy());
+                tracking.getCreatedAt());
     }
 }

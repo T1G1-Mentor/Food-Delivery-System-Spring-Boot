@@ -1,6 +1,5 @@
 package com.mentorship.food_delivery_app.order.controller;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -21,7 +20,6 @@ import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
 import com.mentorship.food_delivery_app.order.service.contract.OrderService;
 
@@ -72,10 +70,5 @@ public class OrderController {
     @GetMapping("/customer/{orderId}")
     public ResponseEntity<OrderDetailsDto> getOrderDetails(@PathVariable UUID orderId) {
         return ResponseEntity.ok(orderService.getOrderDetails(orderId));
-    }
-
-    @GetMapping("/status/{orderId}")
-    public ResponseEntity<List<OrderTrackingDto>> getOrderTrackingHistory(@PathVariable UUID orderId) {
-        return ResponseEntity.ok(orderService.getOrderTrackingHistoryByOrderId(orderId));
     }
 }

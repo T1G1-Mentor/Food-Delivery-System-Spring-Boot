@@ -26,6 +26,4 @@ public interface OrderService {
     Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable);
 
     List<OrderTrackingDto> getOrderTrackingHistory(UUID customerId, UUID orderId);
-
-    List<OrderTrackingDto> getOrderTrackingHistoryByOrderId(UUID orderId);
 }

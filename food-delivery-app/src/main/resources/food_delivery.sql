@@ -161,13 +161,10 @@ CREATE TABLE IF NOT EXISTS order_tracking(
     order_tracking_status VARCHAR(20) NOT NULL,-- REFERENCES order_status(order_status)
     order_tracking_order_id UUID NOT NULL, --REFERENCES orders(order_id)
     order_tracking_description VARCHAR(255) NOT NULL ,
-    order_tracking_changed_by VARCHAR(100),
     order_tracking_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 --  CHANGED THE COL CHANGED AT TO CREATED AT SINCE IT WILL ONLY CHANGE ONCE
 
 );
--- Migration for existing installations:
--- ALTER TABLE order_tracking ADD COLUMN IF NOT EXISTS order_tracking_changed_by VARCHAR(100);
 -- REMOVED ORDER_STATUS COL SINCE IT IS ALREADY IN ORDER TRACKING
 CREATE TABLE IF NOT EXISTS orders(
     order_id UUID PRIMARY KEY DEFAULT uuidv7(),

@@ -7,6 +7,4 @@ import java.util.UUID;
 
 public interface OrderTrackingService {
     List<OrderTrackingDto> getTrackingHistory(UUID customerId, UUID orderId);
-
-    List<OrderTrackingDto> getTrackingHistoryByOrderId(UUID orderId);
 }

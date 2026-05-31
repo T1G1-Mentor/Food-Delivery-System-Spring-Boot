@@ -29,9 +29,6 @@ public class OrderTracking {
     @Column(name = "order_tracking_status", nullable = false)
     private OrderStatus status;
 
-    @Column(name = "order_tracking_changed_by")
-    private String changedBy;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_tracking_order_id", nullable = false)
     private Order order;
