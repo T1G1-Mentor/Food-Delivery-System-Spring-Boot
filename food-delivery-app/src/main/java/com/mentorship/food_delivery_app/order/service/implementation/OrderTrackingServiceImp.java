@@ -20,4 +20,9 @@ public class OrderTrackingServiceImp implements OrderTrackingService {
     public List<OrderTrackingDto> getTrackingHistory(UUID customerId, UUID orderId) {
         return orderTrackingRepository.findAllByCustomerIdAndOrderId(customerId, orderId);
     }
+
+    @Override
+    public List<OrderTrackingDto> getTrackingHistoryByOrderId(UUID orderId) {
+        return orderTrackingRepository.findAllByOrderId(orderId);
+    }
 }

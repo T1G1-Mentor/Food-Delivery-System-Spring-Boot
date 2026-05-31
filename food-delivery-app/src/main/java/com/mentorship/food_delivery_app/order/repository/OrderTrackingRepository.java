@@ -13,12 +13,26 @@ public interface OrderTrackingRepository extends CrudRepository<OrderTracking, U
     SELECT new com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto(
     od.status,
     od.description,
-    od.createdAt
+    od.createdAt,
+    od.changedBy
     )
     FROM OrderTracking od
     WHERE od.order.id = :orderId AND od.order.customer.id = :customerId
     ORDER BY od.createdAt DESC
 """)
     List<OrderTrackingDto> findAllByCustomerIdAndOrderId(UUID customerId, UUID orderId);
+
+    @Query("""
+    SELECT new com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto(
+    od.status,
+    od.description,
+    od.createdAt,
+    od.changedBy
+    )
+    FROM OrderTracking od
+    WHERE od.order.id = :orderId
+    ORDER BY od.createdAt DESC
+""")
+    List<OrderTrackingDto> findAllByOrderId(UUID orderId);
 
 }

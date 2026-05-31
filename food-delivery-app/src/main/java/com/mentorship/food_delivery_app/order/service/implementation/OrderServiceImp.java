@@ -97,7 +97,8 @@ public class OrderServiceImp implements OrderService {
         OrderStatus status = OrderStatus.CANCELLED;
         log.info("Initiating status update for Order ID: {} to Status: {}", orderId, status);
 
-        createNewOrderTracking(status, status.getDescription(), order);
+        String changedBy = userService.getDummyLoggedInUser().getEmail();
+        createNewOrderTracking(status, status.getDescription(), order, changedBy);
 
         log.debug("Dispatching asynchronous status update email to: {}", order.getCustomerEmail());
         sendStatusUpdateEmail(order.getCustomerEmail(), status.getDescription());
@@ -115,7 +116,8 @@ public class OrderServiceImp implements OrderService {
 
         log.info("Initiating status update for Order ID: {} to Status: {}", orderId, newStatus);
 
-        createNewOrderTracking(newStatus, newStatus.getDescription(), order);
+        String changedBy = userService.getDummyLoggedInUser().getEmail();
+        createNewOrderTracking(newStatus, newStatus.getDescription(), order, changedBy);
 
         log.debug("Dispatching asynchronous status update email to: {}", order.getCustomerEmail());
         sendStatusUpdateEmail(order.getCustomerEmail(), newStatus.getDescription());
@@ -172,6 +174,13 @@ public class OrderServiceImp implements OrderService {
         return orderTrackingService.getTrackingHistory(customerId, orderId);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<OrderTrackingDto> getOrderTrackingHistoryByOrderId(UUID orderId) {
+        log.debug("Fetching tracking history for Order ID: {}", orderId);
+        return orderTrackingService.getTrackingHistoryByOrderId(orderId);
+    }
+
     private Order getAndValidateOrder(UUID orderId) {
         User user = userService.getDummyLoggedInUser();
         log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, user.getId());
@@ -183,13 +192,14 @@ public class OrderServiceImp implements OrderService {
                 });
     }
 
-    private void createNewOrderTracking(OrderStatus status, String description, Order order) {
+    private void createNewOrderTracking(OrderStatus status, String description, Order order, String changedBy) {
         log.debug("Appending new tracking event to Order ID: {}. Status: {}", order.getOrderId(), status);
 
         OrderTracking tracking = OrderTracking.
                 builder()
                 .description(description)
                 .status(status)
+                .changedBy(changedBy)
                 .build();
 
         order.addTrackingEvent(tracking);
@@ -274,7 +284,7 @@ public class OrderServiceImp implements OrderService {
         Order savedOrder = orderRepository.save(order);
         savedOrder.setItems(buildOrderItems(cartItems, savedOrder));
 
-        createNewOrderTracking(OrderStatus.PENDING, OrderStatus.PENDING.getDescription(), savedOrder);
+        createNewOrderTracking(OrderStatus.PENDING, OrderStatus.PENDING.getDescription(), savedOrder, customer.getUser().getEmail());
 
         return savedOrder;
     }
