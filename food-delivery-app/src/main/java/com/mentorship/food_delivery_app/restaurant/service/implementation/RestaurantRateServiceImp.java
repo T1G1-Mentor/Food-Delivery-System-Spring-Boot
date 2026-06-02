@@ -47,7 +47,6 @@ public class RestaurantRateServiceImp implements RestaurantRateService {
     @Transactional
     @Override
     public RestaurantRateResponseDto createRating(UUID restaurantId, RestaurantRateRequestDto request) {
-        validateRatingStep(request.rating());
 
         Restaurant restaurant = getRestaurantById(restaurantId);
         Customer customer = customerService.getLoggedinCustomer();
@@ -79,10 +78,6 @@ public class RestaurantRateServiceImp implements RestaurantRateService {
     @Transactional
     @Override
     public RestaurantRateResponseDto updateRating(UUID restaurantId, UUID rateId, RestaurantRatePatchRequestDto request) {
-        if (request.rating() != null) {
-            validateRatingStep(request.rating());
-        }
-
         validateRestaurantExists(restaurantId);
         Customer customer = customerService.getLoggedinCustomer();
 
@@ -127,11 +122,4 @@ public class RestaurantRateServiceImp implements RestaurantRateService {
         }
     }
 
-    private void validateRatingStep(double rating) {
-        // Rating must be a multiple of 0.5 (0.0, 0.5, 1.0, 1.5, ... 5.0)
-        if (rating * 2 != Math.floor(rating * 2)) {
-            throw new com.mentorship.food_delivery_app.common.exceptions.BadRequestException(
-                    ErrorMessage.INVALID_RATING_VALUE.getMessage());
-        }
-    }
 }
