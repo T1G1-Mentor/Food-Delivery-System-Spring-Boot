@@ -28,5 +28,5 @@ public interface RestaurantRateRepository extends JpaRepository<RestaurantRate, 
     Optional<RestaurantRate> findByIdAndCustomerId(@Param("rateId") UUID rateId,
                                                    @Param("customerId") UUID customerId);
 
-    boolean existsByRestaurantIdAndCustomerId(UUID restaurantId, UUID customerId);
+    long countByRestaurantIdAndCustomerId(UUID restaurantId, UUID customerId);
 }

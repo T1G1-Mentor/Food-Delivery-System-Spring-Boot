@@ -52,13 +52,14 @@ public class RestaurantRateServiceImp implements RestaurantRateService {
         Restaurant restaurant = getRestaurantById(restaurantId);
         Customer customer = customerService.getLoggedinCustomer();
 
-        boolean hasDeliveredOrder = orderRepository.existsByCustomerIdAndBranchRestaurantIdAndStatus(
+        long deliveredOrderCount = orderRepository.countByCustomerIdAndBranchRestaurantIdAndStatus(
                 customer.getId(), restaurantId, OrderStatus.DELIVERED);
-        if (!hasDeliveredOrder) {
+        if (deliveredOrderCount == 0) {
             throw new CustomerHasNotOrderedException(ErrorMessage.CUSTOMER_HAS_NOT_ORDERED.getMessage());
         }
 
-        if (restaurantRateRepository.existsByRestaurantIdAndCustomerId(restaurantId, customer.getId())) {
+        long ratingCount = restaurantRateRepository.countByRestaurantIdAndCustomerId(restaurantId, customer.getId());
+        if (ratingCount >= deliveredOrderCount) {
             throw new CustomerAlreadyRatedException(ErrorMessage.CUSTOMER_ALREADY_RATED.getMessage());
         }
 
