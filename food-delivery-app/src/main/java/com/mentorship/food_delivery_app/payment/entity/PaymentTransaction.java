@@ -2,6 +2,9 @@ package com.mentorship.food_delivery_app.payment.entity;
 
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.order.entity.Order;
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentMethod;
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentProvider;
+import com.mentorship.food_delivery_app.payment.entity.enums.TransactionStatus;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
@@ -26,16 +29,21 @@ public class PaymentTransaction {
     @Column(name = "transaction_id")
     private UUID id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "transaction_status", length = 20, nullable = false)
-    private String status;
+    private TransactionStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "transaction_order_id", nullable = false)
     private Order order;
 
-    // Also Payment Method
-    @Column(name = "transaction_payment_type", length = 20)
-    private String paymentType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_payment_provider", length = 20)
+    private PaymentProvider paymentProvider;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_payment_method", length = 20)
+    private PaymentMethod paymentMethod;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "transaction_customer_id", nullable = false)
