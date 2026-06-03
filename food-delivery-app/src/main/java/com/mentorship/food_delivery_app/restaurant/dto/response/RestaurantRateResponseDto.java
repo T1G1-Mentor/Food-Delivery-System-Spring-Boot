@@ -9,7 +9,7 @@ public record RestaurantRateResponseDto(
 
         UUID id,
         String title,
-        Double rating,
+        Integer rating,
         String comment,
         String customerFullName,
         Instant createdAt

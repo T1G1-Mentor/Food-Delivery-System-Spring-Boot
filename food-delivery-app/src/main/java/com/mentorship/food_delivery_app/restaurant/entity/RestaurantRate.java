@@ -35,7 +35,7 @@ public class RestaurantRate {
     private String title;
 
     @Column(name = "restaurant_rate_rating")
-    private Double rating;
+    private Integer rating;
 
     @Column(name = "restaurant_rate_comment", length = 500)
     private String comment;

@@ -23,8 +23,7 @@ public enum ErrorMessage {
     RESTAURANT_NOT_FOUND("Restaurant not found."),
     RESTAURANT_RATE_NOT_FOUND("Rating not found."),
     CUSTOMER_HAS_NOT_ORDERED("You must have a delivered order from this restaurant before rating it."),
-    CUSTOMER_ALREADY_RATED("You have already rated this restaurant."),
-    INVALID_RATING_VALUE("Rating must be a multiple of 0.5 between 0.0 and 5.0 (e.g. 0.5, 1.0, 1.5, ..., 5.0).");
+    CUSTOMER_ALREADY_RATED("You have already rated this restaurant.");
 
     private final String message;
 
