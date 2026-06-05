@@ -1,8 +1,6 @@
 package com.mentorship.food_delivery_app.services.order;
 
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
-import com.mentorship.food_delivery_app.common.exceptions.BadRequestException;
-import com.mentorship.food_delivery_app.common.exceptions.ResourceNotFoundException;
 import com.mentorship.food_delivery_app.common.services.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.order.entity.Order;
@@ -58,7 +56,7 @@ class UpdateOrderStatusTest {
 
 
         dummyUser = new User();
-        dummyUser.setId(userId);
+        dummyUser.setUserId(userId);
 
         Customer customer = new Customer();
         User user = new User();

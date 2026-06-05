@@ -24,7 +24,7 @@ public class CustomerAddressController {
     public ResponseEntity<List<CustomerAddressResponseDto>> getAllAddresses() {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 
-        return ResponseEntity.ok(customerService.getAllCustomerAddresses(customer.getId()));
+        return ResponseEntity.ok(customerService.getAllCustomerAddresses(customer.getCustomerId()));
     }
 
     @GetMapping("/{addressId}")
@@ -32,14 +32,14 @@ public class CustomerAddressController {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 
         return ResponseEntity.ok(customerService.getCustomerAddress(addressId,
-                customer.getId()));
+                customer.getCustomerId()));
     }
 
     @DeleteMapping("/{addressId}")
     public ResponseEntity<Void> deleteCustomerAddress(@PathVariable UUID addressId) {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 
-        customerService.deleteCustomerAddress(addressId, customer.getId());
+        customerService.deleteCustomerAddress(addressId, customer.getCustomerId());
 
         return ResponseEntity.noContent().build();
     }
@@ -48,7 +48,7 @@ public class CustomerAddressController {
     public ResponseEntity<Void> createCustomerAddress(@RequestBody @Valid CustomerAddressRequestDto addressRequestDto) {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 
-        UUID addressId = customerService.createCustomerAddress(addressRequestDto, customer.getId());
+        UUID addressId = customerService.createCustomerAddress(addressRequestDto, customer.getCustomerId());
 
         return ResponseEntity.
                 created(URI.create("/api/v1/customers/addresses/" + addressId)).build();
@@ -59,7 +59,7 @@ public class CustomerAddressController {
                                                       @PathVariable UUID addressId) {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 
-        customerService.updateCustomerAddress(addressId, customer.getId(), addressRequestDto);
+        customerService.updateCustomerAddress(addressId, customer.getCustomerId(), addressRequestDto);
 
         return ResponseEntity.noContent().build();
     }
@@ -68,7 +68,7 @@ public class CustomerAddressController {
     public ResponseEntity<Void> setCustomerDefaultAddress(@PathVariable UUID addressId) {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 
-        customerService.setCustomerDefaultAddress(addressId, customer.getId());
+        customerService.setCustomerDefaultAddress(addressId, customer.getCustomerId());
         return ResponseEntity.
                 noContent().build();
     }
@@ -77,6 +77,6 @@ public class CustomerAddressController {
     public ResponseEntity<CustomerAddressResponseDto> getCustomerDefaultAddress() {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 
-        return ResponseEntity.ok(customerService.getCustomerDefaultAddress(customer.getId()));
+        return ResponseEntity.ok(customerService.getCustomerDefaultAddress(customer.getCustomerId()));
     }
 }

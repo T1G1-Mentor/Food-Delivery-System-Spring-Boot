@@ -53,7 +53,7 @@ class CancelOrderTest {
 
 
         dummyUser = new User();
-        dummyUser.setId(userId);
+        dummyUser.setUserId(userId);
 
         Customer customer = new Customer();
         User user = new User();

@@ -15,8 +15,8 @@ public class PaymentProviderConfig {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "payment_type_config_id")
-    private Integer id;
+    @Column(name = "payment_provider_config_id")
+    private Integer paymentProviderConfigId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_provider_name", length = 20, nullable = false)

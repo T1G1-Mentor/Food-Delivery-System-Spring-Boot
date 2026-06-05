@@ -52,12 +52,12 @@ public class RestaurantRateServiceImp implements RestaurantRateService {
         Customer customer = customerService.getLoggedinCustomer();
 
         long deliveredOrderCount = orderRepository.countByCustomerIdAndBranchRestaurantIdAndStatus(
-                customer.getId(), restaurantId, OrderStatus.DELIVERED);
+                customer.getCustomerId(), restaurantId, OrderStatus.DELIVERED);
         if (deliveredOrderCount == 0) {
             throw new CustomerHasNotOrderedException(ErrorMessage.CUSTOMER_HAS_NOT_ORDERED.getMessage());
         }
 
-        long ratingCount = restaurantRateRepository.countByRestaurantIdAndCustomerId(restaurantId, customer.getId());
+        long ratingCount = restaurantRateRepository.countByRestaurantIdAndCustomerId(restaurantId, customer.getCustomerId());
         if (ratingCount >= deliveredOrderCount) {
             throw new CustomerAlreadyRatedException(ErrorMessage.CUSTOMER_ALREADY_RATED.getMessage());
         }
@@ -71,7 +71,7 @@ public class RestaurantRateServiceImp implements RestaurantRateService {
                 .build();
 
         RestaurantRate saved = restaurantRateRepository.save(rate);
-        log.info("Customer {} rated restaurant {} with rating {}", customer.getId(), restaurantId, request.rating());
+        log.info("Customer {} rated restaurant {} with rating {}", customer.getCustomerId(), restaurantId, request.rating());
         return RestaurantRateResponseDto.from(saved);
     }
 
@@ -81,7 +81,7 @@ public class RestaurantRateServiceImp implements RestaurantRateService {
         validateRestaurantExists(restaurantId);
         Customer customer = customerService.getLoggedinCustomer();
 
-        RestaurantRate rate = restaurantRateRepository.findByIdAndCustomerId(rateId, customer.getId())
+        RestaurantRate rate = restaurantRateRepository.findByIdAndCustomerId(rateId, customer.getCustomerId())
                 .orElseThrow(() -> new RestaurantRateNotFoundException(ErrorMessage.RESTAURANT_RATE_NOT_FOUND.getMessage()));
 
         if (request.title() != null) {
@@ -94,7 +94,7 @@ public class RestaurantRateServiceImp implements RestaurantRateService {
             rate.setComment(request.comment());
         }
 
-        log.info("Customer {} updated rating {} for restaurant {}", customer.getId(), rateId, restaurantId);
+        log.info("Customer {} updated rating {} for restaurant {}", customer.getCustomerId(), rateId, restaurantId);
         return RestaurantRateResponseDto.from(rate);
     }
 
@@ -104,11 +104,11 @@ public class RestaurantRateServiceImp implements RestaurantRateService {
         validateRestaurantExists(restaurantId);
         Customer customer = customerService.getLoggedinCustomer();
 
-        RestaurantRate rate = restaurantRateRepository.findByIdAndCustomerId(rateId, customer.getId())
+        RestaurantRate rate = restaurantRateRepository.findByIdAndCustomerId(rateId, customer.getCustomerId())
                 .orElseThrow(() -> new RestaurantRateNotFoundException(ErrorMessage.RESTAURANT_RATE_NOT_FOUND.getMessage()));
 
         restaurantRateRepository.delete(rate);
-        log.info("Customer {} deleted rating {} for restaurant {}", customer.getId(), rateId, restaurantId);
+        log.info("Customer {} deleted rating {} for restaurant {}", customer.getCustomerId(), rateId, restaurantId);
     }
 
     private Restaurant getRestaurantById(UUID restaurantId) {

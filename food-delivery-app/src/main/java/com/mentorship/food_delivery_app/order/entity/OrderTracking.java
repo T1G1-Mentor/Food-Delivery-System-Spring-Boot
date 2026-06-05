@@ -20,7 +20,7 @@ public class OrderTracking {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "order_tracking_id")
-    private UUID id;
+    private UUID orderTrackingId;
 
     @Column(name = "order_tracking_description", nullable = false)
     private String description;

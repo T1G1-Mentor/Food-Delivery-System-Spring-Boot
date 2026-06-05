@@ -65,10 +65,10 @@ public class OrderServiceImp implements OrderService {
     public OrderResponseDto placeOrder(PlaceOrderRequestDto request) {
         Customer customer = customerService.getLoggedinCustomer();
 
-        Cart cart = cartService.getCartByCustomerId(customer.getId());
-        cartService.lockCart(cart.getId());
+        Cart cart = cartService.getCartByCustomerId(customer.getCustomerId());
+        cartService.lockCart(cart.getCartId());
 
-        Set<CartItem> cartItems = cartService.getCartItemsWithMenuItemsByCartId(cart.getId());
+        Set<CartItem> cartItems = cartService.getCartItemsWithMenuItemsByCartId(cart.getCartId());
 //        validateRestaurantIsOpen(cart);
         validateCartItemsAvailability(cartItems);
 
@@ -139,7 +139,7 @@ public class OrderServiceImp implements OrderService {
     @Transactional(readOnly = true)
     @Override
     public OrderDetailsDto getOrderDetails(UUID orderId) {
-        UUID userId = userService.getDummyLoggedInUser().getId();
+        UUID userId = userService.getDummyLoggedInUser().getUserId();
         log.debug("Fetching order details for Order ID: {} by customer user ID: {}", orderId, userId);
 
         Order order = orderRepository.fetchOrderDetailsForCustomer(orderId, userId)
@@ -155,7 +155,7 @@ public class OrderServiceImp implements OrderService {
     @Transactional(readOnly = true)
     @Override
     public Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable) {
-        UUID userId = userService.getDummyLoggedInUser().getId();
+        UUID userId = userService.getDummyLoggedInUser().getUserId();
         log.debug("Fetching order history for user ID: {} with status filter: {}", userId, status);
 
         Page<Order> orders = (status != null)
@@ -174,11 +174,11 @@ public class OrderServiceImp implements OrderService {
 
     private Order getAndValidateOrder(UUID orderId) {
         User user = userService.getDummyLoggedInUser();
-        log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, user.getId());
+        log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, user.getUserId());
 
-        return orderRepository.findOrderByIdAndAdminId(orderId, user.getId())
+        return orderRepository.findOrderByIdAndAdminId(orderId, user.getUserId())
                 .orElseThrow(() -> {
-                    log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, user.getId());
+                    log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, user.getUserId());
                     return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
                 });
     }

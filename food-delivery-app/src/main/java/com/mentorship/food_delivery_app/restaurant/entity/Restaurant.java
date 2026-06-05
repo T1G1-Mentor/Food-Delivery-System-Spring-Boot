@@ -17,7 +17,7 @@ public class Restaurant {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "restaurant_id")
-    private UUID id;
+    private UUID restaurantId;
 
     @Column(name = "restaurant_name", nullable = false, length = 100)
     private String name;

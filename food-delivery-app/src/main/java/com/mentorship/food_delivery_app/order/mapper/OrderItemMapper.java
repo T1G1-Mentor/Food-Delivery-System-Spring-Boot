@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class OrderItemMapper {
     public OrderItemResponseDto toResponse(OrderItem orderItem) {
         return new OrderItemResponseDto(
-                orderItem.getMenuItem().getId(),
+                orderItem.getMenuItem().getMenuItemId(),
                 orderItem.getUnitPrice(),
                 orderItem.getQuantity(),
                 orderItem.getSubtotal()

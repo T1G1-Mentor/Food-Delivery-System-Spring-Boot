@@ -22,7 +22,7 @@ public class Coupon {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "coupon_id")
-    private UUID id;
+    private UUID couponId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coupon_restaurant_id", nullable = false)

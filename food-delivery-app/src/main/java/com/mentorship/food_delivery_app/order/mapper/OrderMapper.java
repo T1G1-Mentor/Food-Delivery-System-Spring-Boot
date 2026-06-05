@@ -81,7 +81,7 @@ public class OrderMapper {
 
     private OrderItemDto toOrderItem(OrderItem item) {
         return new OrderItemDto(
-                item.getId(),
+                item.getOrderItemId(),
                 item.getMenuItem().getName(),
                 item.getQuantity(),
                 item.getUnitPrice(),

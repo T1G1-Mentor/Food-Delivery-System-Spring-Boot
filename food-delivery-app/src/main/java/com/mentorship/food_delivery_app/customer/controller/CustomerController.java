@@ -25,7 +25,7 @@ public class CustomerController {
     public ResponseEntity<Void> deactivateAccount() {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 //        the principal will also contain the user-Id
-        customerService.deactivateAccount(customer.getId(), customer.getUser().getId());
+        customerService.deactivateAccount(customer.getCustomerId(), customer.getUser().getUserId());
         return ResponseEntity.noContent().build();
     }
 
@@ -35,7 +35,7 @@ public class CustomerController {
     ) {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
         return ResponseEntity.
-                ok(orderService.getOrderTrackingHistory(customer.getId(),
+                ok(orderService.getOrderTrackingHistory(customer.getCustomerId(),
                         orderId));
     }
 
@@ -44,7 +44,7 @@ public class CustomerController {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 
         customerService.addCustomerPreferredPaymentType(preferredPayment.preferredPayment()
-                , customer.getId());
+                , customer.getCustomerId());
 
         return ResponseEntity.noContent().build();
     }
@@ -54,7 +54,7 @@ public class CustomerController {
         Customer customer = customerService.getLoggedinCustomer(); // will be replaced with authorization principal to get the id
 
         return ResponseEntity.ok(
-                customerService.getCustomerPreferredPaymentType(customer.getId())
+                customerService.getCustomerPreferredPaymentType(customer.getCustomerId())
         );
     }
 }

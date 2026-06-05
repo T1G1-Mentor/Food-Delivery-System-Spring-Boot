@@ -14,7 +14,7 @@ public class UserType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_type_id")
-    private Integer id;
+    private Integer userTypeId;
 
     @Column(name = "user_type_name", nullable = false, length = 20)
     private String userTypeName;

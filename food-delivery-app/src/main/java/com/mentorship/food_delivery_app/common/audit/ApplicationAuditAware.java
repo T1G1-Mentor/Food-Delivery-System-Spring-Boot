@@ -18,6 +18,6 @@ public class ApplicationAuditAware implements AuditorAware<UUID> {
                 .map(SecurityContext::getAuthentication)
                 .filter(Authentication::isAuthenticated)
                 .map(Authentication::getPrincipal)
-                .map((user) -> ((User) user).getId());
+                .map((user) -> ((User) user).getUserId());
     }
 }

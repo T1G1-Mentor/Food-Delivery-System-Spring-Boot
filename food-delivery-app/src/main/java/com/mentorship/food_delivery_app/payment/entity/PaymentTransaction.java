@@ -27,7 +27,7 @@ public class PaymentTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "transaction_id")
-    private UUID id;
+    private UUID paymentTransactionId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "transaction_status", length = 20, nullable = false)

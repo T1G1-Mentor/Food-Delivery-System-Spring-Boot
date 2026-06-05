@@ -18,7 +18,7 @@ public class MenuItem extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "menu_item_id")
-    private UUID id;
+    private UUID menuItemId;
 
     @Column(name = "menu_item_description", length = 255)
     private String description;

@@ -2,6 +2,7 @@ package com.mentorship.food_delivery_app.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id")
-    private UUID id;
+    private UUID userId;
 
     @ManyToOne()
     @JoinColumn(name = "user_type_id", nullable = false)

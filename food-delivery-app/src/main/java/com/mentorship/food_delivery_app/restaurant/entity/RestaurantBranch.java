@@ -21,7 +21,7 @@ public class RestaurantBranch extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "branch_id")
-    private UUID id;
+    private UUID restaurantBranchId;
 
 
     @Column(name = "branch_delivery_fee", precision = 6, scale = 2)

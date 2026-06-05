@@ -62,7 +62,7 @@ class ModifyCartItemTests {
         cartId = UUID.randomUUID();
         MenuItem menuItem;
         menuItem = new MenuItem();
-        menuItem.setId(menuItemId);
+        menuItem.setMenuItemId(menuItemId);
         menuItem.setName("Burger");
         menuItem.setDescription("Tasty beef burger");
         menuItem.setPrice(BigDecimal.valueOf(10.00));
@@ -74,7 +74,7 @@ class ModifyCartItemTests {
         cartItems = Set.of(cartItem);
 
         cart = new Cart();
-        cart.setId(cartId);
+        cart.setCartId(cartId);
         cart.setCartItems(Set.of(cartItem));
     }
 

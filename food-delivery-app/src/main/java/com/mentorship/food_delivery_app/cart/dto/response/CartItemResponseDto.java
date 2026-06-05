@@ -16,7 +16,7 @@ public record CartItemResponseDto(
 
     public static CartItemResponseDto fromCartItem(CartItem cartItem) {
         return new CartItemResponseDto(
-                cartItem.getMenuItem().getId(),
+                cartItem.getMenuItem().getMenuItemId(),
                 cartItem.getQuantity(),
                 cartItem.getNote(),
                 cartItem.getMenuItem().getName(),

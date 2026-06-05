@@ -17,7 +17,7 @@ public record RestaurantRateResponseDto(
 ) {
     public static RestaurantRateResponseDto from(RestaurantRate rate) {
         return new RestaurantRateResponseDto(
-                rate.getId(),
+                rate.getRestaurantRateId(),
                 rate.getTitle(),
                 rate.getRating(),
                 rate.getComment(),

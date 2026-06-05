@@ -20,7 +20,7 @@ public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "order_item_id")
-    private UUID id;
+    private UUID orderItemId;
 
     @Positive(message = "Unit price must be greater than zero")
     @Column(name = "order_item_unit_price", precision = 9, scale = 2, nullable = false)

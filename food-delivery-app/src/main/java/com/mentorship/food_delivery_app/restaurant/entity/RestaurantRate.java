@@ -21,7 +21,7 @@ public class RestaurantRate {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "restaurant_rate_id")
-    private UUID id;
+    private UUID restaurantRateId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_rate_restaurant_id", nullable = false)
