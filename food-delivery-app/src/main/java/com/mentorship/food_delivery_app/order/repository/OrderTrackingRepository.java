@@ -16,7 +16,7 @@ public interface OrderTrackingRepository extends CrudRepository<OrderTracking, U
     od.createdAt
     )
     FROM OrderTracking od
-    WHERE od.order.id = :orderId AND od.order.customer.id = :customerId
+    WHERE od.order.orderId = :orderId AND od.order.customer.customerId = :customerId
     ORDER BY od.createdAt DESC
 """)
     List<OrderTrackingDto> findAllByCustomerIdAndOrderId(UUID customerId, UUID orderId);

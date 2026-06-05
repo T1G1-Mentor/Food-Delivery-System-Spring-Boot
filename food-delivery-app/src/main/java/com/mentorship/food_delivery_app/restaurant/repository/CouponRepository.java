@@ -8,5 +8,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CouponRepository extends CrudRepository<Coupon, UUID> {
-    Optional<Coupon> findByIdAndRestaurant(UUID couponId, Restaurant restaurant);
+    Optional<Coupon> findByCouponIdAndRestaurant(UUID couponId, Restaurant restaurant);
 }

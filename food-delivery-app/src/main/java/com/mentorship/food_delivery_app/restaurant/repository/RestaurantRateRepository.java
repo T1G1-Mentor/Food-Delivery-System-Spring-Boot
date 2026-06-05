@@ -15,7 +15,7 @@ public interface RestaurantRateRepository extends JpaRepository<RestaurantRate, 
             SELECT r FROM RestaurantRate r
             JOIN FETCH r.customer c
             JOIN FETCH c.user
-            WHERE r.restaurant.id = :restaurantId
+            WHERE r.restaurant.restaurantId = :restaurantId
             """)
     List<RestaurantRate> findAllByRestaurantId(@Param("restaurantId") UUID restaurantId);
 
@@ -23,10 +23,15 @@ public interface RestaurantRateRepository extends JpaRepository<RestaurantRate, 
             SELECT r FROM RestaurantRate r
             JOIN FETCH r.customer c
             JOIN FETCH c.user
-            WHERE r.id = :rateId AND r.customer.id = :customerId
+            WHERE r.restaurantRateId = :rateId AND r.customer.customerId = :customerId
             """)
     Optional<RestaurantRate> findByIdAndCustomerId(@Param("rateId") UUID rateId,
                                                    @Param("customerId") UUID customerId);
 
+    @Query("""
+        SELECT COUNT(rr) FROM RestaurantRate rr
+        WHERE rr.restaurant.restaurantId = :restaurantId
+          AND rr.customer.customerId = :customerId
+    """)
     long countByRestaurantIdAndCustomerId(UUID restaurantId, UUID customerId);
 }

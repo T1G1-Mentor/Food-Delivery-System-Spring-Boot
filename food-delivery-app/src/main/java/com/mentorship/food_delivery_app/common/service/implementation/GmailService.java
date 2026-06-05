@@ -1,6 +1,6 @@
-package com.mentorship.food_delivery_app.common.services.implementation;
+package com.mentorship.food_delivery_app.common.service.implementation;
 
-import com.mentorship.food_delivery_app.common.services.contract.EmailService;
+import com.mentorship.food_delivery_app.common.service.contract.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;

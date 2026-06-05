@@ -13,7 +13,7 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
     @Query("""
             SELECT c FROM Customer c
-            WHERE c.user.id = :userId
+            WHERE c.user.userId = :userId
             """)
     Optional<Customer> findByUserId(UUID userId);
 
@@ -38,13 +38,13 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
     @Query("""
                 SELECT c FROM Customer c
                 LEFT JOIN FETCH c.defaultAddress
-                WHERE c.id = :customerId
+                WHERE c.customerId = :customerId
             """)
     Optional<Customer> findByIdWithDefaultAddress(UUID customerId);
 
     @Query("""
     SELECT c.preferredPayment FROM Customer c
-    WHERE c.id = :customerId
+    WHERE c.customerId = :customerId
 """)
     Optional<PaymentMethod> getPreferredPaymentById(UUID customerId);
 }

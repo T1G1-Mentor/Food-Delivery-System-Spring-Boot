@@ -1,6 +1,6 @@
 package com.mentorship.food_delivery_app.services.email;
 
-import com.mentorship.food_delivery_app.common.services.implementation.GmailService;
+import com.mentorship.food_delivery_app.common.service.implementation.GmailService;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

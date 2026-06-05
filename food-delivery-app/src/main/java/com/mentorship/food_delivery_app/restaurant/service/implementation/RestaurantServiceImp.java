@@ -12,6 +12,7 @@ import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantSe
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -29,7 +30,7 @@ public class RestaurantServiceImp implements RestaurantService {
 
     @Override
     public Coupon getRestaurantCoupon(UUID couponId, RestaurantBranch branch) {
-        return couponRepository.findByIdAndRestaurant(couponId, branch.getRestaurant())
+        return couponRepository.findByCouponIdAndRestaurant(couponId, branch.getRestaurant())
                 .orElseThrow(() -> new CouponNotFoundException(ErrorMessage.COUPON_NOT_FOUND.getMessage()));
     }
 }

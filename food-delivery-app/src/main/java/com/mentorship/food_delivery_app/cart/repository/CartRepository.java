@@ -11,17 +11,21 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CartRepository extends CrudRepository<Cart, UUID> {
-    Optional<Cart> findByCustomerId(UUID id);
+    @Query("""
+    SELECT c FROM Cart c
+    WHERE c.customer.customerId = :customerId
+""")
+    Optional<Cart> findByCustomerId(UUID customerId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT c FROM Cart c WHERE c.id = :id")
+    @Query("SELECT c FROM Cart c WHERE c.cartId = :id")
     Optional<Cart> findByIdWithLock(@Param("id") UUID id);
 
     @Query("""
                 SELECT c FROM Cart c
                 LEFT JOIN FETCH c.cartItems ci
                 JOIN FETCH ci.menuItem mi
-                WHERE c.customer.id= :customerId
+                WHERE c.customer.customerId= :customerId
             """)
     Optional<Cart> findWithCartItemsAndMenuItemsByCustomerId(UUID customerId);
 }
