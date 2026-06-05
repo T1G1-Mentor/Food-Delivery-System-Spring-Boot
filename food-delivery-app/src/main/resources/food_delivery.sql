@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS customer(
     customer_id  UUID PRIMARY KEY DEFAULT uuidv7(),
     customer_user_id UUID NOT NULL UNIQUE, -- REFERENCES users(user_id)
     customer_default_address_id UUID,  --REFERENCES customer_address(customer_address_id)
-    customer_preferred_payment_id INT --  REFERENCES payment_type_config(payment_type_config_id)
+    customer_preferred_payment_method VARCHAR(20) --  REFERENCES payment_method(payment_method_name)
 );
 CREATE TABLE IF NOT EXISTS customer_address(
     customer_address_id UUID PRIMARY KEY DEFAULT uuidv7(),
@@ -112,10 +112,15 @@ CREATE TABLE IF NOT EXISTS restaurant_rate(
     restaurant_rate_id UUID PRIMARY KEY DEFAULT uuidv7(),
     restaurant_rate_restaurant_id UUID NOT NULL,-- REFERENCES restaurant(restaurant_id)
     restaurant_rate_customer_id UUID NOT NULL,-- REFERENCES customer(customer_id)
-    restaurant_rate_rating INT,
-    restaurant_rate_comment VARCHAR(500) NOT NULL ,
+    restaurant_rate_title VARCHAR(100) NOT NULL,
+    restaurant_rate_rating DECIMAL(3,1) CHECK (restaurant_rate_rating >= 0 AND restaurant_rate_rating <= 5),
+    restaurant_rate_comment VARCHAR(500),
     restaurant_rate_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+-- Migration for existing installations:
+-- ALTER TABLE restaurant_rate ADD COLUMN IF NOT EXISTS restaurant_rate_title VARCHAR(100) NOT NULL DEFAULT '';
+-- ALTER TABLE restaurant_rate ALTER COLUMN restaurant_rate_rating TYPE DECIMAL(3,1);
+-- ALTER TABLE restaurant_rate ALTER COLUMN restaurant_rate_comment DROP NOT NULL;
 CREATE TABLE IF NOT EXISTS coupon(
     coupon_id UUID PRIMARY KEY DEFAULT uuidv7(),
     coupon_restaurant_id UUID NOT NULL,-- REFERENCES restaurant(restaurant_id)
@@ -192,13 +197,17 @@ CREATE TABLE IF NOT EXISTS order_item(
 );
 ------------------------------PAYMENT---------------------
 
-CREATE TABLE IF NOT EXISTS payment_integration_type(
-    payment_integration_type_name VARCHAR(20) PRIMARY KEY
+CREATE TABLE IF NOT EXISTS payment_provider(
+    payment_provider_name VARCHAR(20) PRIMARY KEY
 );
 
-CREATE TABLE IF NOT EXISTS payment_type_config(
-    payment_type_config_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-     payment_integration_type VARCHAR(20) NOT NULL , --REFERENCES payment_integration_type(payment_integration_type_name)
+CREATE TABLE IF NOT EXISTS payment_method(
+    payment_method_name VARCHAR(20) PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS payment_provider_config(
+    payment_privider_config_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+     payment_provider_name VARCHAR(20) NOT NULL , --REFERENCES payment_provide(payment_provider_name)
     config_details TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS transaction_status(
@@ -209,9 +218,10 @@ CREATE TABLE IF NOT EXISTS transactions(
     transaction_id UUID PRIMARY KEY DEFAULT uuidv7(),
     transaction_status VARCHAR(20) NOT NULL , --REFERENCES transaction_status(status)
     transaction_order_id UUID NOT NULL ,--REFERENCES orders(order_id)
-    transaction_payment_type VARCHAR(20), --REFERENCES payment_integration_type(payment_integration_type_name)
+    transaction_payment_provider VARCHAR(20) NOT NULL, --REFERENCES payment_provider(payment_provider_name)
     transaction_customer_id UUID NOT NULL ,--REFERENCES customer(customer_id)
     transaction_rest_branch_id UUID NOT NULL ,--REFERENCES restaurant_branch(branch_id)
+    transaction_payment_method VARCHAR(20) NOT NULL, --REFERENCES payment_method(payment_method_name)
     transaction_amount DECIMAL(10,2) CHECK (transaction_amount > 0),
     transaction_time TIMESTAMP DEFAULT  CURRENT_TIMESTAMP
 );

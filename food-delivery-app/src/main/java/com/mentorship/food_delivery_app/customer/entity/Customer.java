@@ -1,10 +1,10 @@
 package com.mentorship.food_delivery_app.customer.entity;
 
-import com.mentorship.food_delivery_app.cart.entity.Cart;
-import com.mentorship.food_delivery_app.payment.entity.PaymentTypeConfig;
+import com.mentorship.food_delivery_app.payment.entity.enums.PaymentMethod;
 import com.mentorship.food_delivery_app.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@DynamicUpdate
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,9 +31,9 @@ public class Customer {
     @JoinColumn(name = "customer_default_address_id")
     private CustomerAddress defaultAddress;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_preferred_payment_id")
-    private PaymentTypeConfig preferredPaymentType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "customer_preferred_payment_method", length = 20)
+    private PaymentMethod preferredPayment;
 
     @OneToMany(mappedBy = "customer", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<CustomerAddress> addresses;

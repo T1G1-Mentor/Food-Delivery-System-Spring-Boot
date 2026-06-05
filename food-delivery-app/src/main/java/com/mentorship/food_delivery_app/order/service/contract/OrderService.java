@@ -4,10 +4,12 @@ import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
+import com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface OrderService {
@@ -22,4 +24,6 @@ public interface OrderService {
     OrderDetailsDto getOrderDetails(UUID orderId);
 
     Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable);
+
+    List<OrderTrackingDto> getOrderTrackingHistory(UUID customerId, UUID orderId);
 }

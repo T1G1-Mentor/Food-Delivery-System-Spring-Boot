@@ -1,5 +1,10 @@
 package com.mentorship.food_delivery_app.common.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@Getter
 public enum ErrorMessage {
     CUSTOMER_NOT_FOUND("Customer not found"),
     CART_ITEM_NOT_FOUND("This item does not exist in your cart."),
@@ -11,15 +16,16 @@ public enum ErrorMessage {
     ORDER_NOT_FOUND("The order you are looking for does not exist."),
     ORDER_ALREADY_DELIVERED("The order has already been delivered"),
     ORDER_ALREADY_CANCELLED("The order has already been cancelled"),
-    RESTAURANT_CLOSED("The restaurant is currently closed. Please try again later.");
+    RESTAURANT_CLOSED("The restaurant is currently closed. Please try again later."),
+    ADDRESS_NOT_FOUND("The address you are locking for does not exist."),
+    NO_DEFAULT_ADDRESS_EXISTS("You do not have any addresses. Please create address first"),
+    PREFERRED_PAYMENT_NOT_FOUND("Customer did not configure his preferred payment type"),
+    RESTAURANT_NOT_FOUND("Restaurant not found."),
+    RESTAURANT_RATE_NOT_FOUND("Rating not found."),
+    CUSTOMER_HAS_NOT_ORDERED("You must have a delivered order from this restaurant before rating it."),
+    CUSTOMER_ALREADY_RATED("You have already rated this restaurant.");
 
     private final String message;
 
-     ErrorMessage(String message){
-        this.message=message;
-    }
 
-    public String getMessage() {
-        return message;
-    }
 }

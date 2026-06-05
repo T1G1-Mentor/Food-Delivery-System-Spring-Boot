@@ -14,6 +14,7 @@ import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
+import com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto;
 import com.mentorship.food_delivery_app.order.entity.DeliveryAddress;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.entity.OrderItem;
@@ -25,6 +26,7 @@ import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
 import com.mentorship.food_delivery_app.order.mapper.OrderMapper;
 import com.mentorship.food_delivery_app.order.repository.OrderRepository;
 import com.mentorship.food_delivery_app.order.service.contract.OrderService;
+import com.mentorship.food_delivery_app.order.service.contract.OrderTrackingService;
 import com.mentorship.food_delivery_app.payment.service.PaymentService;
 import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
@@ -54,6 +56,7 @@ public class OrderServiceImp implements OrderService {
     private final PaymentService paymentService;
     private final RestaurantService restaurantService;
     private final CartService cartService;
+    private final OrderTrackingService orderTrackingService;
     private final OrderMapper orderMapper;
 
 
@@ -120,6 +123,106 @@ public class OrderServiceImp implements OrderService {
         log.info("Successfully completed status update for Order ID: {}", orderId);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public Page<OrderListItemDto> listOrders(UUID restaurantBranchId, OrderStatus status, Pageable pageable) {
+        log.debug("Fetching orders for branch ID: {} with status filter: {}", restaurantBranchId, status);
+
+        Page<Order> orders = (status != null)
+                ? orderRepository.findOrdersByBranchIdAndStatus(restaurantBranchId, status, pageable)
+                : orderRepository.findOrdersByBranchId(restaurantBranchId, pageable);
+
+        log.info("Fetched {} orders for branch ID: {}", orders.getTotalElements(), restaurantBranchId);
+        return orders.map(orderMapper::toListItem);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public OrderDetailsDto getOrderDetails(UUID orderId) {
+        UUID userId = userService.getDummyLoggedInUser().getId();
+        log.debug("Fetching order details for Order ID: {} by customer user ID: {}", orderId, userId);
+
+        Order order = orderRepository.fetchOrderDetailsForCustomer(orderId, userId)
+                .orElseThrow(() -> {
+                    log.warn("Order details not found. Order ID: {} for user ID: {}", orderId, userId);
+                    return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
+                });
+
+        log.info("Successfully fetched details for Order ID: {}", orderId);
+        return orderMapper.toDetails(order);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable) {
+        UUID userId = userService.getDummyLoggedInUser().getId();
+        log.debug("Fetching order history for user ID: {} with status filter: {}", userId, status);
+
+        Page<Order> orders = (status != null)
+                ? orderRepository.findOrdersByUserIdAndStatus(userId, status, pageable)
+                : orderRepository.findOrdersByUserId(userId, pageable);
+
+        log.info("Fetched {} orders in history for user ID: {}", orders.getTotalElements(), userId);
+        return orders.map(orderMapper::toHistoryItem);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<OrderTrackingDto> getOrderTrackingHistory(UUID customerId, UUID orderId) {
+        return orderTrackingService.getTrackingHistory(customerId, orderId);
+    }
+
+    private Order getAndValidateOrder(UUID orderId) {
+        User user = userService.getDummyLoggedInUser();
+        log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, user.getId());
+
+        return orderRepository.findOrderByIdAndAdminId(orderId, user.getId())
+                .orElseThrow(() -> {
+                    log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, user.getId());
+                    return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
+                });
+    }
+
+    private void createNewOrderTracking(OrderStatus status, String description, Order order) {
+        log.debug("Appending new tracking event to Order ID: {}. Status: {}", order.getOrderId(), status);
+
+        OrderTracking tracking = OrderTracking.
+                builder()
+                .description(description)
+                .status(status)
+                .build();
+
+        order.addTrackingEvent(tracking);
+        order.setStatus(status);
+
+    }
+
+    private OrderStatus getNextStatus(OrderStatus status) {
+        return switch (status) {
+            case PENDING -> OrderStatus.IN_PROGRESS;
+            case IN_PROGRESS -> OrderStatus.ON_THE_WAY;
+            case ON_THE_WAY -> OrderStatus.DELIVERED;
+            case DELIVERED -> throw new DeliveredOrderException(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
+            case CANCELLED -> throw new CancelledOrderException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
+        };
+
+    }
+
+    //    dummy template
+    private void sendStatusUpdateEmail(String email, String staus) {
+        emailService.sendEmailAsync(email, "Order Status Update", String.format
+                ("Your order status just got updated, %s", staus));
+    }
+
+    private void notifyOrderPlaced(Order order) {
+
+        emailService.sendEmailAsync(
+                order.getCustomer().getUser().getEmail(),
+                "Order Confirmation",
+                "Your order has been placed. Order ID: " + order.getOrderId()
+        );
+
+    }
 //    private void validateRestaurantIsOpen(Cart cart) {
 //        RestaurantBranch branch = cart.getCurrentRestaurant();
 //        if (!branch.isOpen()) {
@@ -194,100 +297,4 @@ public class OrderServiceImp implements OrderService {
         }
         return DeliveryAddress.from(deliveryAddressDto);
     }
-
-    @Transactional(readOnly = true)
-    @Override
-    public Page<OrderListItemDto> listOrders(UUID restaurantBranchId, OrderStatus status, Pageable pageable) {
-        log.debug("Fetching orders for branch ID: {} with status filter: {}", restaurantBranchId, status);
-
-        Page<Order> orders = (status != null)
-                ? orderRepository.findOrdersByBranchIdAndStatus(restaurantBranchId, status, pageable)
-                : orderRepository.findOrdersByBranchId(restaurantBranchId, pageable);
-
-        log.info("Fetched {} orders for branch ID: {}", orders.getTotalElements(), restaurantBranchId);
-        return orders.map(orderMapper::toListItem);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public OrderDetailsDto getOrderDetails(UUID orderId) {
-        UUID userId = userService.getDummyLoggedInUser().getId();
-        log.debug("Fetching order details for Order ID: {} by customer user ID: {}", orderId, userId);
-
-        Order order = orderRepository.fetchOrderDetailsForCustomer(orderId, userId)
-                .orElseThrow(() -> {
-                    log.warn("Order details not found. Order ID: {} for user ID: {}", orderId, userId);
-                    return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
-                });
-
-        log.info("Successfully fetched details for Order ID: {}", orderId);
-        return orderMapper.toDetails(order);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable) {
-        UUID userId = userService.getDummyLoggedInUser().getId();
-        log.debug("Fetching order history for user ID: {} with status filter: {}", userId, status);
-
-        Page<Order> orders = (status != null)
-                ? orderRepository.findOrdersByUserIdAndStatus(userId, status, pageable)
-                : orderRepository.findOrdersByUserId(userId, pageable);
-
-        log.info("Fetched {} orders in history for user ID: {}", orders.getTotalElements(), userId);
-        return orders.map(orderMapper::toHistoryItem);
-    }
-
-    private Order getAndValidateOrder(UUID orderId) {
-        User user = userService.getDummyLoggedInUser();
-        log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, user.getId());
-
-        return orderRepository.findOrderByIdAndAdminId(orderId, user.getId())
-                .orElseThrow(() -> {
-                    log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, user.getId());
-                    return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
-                });
-    }
-
-    private void createNewOrderTracking(OrderStatus status, String description, Order order) {
-        log.debug("Appending new tracking event to Order ID: {}. Status: {}", order.getOrderId(), status);
-
-        OrderTracking tracking = OrderTracking.
-                builder()
-                .description(description)
-                .status(status)
-                .build();
-
-        order.addTrackingEvent(tracking);
-        order.setStatus(status);
-
-    }
-
-    private OrderStatus getNextStatus(OrderStatus status) {
-        return switch (status) {
-            case PENDING -> OrderStatus.IN_PROGRESS;
-            case IN_PROGRESS -> OrderStatus.ON_THE_WAY;
-            case ON_THE_WAY -> OrderStatus.DELIVERED;
-            case DELIVERED -> throw new DeliveredOrderException(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
-            case CANCELLED -> throw new CancelledOrderException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
-        };
-
-    }
-
-    //    dummy template
-    private void sendStatusUpdateEmail(String email, String staus) {
-        emailService.sendEmailAsync(email, "Order Status Update", String.format
-                ("Your order status just got updated, %s", staus));
-    }
-
-    private void notifyOrderPlaced(Order order) {
-
-        emailService.sendEmailAsync(
-                order.getCustomer().getUser().getEmail(),
-                "Order Confirmation",
-                "Your order has been placed. Order ID: " + order.getOrderId()
-        );
-
-    }
-
 }

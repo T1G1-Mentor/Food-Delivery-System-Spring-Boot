@@ -6,12 +6,18 @@ import com.mentorship.food_delivery_app.cart.exceptions.ItemNotAvailableExceptio
 import com.mentorship.food_delivery_app.cart.exceptions.RestaurantMismatchException;
 import com.mentorship.food_delivery_app.common.dto.ErrorResponseDto;
 import com.mentorship.food_delivery_app.common.dto.ValidationErrorResponse;
+import com.mentorship.food_delivery_app.customer.exceptions.AddressNotFoundException;
 import com.mentorship.food_delivery_app.customer.exceptions.CustomerNotFoundException;
+import com.mentorship.food_delivery_app.customer.exceptions.PreferredPaymentWasNotConfiguredException;
 import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
 import com.mentorship.food_delivery_app.restaurant.exceptions.CouponNotFoundException;
+import com.mentorship.food_delivery_app.restaurant.exceptions.CustomerAlreadyRatedException;
+import com.mentorship.food_delivery_app.restaurant.exceptions.CustomerHasNotOrderedException;
 import com.mentorship.food_delivery_app.restaurant.exceptions.ItemNotFoundException;
+import com.mentorship.food_delivery_app.restaurant.exceptions.RestaurantNotFoundException;
+import com.mentorship.food_delivery_app.restaurant.exceptions.RestaurantRateNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -298,6 +304,34 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
 
+    @ExceptionHandler(RestaurantNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleRestaurantNotFound(RestaurantNotFoundException ex) {
+        log.warn("Restaurant Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(RestaurantRateNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleRestaurantRateNotFound(RestaurantRateNotFoundException ex) {
+        log.warn("Restaurant Rate Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(CustomerHasNotOrderedException.class)
+    public ResponseEntity<ErrorResponseDto> handleCustomerHasNotOrdered(CustomerHasNotOrderedException ex) {
+        log.warn("Customer Has Not Ordered Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(CustomerAlreadyRatedException.class)
+    public ResponseEntity<ErrorResponseDto> handleCustomerAlreadyRated(CustomerAlreadyRatedException ex) {
+        log.warn("Customer Already Rated Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getLocalizedMessage());
+    }
+
     // -------------------------------------------------------------------
     //  CUSTOMER EXCEPTIONS
     // -------------------------------------------------------------------
@@ -308,6 +342,19 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
 
+    @ExceptionHandler(AddressNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleAddressNotFound(AddressNotFoundException ex) {
+        log.warn("Address Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(PreferredPaymentWasNotConfiguredException.class)
+    public ResponseEntity<ErrorResponseDto> handlePreferredPaymentWasNotConfigured(PreferredPaymentWasNotConfiguredException ex) {
+        log.warn("Preferred Payment Was Not Configured Exception Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
+    }
     // -------------------------------------------------------------------
     //  ORDER EXCEPTIONS
     // -------------------------------------------------------------------

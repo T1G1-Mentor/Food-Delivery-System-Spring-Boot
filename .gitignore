@@ -9,3 +9,6 @@ target/
 *.iws
 *.ipr
 secret.env
+
+# VS Code IDE
+.vscode/
