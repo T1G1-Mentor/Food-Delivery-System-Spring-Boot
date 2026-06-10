@@ -35,4 +35,12 @@ public interface CartRepository extends CrudRepository<Cart, UUID> {
     WHERE c.cartId = :cartId AND c.customer.customerId = :customerId
 """)
     Optional<Cart> findCarWithRestaurantBranchByIdAndCustomerId(UUID cartId, UUID customerId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    SELECT c FROM Cart c
+    JOIN FETCH c.currentRestaurant
+    WHERE c.cartId = :cartId AND c.customer.customerId = :customerId
+""")
+    Cart findAndLockWithRestBranchByIdAndCustomerId(UUID cartId, UUID customerId);
 }

@@ -19,7 +19,7 @@ public abstract class OrderHandler {
 
     protected OrderResponseDto handleNext(OrderProcessingContext context) {
         if (next == null)
-            return context.getOrderResponse();
+            return context.getResponseDto();
 
         return next.handle(context);
     }

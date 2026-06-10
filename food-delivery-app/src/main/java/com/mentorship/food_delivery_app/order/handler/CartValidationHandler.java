@@ -18,8 +18,6 @@ public class CartValidationHandler extends OrderHandler {
                 .equals(context.getRequestRestaurantBranchId()))
             throw new RestaurantMismatchException(ErrorMessage.RESTAURANT_MISMATCH.getMessage());
 
-        context.lockCart();
-
         return this.handleNext(context);
     }
 }

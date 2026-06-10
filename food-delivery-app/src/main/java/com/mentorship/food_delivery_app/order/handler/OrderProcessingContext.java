@@ -31,7 +31,6 @@ public class OrderProcessingContext {
     private final PlaceOrderRequestDto requestDto;
     private final Supplier<Cart> cartSupplier;
     private final Supplier<Set<CartItem>> cartItemsSupplier;
-    private final Runnable cartLocker;
     private final Supplier<Customer> customerSupplier;
     private final Supplier<Coupon> couponSupplier;
 
@@ -69,10 +68,6 @@ public class OrderProcessingContext {
             cartItems = cartItemsSupplier.get();
 
         return cartItems;
-    }
-
-    public void lockCart() {
-        cartLocker.run();
     }
 
 

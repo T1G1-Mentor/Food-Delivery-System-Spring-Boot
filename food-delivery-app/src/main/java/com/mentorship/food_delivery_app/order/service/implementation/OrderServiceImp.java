@@ -71,7 +71,7 @@ public class OrderServiceImp implements OrderService {
         this.notifyOrderPlaced(orderProcessingContext.getCustomerEmail(),
                 orderResponse.orderId());
 
-        return handler.handle(orderProcessingContext);
+        return orderResponse;
     }
 
 
@@ -186,9 +186,8 @@ public class OrderServiceImp implements OrderService {
     private OrderProcessingContext buildContext(PlaceOrderRequestDto request, UUID customerId) {
         return new OrderProcessingContext(
                 request,
-                () -> cartService.getCartByIdAndCustomerId(request.cartId(), customerId),// customer supplier
-                () -> cartService.getCartItemsWithMenuItemsByCartId(request.cartId()), // cart items supplier
-                () -> cartService.lockCart(request.cartId()), // lock cart runnable
+                () -> cartService.getCartByIdAndCustomerIdWithLock(request.cartId(), customerId),// cart fetch and lock supplier
+                () -> cartService.getCartItemsWithDetails(request.cartId()), // cart items supplier
                 () -> customerService.getCustomerReference(customerId), // customer supplier
                 () -> restaurantService.getRestaurantCoupon(request.couponId()) // coupon supplier
         );

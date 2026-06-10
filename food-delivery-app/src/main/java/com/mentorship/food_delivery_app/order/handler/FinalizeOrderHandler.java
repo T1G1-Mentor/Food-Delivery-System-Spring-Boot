@@ -19,8 +19,10 @@ import com.mentorship.food_delivery_app.order.repository.OrderRepository;
 import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.query.NativeQuery;
 
 import java.util.Set;
+import java.util.concurrent.RecursiveTask;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -41,16 +43,17 @@ public class FinalizeOrderHandler extends OrderHandler {
 
     public Order createAndPersistOrder(OrderProcessingContext context) {
         DeliveryAddressDto deliveryAddressDto = context.getRequestDto().deliveryAddress();
-        Customer localCustomer = context.getCustomer();
-        Cart localCart = context.getCart();
+        Customer customer = context.getCustomer();
+        Cart cart = context.getCart();
         RestaurantBranch restaurantBranch = context.getRestaurantBranch();
         Coupon coupon = context.getCoupon();
+        Set<CartItem> cartItems=context.getCartItems();
 
-        DeliveryAddress deliveryAddressToPersist = resolveDeliveryAddress(localCustomer, deliveryAddressDto);
+        DeliveryAddress deliveryAddressToPersist = resolveDeliveryAddress(customer, deliveryAddressDto);
 
-        OrderPricing pricing = OrderPricing.calculate(localCart, coupon);
+        OrderPricing pricing = OrderPricing.calculate(cart, cartItems, coupon);
         Order order = Order.builder()
-                .customer(localCustomer)
+                .customer(customer)
                 .deliveryAddress(deliveryAddressToPersist)
                 .branch(restaurantBranch)
                 .subtotal(pricing.subtotal())
@@ -61,12 +64,11 @@ public class FinalizeOrderHandler extends OrderHandler {
                 .note(context.getRequestDto().orderNotes())
                 .build();
 
-        order.setItems(buildOrderItems(context.getCartItems(), order));
+        order.setItems(buildOrderItems(cartItems, order));
 
-        Order savedOrder = orderRepository.save(order);
+        OrderTracking.createNewOrderTracking(OrderStatus.PENDING, OrderStatus.PENDING.getDescription(), order);
+        return orderRepository.save(order);
 
-        OrderTracking.createNewOrderTracking(OrderStatus.PENDING, OrderStatus.PENDING.getDescription(), savedOrder);
-        return savedOrder;
     }
 
     private DeliveryAddress resolveDeliveryAddress(Customer customer, DeliveryAddressDto deliveryAddressDto) {
