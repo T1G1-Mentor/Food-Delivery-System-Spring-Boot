@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface OrderService {
-    OrderResponseDto placeOrder(PlaceOrderRequestDto request);
+    OrderResponseDto placeOrder(PlaceOrderRequestDto request, UUID customerId);
 
     void updateOrderStatus(UUID orderId);
 
