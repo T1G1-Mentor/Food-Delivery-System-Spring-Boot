@@ -1,37 +1,26 @@
 package com.mentorship.food_delivery_app.order.service.implementation;
 
-import com.mentorship.food_delivery_app.cart.entity.Cart;
-import com.mentorship.food_delivery_app.cart.entity.CartItem;
 import com.mentorship.food_delivery_app.cart.service.contract.CartService;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
-import com.mentorship.food_delivery_app.common.exceptions.ResourceUnavailableException;
 import com.mentorship.food_delivery_app.common.service.contract.EmailService;
-import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
-import com.mentorship.food_delivery_app.order.dto.OrderPricing;
-import com.mentorship.food_delivery_app.order.dto.request.DeliveryAddressDto;
 import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto;
-import com.mentorship.food_delivery_app.order.entity.DeliveryAddress;
 import com.mentorship.food_delivery_app.order.entity.Order;
-import com.mentorship.food_delivery_app.order.entity.OrderItem;
 import com.mentorship.food_delivery_app.order.entity.OrderTracking;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
 import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
 import com.mentorship.food_delivery_app.order.handler.*;
-import com.mentorship.food_delivery_app.order.mapper.OrderItemMapper;
 import com.mentorship.food_delivery_app.order.mapper.OrderMapper;
 import com.mentorship.food_delivery_app.order.repository.OrderRepository;
 import com.mentorship.food_delivery_app.order.service.contract.OrderService;
 import com.mentorship.food_delivery_app.order.service.contract.OrderTrackingService;
 import com.mentorship.food_delivery_app.payment.service.PaymentService;
-import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
-import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
 import com.mentorship.food_delivery_app.user.entity.User;
 import com.mentorship.food_delivery_app.user.service.contract.UserService;
@@ -43,10 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -66,9 +52,9 @@ public class OrderServiceImp implements OrderService {
     @Override
     public OrderResponseDto placeOrder(PlaceOrderRequestDto request, UUID customerId) {
 
-        OrderProcessingContext orderProcessingContext =  buildContext(request, customerId);
+        OrderProcessingContext orderProcessingContext = buildContext(request, customerId);
 
-        OrderHandler handler=OrderHandler.processOrder(
+        OrderHandler handler = OrderHandler.processOrder(
                 // validate cart exists, unlocked, and current restaurant matches the request's restaurant
                 new CartValidationHandler(),
 //                validate that the restaurant is in it's working hours
@@ -76,14 +62,17 @@ public class OrderServiceImp implements OrderService {
 //                validate that all menu items are available, and they belong to the same restaurant
                 new MenuItemValidationHandler(),
 //                finalizing the order, creating new tracking in pending status until the payment is processed and the restaurants accepts the order.
-                new FinalizeOrderHandler(emailService),
+                new FinalizeOrderHandler(orderRepository, orderMapper),
 //                Processing a dummy payment
                 new PaymentProcessHandler(paymentService)
-                );
+        );
+        OrderResponseDto orderResponse = handler.handle(orderProcessingContext);
 
-    return handler.handle(orderProcessingContext);
+        this.notifyOrderPlaced(orderProcessingContext.getCustomerEmail(),
+                orderResponse.orderId());
+
+        return handler.handle(orderProcessingContext);
     }
-
 
 
     @Transactional
@@ -95,32 +84,25 @@ public class OrderServiceImp implements OrderService {
             throw new CancelledOrderException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 
         OrderStatus status = OrderStatus.CANCELLED;
-        log.info("Initiating status update for Order ID: {} to Status: {}", orderId, status);
 
         OrderTracking.createNewOrderTracking(status, status.getDescription(), order);
 
-        log.debug("Dispatching asynchronous status update email to: {}", order.getCustomerEmail());
         sendStatusUpdateEmail(order.getCustomerEmail(), status.getDescription());
 
-        log.info("Successfully completed status update for Order ID: {}", orderId);
 
     }
 
     @Transactional
     @Override
-    public void updateOrderStatus(UUID orderId) {
+    public void handlerOrderStatusUpdate(UUID orderId) {
 
         Order order = getAndValidateOrder(orderId);
         OrderStatus newStatus = getNextStatus(order.getStatus());
 
-        log.info("Initiating status update for Order ID: {} to Status: {}", orderId, newStatus);
-
         OrderTracking.createNewOrderTracking(newStatus, newStatus.getDescription(), order);
 
-        log.debug("Dispatching asynchronous status update email to: {}", order.getCustomerEmail());
         sendStatusUpdateEmail(order.getCustomerEmail(), newStatus.getDescription());
 
-        log.info("Successfully completed status update for Order ID: {}", orderId);
     }
 
     @Transactional(readOnly = true)
@@ -203,16 +185,23 @@ public class OrderServiceImp implements OrderService {
 
     private OrderProcessingContext buildContext(PlaceOrderRequestDto request, UUID customerId) {
         return new OrderProcessingContext(
-                ()-> cartService.getCartByIdAndCustomerId(request.cartId(), customerId),// customer supplier
-                ()->cartService.getCartItemsWithMenuItemsByCartId(request.cartId()), // cart items supplier
-                ()->cartService.lockCart(request.cartId()), // lock cart runnable
-                ()-> customerService.getCustomerReference(customerId), // customer supplier
-                ()-> restaurantService.getRestaurantCoupon(request.couponId()), // coupon supplier
-                orderRepository,
                 request,
-                orderMapper
+                () -> cartService.getCartByIdAndCustomerId(request.cartId(), customerId),// customer supplier
+                () -> cartService.getCartItemsWithMenuItemsByCartId(request.cartId()), // cart items supplier
+                () -> cartService.lockCart(request.cartId()), // lock cart runnable
+                () -> customerService.getCustomerReference(customerId), // customer supplier
+                () -> restaurantService.getRestaurantCoupon(request.couponId()) // coupon supplier
         );
     }
 
+    private void notifyOrderPlaced(String customerEmail, UUID orderId) {
+
+        emailService.sendEmailAsync(
+                customerEmail,
+                "Order Confirmation",
+                "Your order has been placed. Order ID: " + orderId
+        );
+
+    }
 
 }

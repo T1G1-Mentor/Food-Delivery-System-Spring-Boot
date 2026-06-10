@@ -227,7 +227,7 @@ class CancelOrderTest {
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
-        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
                 .isInstanceOf(CancelledOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 

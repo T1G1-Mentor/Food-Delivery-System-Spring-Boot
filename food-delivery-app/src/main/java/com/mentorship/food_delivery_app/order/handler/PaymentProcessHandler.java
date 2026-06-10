@@ -10,7 +10,7 @@ public class PaymentProcessHandler extends OrderHandler {
 
     @Override
     public OrderResponseDto handle(OrderProcessingContext context) {
-//        TODO: Create payment strategy
+//        TODO: Create payment strategy & handle the payment to proceed with order status payment failed if payment was not successful
         paymentService.processPayment();// dummy payment
 
         return this.handleNext(context);

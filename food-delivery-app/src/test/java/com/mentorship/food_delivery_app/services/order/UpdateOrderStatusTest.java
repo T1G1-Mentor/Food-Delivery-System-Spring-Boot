@@ -85,7 +85,7 @@ class UpdateOrderStatusTest {
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        orderService.updateOrderStatus(orderId);
+        orderService.handlerOrderStatusUpdate(orderId);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.IN_PROGRESS);
 
@@ -119,7 +119,7 @@ class UpdateOrderStatusTest {
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_NOT_FOUND.getMessage());
 
@@ -140,7 +140,7 @@ class UpdateOrderStatusTest {
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
                 .isInstanceOf(DeliveredOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
 
@@ -162,7 +162,7 @@ class UpdateOrderStatusTest {
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
                 .isInstanceOf(CancelledOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 

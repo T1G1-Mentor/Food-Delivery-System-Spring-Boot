@@ -1,9 +1,9 @@
 package com.mentorship.food_delivery_app.order.service.contract;
 
 import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
+import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
 import org.springframework.data.domain.Page;
@@ -15,7 +15,7 @@ import java.util.UUID;
 public interface OrderService {
     OrderResponseDto placeOrder(PlaceOrderRequestDto request, UUID customerId);
 
-    void updateOrderStatus(UUID orderId);
+    void handlerOrderStatusUpdate(UUID orderId);
 
     void cancelOrder(UUID orderId);
 

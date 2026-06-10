@@ -46,7 +46,7 @@ public class OrderController {
     // @PreAuthorize("hasRole('ADMIN')") // spring security is not enabled yet
     @PostMapping("/{orderId}/status")
     public ResponseEntity<Void> updateStatus(@PathVariable UUID orderId) {
-        orderService.updateOrderStatus(orderId);
+        orderService.handlerOrderStatusUpdate(orderId);
         return ResponseEntity.noContent().build();
     }
 
