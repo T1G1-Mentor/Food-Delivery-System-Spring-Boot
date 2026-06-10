@@ -6,8 +6,10 @@ import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import com.mentorship.food_delivery_app.restaurant.exceptions.CouponNotFoundException;
 import com.mentorship.food_delivery_app.restaurant.exceptions.ItemNotFoundException;
+import com.mentorship.food_delivery_app.restaurant.exceptions.RestaurantBranchNotFoundException;
 import com.mentorship.food_delivery_app.restaurant.repository.CouponRepository;
 import com.mentorship.food_delivery_app.restaurant.repository.MenuItemRepository;
+import com.mentorship.food_delivery_app.restaurant.repository.RestaurantBranchRepository;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class RestaurantServiceImp implements RestaurantService {
     private final MenuItemRepository menuItemRepository;
     private final CouponRepository couponRepository;
+    private final RestaurantBranchRepository restaurantBranchRepository;
 
     @Override
     public MenuItem getMenuItemById(UUID menuItemId) {
@@ -29,8 +32,21 @@ public class RestaurantServiceImp implements RestaurantService {
     }
 
     @Override
-    public Coupon getRestaurantCoupon(UUID couponId, RestaurantBranch branch) {
-        return couponRepository.findByCouponIdAndRestaurant(couponId, branch.getRestaurant())
+    public Coupon getRestaurantCoupon(UUID couponId) {
+        return couponRepository.findByCouponId(couponId)
                 .orElseThrow(() -> new CouponNotFoundException(ErrorMessage.COUPON_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    public List<MenuItem> getMenuItemsByIds(List<UUID> menuItemIds){
+        return menuItemRepository.findMenuItemsByIds(menuItemIds);
+    }
+
+    @Override
+    public RestaurantBranch getRestaurantBranchById(UUID restaurantBranchId) {
+
+        return restaurantBranchRepository.findByRestaurantBranchId(restaurantBranchId)
+                .orElseThrow(()->
+                        new RestaurantBranchNotFoundException(ErrorMessage.RESTAURANT_BRANCH_NOT_FOUND.getMessage()));
     }
 }
