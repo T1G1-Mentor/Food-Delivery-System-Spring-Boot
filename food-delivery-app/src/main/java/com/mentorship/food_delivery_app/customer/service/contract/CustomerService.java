@@ -41,4 +41,6 @@ public interface CustomerService {
     Customer getCustomerById(UUID customerId);
 
     String getCustomerPreferredPaymentType(UUID customerId);
+
+    Customer getCustomerReference(UUID customerId);
 }
