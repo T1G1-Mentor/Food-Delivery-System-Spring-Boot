@@ -1,8 +1,8 @@
 package com.mentorship.food_delivery_app.order.service.implementation;
 
 import com.mentorship.food_delivery_app.cart.service.contract.CartService;
+import com.mentorship.food_delivery_app.common.dto.EmailEventRecord;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
-import com.mentorship.food_delivery_app.common.service.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
 import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
@@ -26,6 +26,7 @@ import com.mentorship.food_delivery_app.user.entity.User;
 import com.mentorship.food_delivery_app.user.service.contract.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ import java.util.UUID;
 public class OrderServiceImp implements OrderService {
     private final OrderRepository orderRepository;
     private final UserService userService;
-    private final EmailService emailService;
+    private final ApplicationEventPublisher publisher;
     private final CustomerService customerService;
     private final PaymentService paymentService;
     private final RestaurantService restaurantService;
@@ -179,8 +180,10 @@ public class OrderServiceImp implements OrderService {
 
     //    dummy template
     private void sendStatusUpdateEmail(String email, String staus) {
-        emailService.sendEmailAsync(email, "Order Status Update", String.format
+        EmailEventRecord emailEventRecord = new EmailEventRecord(email,
+                "Order Status Update", String.format
                 ("Your order status just got updated, %s", staus));
+        publisher.publishEvent(emailEventRecord);
     }
 
     private OrderProcessingContext buildContext(PlaceOrderRequestDto request, UUID customerId) {
@@ -194,12 +197,11 @@ public class OrderServiceImp implements OrderService {
     }
 
     private void notifyOrderPlaced(String customerEmail, UUID orderId) {
-
-        emailService.sendEmailAsync(
-                customerEmail,
+        EmailEventRecord emailEventRecord = new EmailEventRecord(customerEmail,
                 "Order Confirmation",
-                "Your order has been placed. Order ID: " + orderId
-        );
+                "Your order has been placed. Order ID: " + orderId);
+        publisher.publishEvent(emailEventRecord);
+
 
     }
 
