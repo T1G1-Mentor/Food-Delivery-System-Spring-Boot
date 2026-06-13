@@ -18,8 +18,8 @@ import com.mentorship.food_delivery_app.customer.service.contract.CustomerServic
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
-import com.mentorship.food_delivery_app.user.exceptions.CartItemNotFoundException;
-import com.mentorship.food_delivery_app.user.exceptions.CartNotFoundException;
+import com.mentorship.food_delivery_app.cart.exceptions.CartItemNotFoundException;
+import com.mentorship.food_delivery_app.cart.exceptions.CartNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

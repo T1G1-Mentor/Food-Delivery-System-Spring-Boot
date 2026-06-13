@@ -17,12 +17,11 @@ CREATE TABLE IF NOT EXISTS role_permission(
     role_id INT NOT NULL -- REFERENCES role(role_id)
 );
 CREATE TABLE IF NOT EXISTS user_type(
-    user_type_id INT GENERATED always as IDENTITY,
-    user_type_name VARCHAR(20) NOT NULL
+    user_type_name VARCHAR(20) PRIMARY KEY
 );
 CREATE TABLE IF NOT EXISTS users(
   user_id UUID  PRIMARY KEY DEFAULT uuidv7(),
-  user_type_id INT NOT NULL, -- REFERENCES user_type(user_type_id)
+  user_type_name VARCHAR(20) NOT NULL, -- REFERENCES user_type(user_type_id)
   user_first_name VARCHAR(50) NOT NULL,
   user_last_name VARCHAR(50) NOT NULL ,
   user_birth_date DATE,
@@ -233,3 +232,13 @@ INSERT INTO order_status  (order_status)
          ('ON_THE_WAY'),
          ('DELIVERED'),
          ('CANCELLED');
+
+INSERT INTO user_type (user_type_name)
+    VALUES
+          ('USER_ADMIN'),
+          ('CUSTOMER');
+
+INSERT INTO role (role_name)
+    VALUES
+        ('ROLE_ADMIN'),('ROLE_CUSTOMER');
+

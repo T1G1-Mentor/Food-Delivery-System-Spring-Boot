@@ -134,14 +134,14 @@ public class CustomerServiceImp implements CustomerService {
     @Override
     public Customer getCustomerById(UUID customerId) {
         return customerRepository.findById(customerId)
-                .orElseThrow(()->
+                .orElseThrow(() ->
                         new CustomerNotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND.getMessage()));
     }
 
     @Override
     public String getCustomerPreferredPaymentType(UUID customerId) {
-        PaymentMethod preferredPayment =customerRepository.getPreferredPaymentById(customerId)
-                .orElseThrow(()->
+        PaymentMethod preferredPayment = customerRepository.getPreferredPaymentById(customerId)
+                .orElseThrow(() ->
                         new PreferredPaymentWasNotConfiguredException(ErrorMessage.PREFERRED_PAYMENT_NOT_FOUND.getMessage()
                         ));
         return preferredPayment.getExposableName();
@@ -150,5 +150,11 @@ public class CustomerServiceImp implements CustomerService {
     @Override
     public Customer getCustomerReference(UUID customerId) {
         return customerRepository.getReferenceById(customerId);
+    }
+
+    @Override
+    public UUID getCustomerIdByUserId(UUID userId) {
+        return customerRepository.findIdByUserId(userId).orElseThrow(() -> new CustomerNotFoundException
+                (ErrorMessage.CUSTOMER_NOT_FOUND.getMessage()));
     }
 }

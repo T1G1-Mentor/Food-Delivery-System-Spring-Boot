@@ -13,12 +13,22 @@ import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException
 import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
 import com.mentorship.food_delivery_app.restaurant.exceptions.*;
+import com.mentorship.food_delivery_app.security.exceptions.InvalidTokenException;
+import com.mentorship.food_delivery_app.cart.exceptions.CartItemNotFoundException;
+import com.mentorship.food_delivery_app.cart.exceptions.CartNotFoundException;
+import com.mentorship.food_delivery_app.user.exceptions.UserEmailAlreadyExistsException;
+import com.mentorship.food_delivery_app.user.exceptions.UserRoleNotFoundException;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -69,6 +79,51 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, "Invalid data type provided.");
         }
         return errors;
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidTokenClaim(InvalidTokenException ex) {
+        log.warn("Security Warning: Rejected token due to missing claims. Reason: {}", ex.getMessage());
+
+        return buildErrorResponse(
+                HttpStatus.UNAUTHORIZED,
+                HttpStatus.UNAUTHORIZED.getReasonPhrase()
+        );
+    }
+
+    // 2. Handle native JWT parsing errors (Expired, Tampered, Malformed)
+    @ExceptionHandler({ExpiredJwtException.class, SignatureException.class, MalformedJwtException.class})
+    public ResponseEntity<ErrorResponseDto> handleJwtParsing(Exception ex) {
+        log.warn("Security Warning: Invalid JWT processing. Type: {}, {}", ex.getClass().getSimpleName(), ex.getMessage());
+
+        return buildErrorResponse(
+                HttpStatus.UNAUTHORIZED,
+                String.format("%s The provided authentication token is expired or invalid.", HttpStatus.UNAUTHORIZED.getReasonPhrase())
+        );
+
+    }
+
+    // 3. Catch-all for any other Spring Security Authentication exceptions
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponseDto> handleAuthentication(AuthenticationException ex) {
+        log.warn("Security Warning: Authentication failed. Reason: {}", ex.getMessage());
+
+        return buildErrorResponse(
+                HttpStatus.UNAUTHORIZED,
+                "Unauthorized: Authentication failed."
+        );
+
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponseDto> handleBadCredentials(BadCredentialsException ex) {
+        log.warn("Security Warning: Bad Credentials. Reason: {}", ex.getMessage());
+
+        return buildErrorResponse(
+                HttpStatus.UNAUTHORIZED,
+                "Unauthorized: Bad Credentials. Invalid email or password."
+        );
+
     }
     // -------------------------------------------------------------------
     //  VALIDATION EXCEPTIONS,
@@ -267,6 +322,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getLocalizedMessage());
     }
 
+    @ExceptionHandler(CartNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleCartNotFound(CartItemNotFoundException ex) {
+        log.warn("Cart Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
 
     @ExceptionHandler(ItemNotAvailableException.class)
     public ResponseEntity<ErrorResponseDto> handleItemNotAvailable(ItemNotAvailableException ex) {
@@ -350,6 +412,7 @@ public class GlobalExceptionHandler {
 
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
     }
+
     @ExceptionHandler(CustomerHasNotOrderedException.class)
     public ResponseEntity<ErrorResponseDto> handleCustomerHasNotOrdered(CustomerHasNotOrderedException ex) {
         log.warn("Customer Has Not Ordered Exception was thrown with cause: {}", ex.getLocalizedMessage());
@@ -363,6 +426,7 @@ public class GlobalExceptionHandler {
 
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getLocalizedMessage());
     }
+
     // -------------------------------------------------------------------
     //  ORDER EXCEPTIONS
     // -------------------------------------------------------------------
@@ -385,5 +449,23 @@ public class GlobalExceptionHandler {
         log.warn("Order Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
 
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    // -------------------------------------------------------------------
+    //  USER EXCEPTIONS
+    // -------------------------------------------------------------------
+
+    @ExceptionHandler(UserRoleNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleUserRoleNotFound(UserRoleNotFoundException ex) {
+        log.warn("User Role Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(UserEmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponseDto> handleEmailAlreadyExists(UserEmailAlreadyExistsException ex) {
+        log.warn("Email already exists Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
     }
 }

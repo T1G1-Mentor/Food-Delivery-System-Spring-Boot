@@ -12,3 +12,5 @@ secret.env
 
 # VS Code IDE
 .vscode/
+#secrets
+/food-delivery-app/src/main/resources/keys/*

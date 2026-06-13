@@ -23,7 +23,7 @@ public class Customer {
     @Column(name = "customer_id")
     private UUID customerId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "customer_user_id", nullable = false, unique = true)
     private User user;
 
