@@ -4,6 +4,7 @@ import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface RestaurantService {
@@ -17,5 +18,9 @@ public interface RestaurantService {
      */
     MenuItem getMenuItemById(UUID menuItemId);
 
-    Coupon getRestaurantCoupon(UUID couponId, RestaurantBranch branch);
+    Coupon getRestaurantCoupon(UUID couponId);
+
+    List<MenuItem> getMenuItemsByIds(List<UUID> menuItemIds);
+
+    RestaurantBranch getRestaurantBranchById(UUID restaurantBranchId);
 }

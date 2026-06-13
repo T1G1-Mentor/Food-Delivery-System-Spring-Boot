@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.order.mapper;
 
+import com.mentorship.food_delivery_app.order.dto.request.DeliveryAddressDto;
 import com.mentorship.food_delivery_app.order.dto.response.*;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.entity.OrderItem;
@@ -17,13 +18,16 @@ public class OrderMapper {
     private final OrderItemMapper orderItemMapper;
 
     public OrderResponseDto toResponse(Order order) {
-        return new OrderResponseDto(
-                order.getOrderId(),
-                order.getSubtotal(),
-                order.getFee(),
-                order.getDiscountValue(),
-                order.getTotal(),
-                order.getItems().stream().map(orderItemMapper::toResponse).toList());
+        List<OrderItemResponseDto> orderItems= order.getItems().stream().map(orderItemMapper::toResponse).toList();
+        return OrderResponseDto.builder().orderId(order.getOrderId())
+                .restaurantBranchId(order.getBranch().getRestaurantBranchId())
+                .restaurantName(order.getRestaurantBranchName())
+                .orderSubtotal(order.getSubtotal())
+                .orderFee(order.getFee())
+                .orderDiscount(order.getDiscountValue())
+                .orderTotal(order.getTotal())
+                .orderDeliveryAddress(DeliveryAddressDto.from(order.getDeliveryAddress()))
+                .orderItems(orderItems).build();
     }
 
     public OrderListItemDto toListItem(Order order) {

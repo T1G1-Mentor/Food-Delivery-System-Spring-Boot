@@ -146,4 +146,9 @@ public class CustomerServiceImp implements CustomerService {
                         ));
         return preferredPayment.getExposableName();
     }
+
+    @Override
+    public Customer getCustomerReference(UUID customerId) {
+        return customerRepository.getReferenceById(customerId);
+    }
 }

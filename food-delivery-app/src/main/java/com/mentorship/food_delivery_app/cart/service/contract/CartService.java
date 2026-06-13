@@ -54,4 +54,10 @@ public interface CartService {
     Cart getCartByCustomerId(UUID customerId);
 
     Set<CartItem> getCartItemsWithMenuItemsByCartId(UUID cartId);
+
+    Set<CartItem> getCartItemsWithDetails(UUID cartId);
+
+    Cart getCartByIdAndCustomerId(UUID cartId, UUID customerId);
+
+    Cart getCartByIdAndCustomerIdWithLock(UUID cartId, UUID customerId);
 }

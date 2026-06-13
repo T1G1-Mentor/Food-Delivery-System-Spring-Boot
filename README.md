@@ -262,7 +262,108 @@ flowchart TB
 
 
 ```
+##### 4.2.2 Place Order (Chain of Responsibility) Sequence Diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+    participant Service as OrderServiceImpl
+    participant Context as OrderProcessingContext
+    participant H1 as CartValidation
+    participant H2 as OpenTimeValidation
+    participant H3 as MenuItemValidation
+    participant H4 as FinalizeOrder
+    participant H5 as PaymentProcess
+    participant DB as PostgreSQL
+    participant Pub as EventPublisher
+    participant Email as EmailService
 
+    Client->>Service: placeOrder(request, customerId)
+    activate Service
+    
+    Note over Service, Context: Phase 1: Context Initialization
+    Service->>Context: buildContext(lambdas...)
+    activate Context
+    Context-->>Service: context
+    deactivate Context
+
+    Note over Service, H5: Phase 2: Explicit Chain Execution
+    Service->>H1: handle(context)
+    activate H1
+
+    %% Handler 1
+    H1->>Context: getCart()
+    Context->>DB: getCartByIdAndCustomerIdWithLock()
+    DB-->>Context: Cart (Locked)
+    H1->>H1: validate restaurant match
+    H1->>H1: handleNext(context)
+    H1->>H2: handle(context)
+    activate H2
+
+    %% Handler 2
+
+    H2->>Context: getRestaurantBranch() 
+    H2->>H2: validate branch.isOpen()
+    H2->>H2: handleNext(context)
+    H2->>H3: handle(context)
+    activate H3
+
+    %% Handler 3
+    H3->>Context: getMenuItems()
+    Context->>Context: getCartItems()
+    Context->>DB: getCartItemsWithDetails() [JOIN FETCH]
+    DB-->>Context: Hydrated Items
+    H3->>H3: validateCartItemsAvailability()
+    H3->>H3: handleNext(context)
+    H3->>H4: handle(context)
+    activate H4
+
+    %% Handler 4
+    H4->>Context: getCustomer() & getCoupon()
+    Context->>DB: Fetch remaining dependencies
+    H4->>H4: createAndPersistOrder() (Build Graph in Memory)
+    H4->>DB: orderRepository.save(order)
+    DB-->>H4: savedOrder
+    H4->>Context: setResponseDto(mapped DTO)
+    H4->>H4: handleNext(context)
+    H4->>H5: handle(context)
+    activate H5
+    
+    %% Handler 5
+    H5->>H5: paymentService.processPayment()
+    H5->>H5: handleNext(context) (next == null)
+    
+    %% The Stack Unwinds
+    Note over H1, H5: The Call Stack Returns (Unwinding)
+    H5-->>H4: orderResponseDto
+    deactivate H5
+    H4-->>H3: orderResponseDto
+    deactivate H4
+    H3-->>H2: orderResponseDto
+    deactivate H3
+    H2-->>H1: orderResponseDto
+    deactivate H2
+    H1-->>Service: orderResponseDto
+    deactivate H1
+
+    Note over Service, Pub: Phase 3: Event Publication
+    Service->>Context: getCustomerEmail()
+    Service->>Pub: publishEvent(new EmailEventRecord(...))
+    
+    Note over Service, DB: @Transactional Boundary Ends -> Commit
+    Service-->>Client: orderResponseDto
+    deactivate Service
+    
+    Note over DB, Email: Phase 4: Async Post-Commit Execution
+    DB-->>Pub: Transaction SUCCESS Signal
+    activate Pub
+    Pub->>Email: sendEmailAsync(EmailEventRecord)
+    deactivate Pub
+    activate Email
+    Email-->>Email: Attempt SMTP send on background thread
+    deactivate Email
+
+```
 ---
 
 ### 5. Customer Management

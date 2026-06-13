@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.common.enums;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -23,7 +24,10 @@ public enum ErrorMessage {
     RESTAURANT_NOT_FOUND("Restaurant not found."),
     RESTAURANT_RATE_NOT_FOUND("Rating not found."),
     CUSTOMER_HAS_NOT_ORDERED("You must have a delivered order from this restaurant before rating it."),
-    CUSTOMER_ALREADY_RATED("You have already rated this restaurant.");
+    CUSTOMER_ALREADY_RATED("You have already rated this restaurant."),
+    RESTAURANT_MISMATCH("This restaurant does not match, please make sure that all items belongs to the same restaurant."),
+    RESTAURANT_BRANCH_NOT_FOUND("This restaurant branch does not exist."),
+    RESTAURANT_BRANCH_CLOSED("The restaurant is currently closed.");
 
     private final String message;
 

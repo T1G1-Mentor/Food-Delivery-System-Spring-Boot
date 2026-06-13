@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.services.order;
 
+import com.mentorship.food_delivery_app.common.dto.EmailEventRecord;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.common.service.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
@@ -14,9 +15,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -24,6 +28,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -34,8 +40,9 @@ class CancelOrderTest {
     @Mock
     private UserService userService;
     @Mock
-    private EmailService emailService;
-
+    private ApplicationEventPublisher applicationEventPublisher;
+    @Captor
+    private ArgumentCaptor<EmailEventRecord> emailEventCaptor;
 
     @InjectMocks
     private OrderServiceImp orderService;
@@ -95,13 +102,16 @@ class CancelOrderTest {
                     assertThat(appendedTracking.getOrder()).isEqualTo(order); // Validates Bidirectional mapping!
                 });
 
-        // Assert - 3. Verify External Service Calls
-        verify(emailService).sendEmailAsync(
-                eq(order.getCustomerEmail()),
-                eq("Order Status Update"),
-                contains(OrderStatus.CANCELLED.getExposableName())
-        );
-        verify(emailService, times(1)).sendEmailAsync(any(), any(), any());
+// 1. Verify that the publisher was called exactly once, and capture the event payload
+        verify(applicationEventPublisher, times(1)).publishEvent(emailEventCaptor.capture());
+
+// 2. Extract the captured record
+        EmailEventRecord publishedEvent = emailEventCaptor.getValue();
+
+// 3. Assert the individual fields inside the record
+        assertEquals(order.getCustomerEmail(), publishedEvent.to());
+        assertEquals("Order Status Update", publishedEvent.subject());
+        assertTrue(publishedEvent.body().contains(OrderStatus.CANCELLED.getExposableName()));
     }
 
     @Test
@@ -132,13 +142,16 @@ class CancelOrderTest {
                     assertThat(appendedTracking.getOrder()).isEqualTo(order); // Validates Bidirectional mapping!
                 });
 
-        // Assert - 3. Verify External Service Calls
-        verify(emailService).sendEmailAsync(
-                eq(order.getCustomerEmail()),
-                eq("Order Status Update"),
-                contains(OrderStatus.CANCELLED.getExposableName())
-        );
-        verify(emailService, times(1)).sendEmailAsync(any(), any(), any());
+// 1. Verify that the publisher was called exactly once, and capture the event payload
+        verify(applicationEventPublisher, times(1)).publishEvent(emailEventCaptor.capture());
+
+// 2. Extract the captured record
+        EmailEventRecord publishedEvent = emailEventCaptor.getValue();
+
+// 3. Assert the individual fields inside the record
+        assertEquals(order.getCustomerEmail(), publishedEvent.to());
+        assertEquals("Order Status Update", publishedEvent.subject());
+        assertTrue(publishedEvent.body().contains(OrderStatus.CANCELLED.getExposableName()));
     }
 
     @Test
@@ -169,13 +182,16 @@ class CancelOrderTest {
                     assertThat(appendedTracking.getOrder()).isEqualTo(order); // Validates Bidirectional mapping!
                 });
 
-        // Assert - 3. Verify External Service Calls
-        verify(emailService).sendEmailAsync(
-                eq(order.getCustomerEmail()),
-                eq("Order Status Update"),
-                contains(OrderStatus.CANCELLED.getExposableName())
-        );
-        verify(emailService, times(1)).sendEmailAsync(any(), any(), any());
+// 1. Verify that the publisher was called exactly once, and capture the event payload
+        verify(applicationEventPublisher, times(1)).publishEvent(emailEventCaptor.capture());
+
+// 2. Extract the captured record
+        EmailEventRecord publishedEvent = emailEventCaptor.getValue();
+
+// 3. Assert the individual fields inside the record
+        assertEquals(order.getCustomerEmail(), publishedEvent.to());
+        assertEquals("Order Status Update", publishedEvent.subject());
+        assertTrue(publishedEvent.body().contains(OrderStatus.CANCELLED.getExposableName()));
     }
 
     @Test
@@ -206,13 +222,16 @@ class CancelOrderTest {
                     assertThat(appendedTracking.getOrder()).isEqualTo(order); // Validates Bidirectional mapping!
                 });
 
-        // Assert - 3. Verify External Service Calls
-        verify(emailService).sendEmailAsync(
-                eq(order.getCustomerEmail()),
-                eq("Order Status Update"),
-                contains(OrderStatus.CANCELLED.getExposableName())
-        );
-        verify(emailService, times(1)).sendEmailAsync(any(), any(), any());
+// 1. Verify that the publisher was called exactly once, and capture the event payload
+        verify(applicationEventPublisher, times(1)).publishEvent(emailEventCaptor.capture());
+
+// 2. Extract the captured record
+        EmailEventRecord publishedEvent = emailEventCaptor.getValue();
+
+// 3. Assert the individual fields inside the record
+        assertEquals(order.getCustomerEmail(), publishedEvent.to());
+        assertEquals("Order Status Update", publishedEvent.subject());
+        assertTrue(publishedEvent.body().contains(OrderStatus.CANCELLED.getExposableName()));
     }
 
     @Test
@@ -227,11 +246,11 @@ class CancelOrderTest {
         when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
-        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
                 .isInstanceOf(CancelledOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 
-        verifyNoInteractions(emailService);
+        verifyNoInteractions(applicationEventPublisher);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
         assertThat(order.getTrackingHistory()).isEmpty();
     }

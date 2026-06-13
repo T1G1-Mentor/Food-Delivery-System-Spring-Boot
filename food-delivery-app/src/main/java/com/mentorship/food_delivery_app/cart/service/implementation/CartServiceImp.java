@@ -150,6 +150,22 @@ public class CartServiceImp implements CartService {
         return cartItemRepository.findAllByCartId(cartId);
     }
 
+    @Override
+    public Set<CartItem> getCartItemsWithDetails(UUID cartId) {
+        return cartItemRepository.findWithMenuItemsRestaurantBranchByCartId(cartId);
+    }
+
+    @Override
+    public Cart getCartByIdAndCustomerId(UUID cartId, UUID customerId) {
+        return cartRepository.findCarWithRestaurantBranchByIdAndCustomerId(cartId, customerId)
+                .orElseThrow(()->new CartNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    public Cart getCartByIdAndCustomerIdWithLock(UUID cartId, UUID customerId) {
+        return cartRepository.findAndLockWithRestBranchByIdAndCustomerId(cartId, customerId);
+    }
+
     private Cart validateAndGetLoggedInCustomerCart() {
         Customer customer = customerService.
                 getLoggedinCustomer();

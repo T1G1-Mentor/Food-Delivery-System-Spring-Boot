@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.services.order;
 
+import com.mentorship.food_delivery_app.common.dto.EmailEventRecord;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.common.service.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
@@ -16,9 +17,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -26,6 +30,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -37,7 +43,10 @@ class UpdateOrderStatusTest {
     @Mock
     private UserService userService;
     @Mock
-    private EmailService emailService;
+    private ApplicationEventPublisher applicationEventPublisher;
+
+    @Captor
+    private ArgumentCaptor<EmailEventRecord> emailEventCaptor;
 
 
     @InjectMocks
@@ -85,7 +94,7 @@ class UpdateOrderStatusTest {
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        orderService.updateOrderStatus(orderId);
+        orderService.handlerOrderStatusUpdate(orderId);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.IN_PROGRESS);
 
@@ -99,13 +108,14 @@ class UpdateOrderStatusTest {
                     assertThat(appendedTracking.getOrder()).isEqualTo(order); // Validates Bidirectional mapping!
                 });
 
-        // Assert - 3. Verify External Service Calls
-        verify(emailService).sendEmailAsync(
-                eq(order.getCustomerEmail()),
-                eq("Order Status Update"),
-                contains(exposableName)
-        );
-        verify(emailService, times(1)).sendEmailAsync(any(), any(), any());
+// Assert - 3. Verify Event Publication
+        verify(applicationEventPublisher, times(1)).publishEvent(emailEventCaptor.capture());
+
+        EmailEventRecord publishedEvent = emailEventCaptor.getValue();
+
+        assertEquals(order.getCustomerEmail(), publishedEvent.to());
+        assertEquals("Order Status Update", publishedEvent.subject());
+        assertTrue(publishedEvent.body().contains(exposableName));
     }
 
     @Test
@@ -119,11 +129,11 @@ class UpdateOrderStatusTest {
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_NOT_FOUND.getMessage());
 
-        verifyNoInteractions(emailService);
+        verifyNoInteractions(applicationEventPublisher);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
         assertThat(order.getTrackingHistory()).isEmpty();
     }
@@ -140,11 +150,11 @@ class UpdateOrderStatusTest {
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
                 .isInstanceOf(DeliveredOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
 
-        verifyNoInteractions(emailService);
+        verifyNoInteractions(applicationEventPublisher);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.DELIVERED);
         assertThat(order.getTrackingHistory()).isEmpty();
     }
@@ -162,11 +172,11 @@ class UpdateOrderStatusTest {
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        assertThatThrownBy(() -> orderService.updateOrderStatus(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
                 .isInstanceOf(CancelledOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 
-        verifyNoInteractions(emailService);
+        verifyNoInteractions(applicationEventPublisher);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
         assertThat(order.getTrackingHistory()).isEmpty();
     }

@@ -12,12 +12,7 @@ import com.mentorship.food_delivery_app.customer.exceptions.PreferredPaymentWasN
 import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
-import com.mentorship.food_delivery_app.restaurant.exceptions.CouponNotFoundException;
-import com.mentorship.food_delivery_app.restaurant.exceptions.CustomerAlreadyRatedException;
-import com.mentorship.food_delivery_app.restaurant.exceptions.CustomerHasNotOrderedException;
-import com.mentorship.food_delivery_app.restaurant.exceptions.ItemNotFoundException;
-import com.mentorship.food_delivery_app.restaurant.exceptions.RestaurantNotFoundException;
-import com.mentorship.food_delivery_app.restaurant.exceptions.RestaurantRateNotFoundException;
+import com.mentorship.food_delivery_app.restaurant.exceptions.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -318,18 +313,18 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
 
-    @ExceptionHandler(CustomerHasNotOrderedException.class)
-    public ResponseEntity<ErrorResponseDto> handleCustomerHasNotOrdered(CustomerHasNotOrderedException ex) {
-        log.warn("Customer Has Not Ordered Exception was thrown with cause: {}", ex.getLocalizedMessage());
+    @ExceptionHandler(RestaurantBranchClosedException.class)
+    public ResponseEntity<ErrorResponseDto> handleRestaurantBranchClosed(RestaurantBranchClosedException ex) {
+        log.warn("Restaurant Branch Closed Exception was thrown with cause: {}", ex.getLocalizedMessage());
 
-        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getLocalizedMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
     }
 
-    @ExceptionHandler(CustomerAlreadyRatedException.class)
-    public ResponseEntity<ErrorResponseDto> handleCustomerAlreadyRated(CustomerAlreadyRatedException ex) {
-        log.warn("Customer Already Rated Exception was thrown with cause: {}", ex.getLocalizedMessage());
+    @ExceptionHandler(RestaurantBranchNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleRestaurantBranchNotFound(RestaurantBranchNotFoundException ex) {
+        log.warn("Restaurant Branch Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
 
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getLocalizedMessage());
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
 
     // -------------------------------------------------------------------
@@ -354,6 +349,19 @@ public class GlobalExceptionHandler {
         log.warn("Preferred Payment Was Not Configured Exception Exception was thrown with cause: {}", ex.getLocalizedMessage());
 
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
+    }
+    @ExceptionHandler(CustomerHasNotOrderedException.class)
+    public ResponseEntity<ErrorResponseDto> handleCustomerHasNotOrdered(CustomerHasNotOrderedException ex) {
+        log.warn("Customer Has Not Ordered Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(CustomerAlreadyRatedException.class)
+    public ResponseEntity<ErrorResponseDto> handleCustomerAlreadyRated(CustomerAlreadyRatedException ex) {
+        log.warn("Customer Already Rated Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getLocalizedMessage());
     }
     // -------------------------------------------------------------------
     //  ORDER EXCEPTIONS
