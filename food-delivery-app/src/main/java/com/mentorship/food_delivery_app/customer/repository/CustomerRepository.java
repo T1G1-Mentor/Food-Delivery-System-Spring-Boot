@@ -47,4 +47,10 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
     WHERE c.customerId = :customerId
 """)
     Optional<PaymentMethod> getPreferredPaymentById(UUID customerId);
+
+    @Query("""
+                SELECT c.id FROM Customer c
+                WHERE c.user.userId = :userId
+            """)
+    Optional<UUID> findIdByUserId(UUID userId);
 }

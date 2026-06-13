@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.user.entity;
 
+import com.mentorship.food_delivery_app.user.entity.enums.UserType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,8 +23,8 @@ public class User {
     @Column(name = "user_id")
     private UUID userId;
 
-    @ManyToOne()
-    @JoinColumn(name = "user_type_id", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_type_name", nullable = false)
     private UserType userType;
 
     @Column(name = "user_first_name", nullable = false, length = 50)

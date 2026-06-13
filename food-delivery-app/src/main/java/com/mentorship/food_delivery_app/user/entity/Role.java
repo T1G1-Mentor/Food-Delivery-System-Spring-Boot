@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.user.entity;
 
+import com.mentorship.food_delivery_app.user.entity.enums.RoleName;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,8 +19,9 @@ public class Role {
     @Column(name = "role_id")
     private Integer roleId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "role_name", nullable = false, length = 20)
-    private String roleName;
+    private RoleName roleName;
 
     @ManyToMany() //lazy by default
     @JoinTable(

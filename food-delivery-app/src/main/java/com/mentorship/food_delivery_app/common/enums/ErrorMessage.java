@@ -1,6 +1,5 @@
 package com.mentorship.food_delivery_app.common.enums;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -27,7 +26,9 @@ public enum ErrorMessage {
     CUSTOMER_ALREADY_RATED("You have already rated this restaurant."),
     RESTAURANT_MISMATCH("This restaurant does not match, please make sure that all items belongs to the same restaurant."),
     RESTAURANT_BRANCH_NOT_FOUND("This restaurant branch does not exist."),
-    RESTAURANT_BRANCH_CLOSED("The restaurant is currently closed.");
+    RESTAURANT_BRANCH_CLOSED("The restaurant is currently closed."),
+    EMAIL_ALREADY_EXISTS("The email you provided already exists, please try another one."),
+    ROLE_NOT_FOUND("The role you are looking for does not exist.");
 
     private final String message;
 
