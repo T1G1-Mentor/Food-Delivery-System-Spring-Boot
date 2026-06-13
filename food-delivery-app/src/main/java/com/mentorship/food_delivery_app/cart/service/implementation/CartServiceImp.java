@@ -43,9 +43,9 @@ public class CartServiceImp implements CartService {
 
     @Transactional
     @Override
-    public CartResponseDto addToCart(CartItemRequestDto cartItemRequest) {
+    public CartResponseDto addToCart(CartItemRequestDto cartItemRequest, UUID customerId) {
 
-        Cart cart = getOrCreateLoggedinCustomerCart();
+        Cart cart = getOrCreateLoggedinCustomerCart(customerId);
         if (cart.isLocked())
             throw new CartLockedException();
 
@@ -70,10 +70,9 @@ public class CartServiceImp implements CartService {
 
 
     @Override
-    public CartResponseDto viewCartItems() {
-        Customer customer = customerService.getLoggedinCustomer();
+    public CartResponseDto viewCartItems(UUID customerId) {
 
-        Optional<Cart> cart = cartRepository.findWithCartItemsAndMenuItemsByCustomerId(customer.getCustomerId());
+        Optional<Cart> cart = cartRepository.findWithCartItemsAndMenuItemsByCustomerId(customerId);
 
         if (cart.isEmpty()) return CartResponseDto.emptyCart();
 
@@ -82,9 +81,9 @@ public class CartServiceImp implements CartService {
 
     @Transactional
     @Override
-    public CartResponseDto modifyCartItem(UUID menuItemId, CartItemModifyRequestDto cartItemRequest) {
+    public CartResponseDto modifyCartItem(UUID customerId, UUID menuItemId, CartItemModifyRequestDto cartItemRequest) {
         log.info("Modifying cart item with menu item id {}", menuItemId);
-        Cart cart = validateAndGetLoggedInCustomerCart();
+        Cart cart = validateAndGetLoggedInCustomerCart(customerId);
 
         Set<CartItem> cartItems = this.getCartItemsWithMenuItemsByCartId(cart.getCartId());
 
@@ -99,8 +98,8 @@ public class CartServiceImp implements CartService {
 
     @Transactional
     @Override
-    public void removeCartItem(UUID menuItemId) {
-        Cart cart = validateAndGetLoggedInCustomerCart();
+    public void removeCartItem(UUID customerId, UUID menuItemId) {
+        Cart cart = validateAndGetLoggedInCustomerCart(customerId);
 
         log.info("Removing item from cart with id {}", cart.getCartId());
         CartItem cartItem = cartItemRepository.
@@ -126,8 +125,8 @@ public class CartServiceImp implements CartService {
 
     @Transactional
     @Override
-    public void clearLoggedInCustomerCart() {
-        Cart cart = validateAndGetLoggedInCustomerCart();
+    public void clearLoggedInCustomerCart(UUID customerId) {
+        Cart cart = validateAndGetLoggedInCustomerCart(customerId);
         clearCart(cart);
     }
 
@@ -166,10 +165,9 @@ public class CartServiceImp implements CartService {
         return cartRepository.findAndLockWithRestBranchByIdAndCustomerId(cartId, customerId);
     }
 
-    private Cart validateAndGetLoggedInCustomerCart() {
-        Customer customer = customerService.
-                getLoggedinCustomer();
-        return cartRepository.findByCustomerId(customer.getCustomerId())
+    private Cart validateAndGetLoggedInCustomerCart(UUID customerId) {
+
+        return cartRepository.findByCustomerId(customerId)
                 .orElseThrow(() -> new CartNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage()));
     }
 
@@ -181,8 +179,8 @@ public class CartServiceImp implements CartService {
     }
 
 
-    private Cart getOrCreateLoggedinCustomerCart() {
-        Customer customer = customerService.getLoggedinCustomer();
+    private Cart getOrCreateLoggedinCustomerCart(UUID customerId) {
+        Customer customer = customerService.getCustomerReference(customerId);
 
         return
                 cartRepository.findByCustomerId(customer.getCustomerId())

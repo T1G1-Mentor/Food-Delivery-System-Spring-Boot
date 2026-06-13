@@ -8,8 +8,8 @@ import com.mentorship.food_delivery_app.cart.repository.CartRepository;
 import com.mentorship.food_delivery_app.cart.service.implementation.CartServiceImp;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
-import com.mentorship.food_delivery_app.user.exceptions.CartItemNotFoundException;
-import com.mentorship.food_delivery_app.user.exceptions.CartNotFoundException;
+import com.mentorship.food_delivery_app.cart.exceptions.CartItemNotFoundException;
+import com.mentorship.food_delivery_app.cart.exceptions.CartNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,11 +39,7 @@ public class RemoveCartItemTests {
     private CartServiceImp cartService;
 
 
-    @BeforeEach
-    void beforeEach() {
-        when(customerService.getLoggedinCustomer())
-                .thenReturn(new Customer());
-    }
+
 
     @Test
     @DisplayName("""
@@ -62,7 +58,7 @@ public class RemoveCartItemTests {
 
 //        actual method call and assertions
         assertThrows(CartNotFoundException.class,
-                () -> cartService.removeCartItem(menuItemId));
+                () -> cartService.removeCartItem(any(),menuItemId));
 
         verifyNoInteractions(cartItemRepository);
     }
@@ -88,7 +84,7 @@ public class RemoveCartItemTests {
 
 //        actual method call & assertions
         assertThrows(CartItemNotFoundException.class,
-                () -> cartService.removeCartItem(menuItemId));
+                () -> cartService.removeCartItem(any(), menuItemId));
 
         verify(cartItemRepository, never())
                 .delete(any());
@@ -115,7 +111,7 @@ public class RemoveCartItemTests {
         when(cartItemRepository.findByMenuItemIdAndCart(any(), any()))
                 .thenReturn(Optional.of(new CartItem()));
 //        actual method call
-        cartService.removeCartItem(menuItemId);
+        cartService.removeCartItem(any(), menuItemId);
 
 
 //        verifications
