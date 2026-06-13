@@ -4,7 +4,7 @@ import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.user.entity.Role;
 import com.mentorship.food_delivery_app.user.entity.User;
 import com.mentorship.food_delivery_app.user.entity.enums.RoleName;
-import com.mentorship.food_delivery_app.user.exceptions.UserEmailAlreadyExists;
+import com.mentorship.food_delivery_app.user.exceptions.UserEmailAlreadyExistsException;
 import com.mentorship.food_delivery_app.user.exceptions.UserRoleNotFoundException;
 import com.mentorship.food_delivery_app.user.repository.RoleRepository;
 import com.mentorship.food_delivery_app.user.repository.UserRepository;
@@ -46,7 +46,7 @@ public class UserServiceImp implements UserService {
 
     public void validateExistsByEmail(String email) {
         if (userRepository.existsByEmail(email))
-            throw new UserEmailAlreadyExists
+            throw new UserEmailAlreadyExistsException
                     (ErrorMessage.EMAIL_ALREADY_EXISTS.getMessage());
     }
 

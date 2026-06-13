@@ -16,7 +16,7 @@ import com.mentorship.food_delivery_app.restaurant.exceptions.*;
 import com.mentorship.food_delivery_app.security.exceptions.InvalidTokenException;
 import com.mentorship.food_delivery_app.cart.exceptions.CartItemNotFoundException;
 import com.mentorship.food_delivery_app.cart.exceptions.CartNotFoundException;
-import com.mentorship.food_delivery_app.user.exceptions.UserEmailAlreadyExists;
+import com.mentorship.food_delivery_app.user.exceptions.UserEmailAlreadyExistsException;
 import com.mentorship.food_delivery_app.user.exceptions.UserRoleNotFoundException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -462,8 +462,8 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
 
-    @ExceptionHandler(UserEmailAlreadyExists.class)
-    public ResponseEntity<ErrorResponseDto> handleEmailAlreadyExists(UserEmailAlreadyExists ex) {
+    @ExceptionHandler(UserEmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponseDto> handleEmailAlreadyExists(UserEmailAlreadyExistsException ex) {
         log.warn("Email already exists Exception was thrown with cause: {}", ex.getLocalizedMessage());
 
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
