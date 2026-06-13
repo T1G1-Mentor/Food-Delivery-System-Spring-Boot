@@ -50,10 +50,10 @@ public class CartServiceImp implements CartService {
             throw new CartLockedException();
 
         MenuItem menuItem = restaurantService.getMenuItemById(cartItemRequest.menuItemId());
-        validateCartCurrentRestaurant(cart.getCurrentRestaurant(), menuItem.getRestaurantBranch().getId());
+        validateCartCurrentRestaurant(cart.getCurrentRestaurant(), menuItem.getRestaurantBranch().getRestaurantBranchId());
 
-        Set<CartItem> cartItems = this.getCartItemsWithMenuItemsByCartId(cart.getId());
-        Optional<CartItem> existingItem = searchExistingItem(cartItems, menuItem.getId());
+        Set<CartItem> cartItems = this.getCartItemsWithMenuItemsByCartId(cart.getCartId());
+        Optional<CartItem> existingItem = searchExistingItem(cartItems, menuItem.getMenuItemId());
 
 
         existingItem.
@@ -73,7 +73,7 @@ public class CartServiceImp implements CartService {
     public CartResponseDto viewCartItems() {
         Customer customer = customerService.getLoggedinCustomer();
 
-        Optional<Cart> cart = cartRepository.findWithCartItemsAndMenuItemsByCustomerId(customer.getId());
+        Optional<Cart> cart = cartRepository.findWithCartItemsAndMenuItemsByCustomerId(customer.getCustomerId());
 
         if (cart.isEmpty()) return CartResponseDto.emptyCart();
 
@@ -86,7 +86,7 @@ public class CartServiceImp implements CartService {
         log.info("Modifying cart item with menu item id {}", menuItemId);
         Cart cart = validateAndGetLoggedInCustomerCart();
 
-        Set<CartItem> cartItems = this.getCartItemsWithMenuItemsByCartId(cart.getId());
+        Set<CartItem> cartItems = this.getCartItemsWithMenuItemsByCartId(cart.getCartId());
 
         CartItem cartItem = searchExistingItem(cartItems, menuItemId)
                 .orElseThrow(() -> new CartItemNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage()));
@@ -102,12 +102,12 @@ public class CartServiceImp implements CartService {
     public void removeCartItem(UUID menuItemId) {
         Cart cart = validateAndGetLoggedInCustomerCart();
 
-        log.info("Removing item from cart with id {}", cart.getId());
+        log.info("Removing item from cart with id {}", cart.getCartId());
         CartItem cartItem = cartItemRepository.
-                findByMenuItemIdAndCart(menuItemId, cart.getId())
+                findByMenuItemIdAndCart(menuItemId, cart.getCartId())
                 .orElseThrow(() -> new CartItemNotFoundException(ErrorMessage.CART_ITEM_NOT_FOUND.getMessage()));
 
-        log.info("Removing item from cart: menu item id {}, cart id {}", menuItemId, cart.getId());
+        log.info("Removing item from cart: menu item id {}, cart id {}", menuItemId, cart.getCartId());
         cartItemRepository.delete(cartItem);
     }
 
@@ -118,8 +118,8 @@ public class CartServiceImp implements CartService {
         if (cart == null)
             throw new CartNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
 
-        log.info("Clearing cart with id {}", cart.getId());
-        cartItemRepository.deleteCartItemsByCartId(cart.getId());
+        log.info("Clearing cart with id {}", cart.getCartId());
+        cartItemRepository.deleteCartItemsByCartId(cart.getCartId());
         cart.setLocked(false);
         cart.setCurrentRestaurant(null);
     }
@@ -150,16 +150,32 @@ public class CartServiceImp implements CartService {
         return cartItemRepository.findAllByCartId(cartId);
     }
 
+    @Override
+    public Set<CartItem> getCartItemsWithDetails(UUID cartId) {
+        return cartItemRepository.findWithMenuItemsRestaurantBranchByCartId(cartId);
+    }
+
+    @Override
+    public Cart getCartByIdAndCustomerId(UUID cartId, UUID customerId) {
+        return cartRepository.findCarWithRestaurantBranchByIdAndCustomerId(cartId, customerId)
+                .orElseThrow(()->new CartNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage()));
+    }
+
+    @Override
+    public Cart getCartByIdAndCustomerIdWithLock(UUID cartId, UUID customerId) {
+        return cartRepository.findAndLockWithRestBranchByIdAndCustomerId(cartId, customerId);
+    }
+
     private Cart validateAndGetLoggedInCustomerCart() {
         Customer customer = customerService.
                 getLoggedinCustomer();
-        return cartRepository.findByCustomerId(customer.getId())
+        return cartRepository.findByCustomerId(customer.getCustomerId())
                 .orElseThrow(() -> new CartNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage()));
     }
 
     private void validateCartCurrentRestaurant(RestaurantBranch currentRestaurant, UUID menuItemRestaurantBranchId) {
 
-        if (currentRestaurant != null && !menuItemRestaurantBranchId.equals(currentRestaurant.getId()))
+        if (currentRestaurant != null && !menuItemRestaurantBranchId.equals(currentRestaurant.getRestaurantBranchId()))
             throw new RestaurantMismatchException(ErrorMessage.ITEM_DIFFERENT_RESTAURANT.getMessage());
 
     }
@@ -169,7 +185,7 @@ public class CartServiceImp implements CartService {
         Customer customer = customerService.getLoggedinCustomer();
 
         return
-                cartRepository.findByCustomerId(customer.getId())
+                cartRepository.findByCustomerId(customer.getCustomerId())
                         .orElseGet(() -> {
                             Cart newCart = Cart.builder()
                                     .customer(customer)
@@ -199,7 +215,7 @@ public class CartServiceImp implements CartService {
     private Optional<CartItem> searchExistingItem(Set<CartItem> cartItems, UUID menuItemId) {
         return cartItems
                 .stream()
-                .filter(item -> item.getMenuItem().getId().equals(menuItemId))
+                .filter(item -> item.getMenuItem().getMenuItemId().equals(menuItemId))
                 .findFirst();
     }
 }

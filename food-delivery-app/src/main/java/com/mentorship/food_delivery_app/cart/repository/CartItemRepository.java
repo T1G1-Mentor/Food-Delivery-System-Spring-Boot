@@ -29,4 +29,13 @@ public interface CartItemRepository extends CrudRepository<CartItem, Long> {
                 WHERE ci.cart.id = :cartId
             """)
     Set<CartItem> findAllByCartId(UUID cartId);
+
+    @Query("""
+                SELECT ci FROM CartItem ci
+                JOIN FETCH ci.menuItem mi
+                JOIN FETCH mi.menu m
+                JOIN FETCH m.restaurantBranch
+                WHERE ci.cart.id = :cartId
+            """)
+    Set<CartItem> findWithMenuItemsRestaurantBranchByCartId(UUID cartId);
 }

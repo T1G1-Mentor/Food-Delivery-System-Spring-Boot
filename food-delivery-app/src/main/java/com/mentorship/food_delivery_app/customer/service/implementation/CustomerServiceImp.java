@@ -78,10 +78,10 @@ public class CustomerServiceImp implements CustomerService {
 
         CustomerAddress customerAddress = customer.getDefaultAddress();
 
-        if (customerAddress != null && customerAddress.getId().equals(addressId))
-            customerRepository.updateCustomerDefaultAddress(customer.getId(), addressId);
+        if (customerAddress != null && customerAddress.getCustomerAddressId().equals(addressId))
+            customerRepository.updateCustomerDefaultAddress(customer.getCustomerId(), addressId);
 
-        this.customerAddressService.deleteCustomerAddress(addressId, customer.getId());
+        this.customerAddressService.deleteCustomerAddress(addressId, customer.getCustomerId());
     }
 
     @Transactional(readOnly = true)
@@ -104,7 +104,7 @@ public class CustomerServiceImp implements CustomerService {
         Customer customer = customerRepository.findByIdWithDefaultAddress(customerId)
                 .orElseThrow((() ->
                         new CustomerNotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND.getMessage())));
-        CustomerAddress customerAddress = customerAddressService.getCustomerAddress(addressId, customer.getId());
+        CustomerAddress customerAddress = customerAddressService.getCustomerAddress(addressId, customer.getCustomerId());
 
         customer.setDefaultAddress(customerAddress);
     }
@@ -145,5 +145,10 @@ public class CustomerServiceImp implements CustomerService {
                         new PreferredPaymentWasNotConfiguredException(ErrorMessage.PREFERRED_PAYMENT_NOT_FOUND.getMessage()
                         ));
         return preferredPayment.getExposableName();
+    }
+
+    @Override
+    public Customer getCustomerReference(UUID customerId) {
+        return customerRepository.getReferenceById(customerId);
     }
 }

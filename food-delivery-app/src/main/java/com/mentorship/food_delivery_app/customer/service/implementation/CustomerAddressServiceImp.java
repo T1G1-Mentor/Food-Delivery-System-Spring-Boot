@@ -27,7 +27,7 @@ public class CustomerAddressServiceImp implements CustomerAddressService {
     @Transactional
     @Override
     public UUID createCustomerAddress(CustomerAddressRequestDto addressRequestDto, Customer customer) {
-        log.info("Creating new address {}, for customer {}", addressRequestDto, customer.getId());
+        log.info("Creating new address {}, for customer {}", addressRequestDto, customer.getCustomerId());
 
         CustomerAddress address = this.buildAddress(addressRequestDto, customer);
 
@@ -36,7 +36,7 @@ public class CustomerAddressServiceImp implements CustomerAddressService {
         if (customer.getDefaultAddress() == null)
             customer.setDefaultAddress(address);
 
-        return savedAddress.getId();
+        return savedAddress.getCustomerAddressId();
     }
 
     @Transactional

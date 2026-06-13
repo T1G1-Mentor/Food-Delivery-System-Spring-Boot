@@ -18,7 +18,7 @@ public class RestaurantMenu extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "restaurant_menu_id")
-    private UUID id;
+    private UUID restaurantMenuId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_menu_rest_branch_id", nullable = false)

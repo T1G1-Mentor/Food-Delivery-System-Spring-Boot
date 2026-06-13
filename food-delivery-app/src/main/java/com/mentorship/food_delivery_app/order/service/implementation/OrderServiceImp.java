@@ -1,49 +1,39 @@
 package com.mentorship.food_delivery_app.order.service.implementation;
 
-import com.mentorship.food_delivery_app.cart.entity.Cart;
-import com.mentorship.food_delivery_app.cart.entity.CartItem;
 import com.mentorship.food_delivery_app.cart.service.contract.CartService;
+import com.mentorship.food_delivery_app.common.dto.EmailEventRecord;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
-import com.mentorship.food_delivery_app.common.exceptions.ResourceUnavailableException;
-import com.mentorship.food_delivery_app.common.services.contract.EmailService;
-import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
-import com.mentorship.food_delivery_app.order.dto.OrderPricing;
-import com.mentorship.food_delivery_app.order.dto.request.DeliveryAddressDto;
 import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
 import com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto;
-import com.mentorship.food_delivery_app.order.entity.DeliveryAddress;
 import com.mentorship.food_delivery_app.order.entity.Order;
-import com.mentorship.food_delivery_app.order.entity.OrderItem;
 import com.mentorship.food_delivery_app.order.entity.OrderTracking;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
 import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException;
 import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
+import com.mentorship.food_delivery_app.order.handler.*;
 import com.mentorship.food_delivery_app.order.mapper.OrderMapper;
 import com.mentorship.food_delivery_app.order.repository.OrderRepository;
 import com.mentorship.food_delivery_app.order.service.contract.OrderService;
 import com.mentorship.food_delivery_app.order.service.contract.OrderTrackingService;
 import com.mentorship.food_delivery_app.payment.service.PaymentService;
-import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
-import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
 import com.mentorship.food_delivery_app.user.entity.User;
 import com.mentorship.food_delivery_app.user.service.contract.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -51,7 +41,7 @@ import java.util.stream.Collectors;
 public class OrderServiceImp implements OrderService {
     private final OrderRepository orderRepository;
     private final UserService userService;
-    private final EmailService emailService;
+    private final ApplicationEventPublisher publisher;
     private final CustomerService customerService;
     private final PaymentService paymentService;
     private final RestaurantService restaurantService;
@@ -59,30 +49,30 @@ public class OrderServiceImp implements OrderService {
     private final OrderTrackingService orderTrackingService;
     private final OrderMapper orderMapper;
 
-
     @Transactional
     @Override
-    public OrderResponseDto placeOrder(PlaceOrderRequestDto request) {
-        Customer customer = customerService.getLoggedinCustomer();
+    public OrderResponseDto placeOrder(PlaceOrderRequestDto request, UUID customerId) {
 
-        Cart cart = cartService.getCartByCustomerId(customer.getId());
-        cartService.lockCart(cart.getId());
+        OrderProcessingContext orderProcessingContext = buildContext(request, customerId);
 
-        Set<CartItem> cartItems = cartService.getCartItemsWithMenuItemsByCartId(cart.getId());
-//        validateRestaurantIsOpen(cart);
-        validateCartItemsAvailability(cartItems);
+        OrderHandler handler = OrderHandler.processOrder(
+                // validate cart exists, unlocked, and current restaurant matches the request's restaurant
+                new CartValidationHandler(),
+//                validate that the restaurant is in it's working hours
+                new RestaurantOpenTimeValidationHandler(),
+//                validate that all menu items are available, and they belong to the same restaurant
+                new MenuItemValidationHandler(),
+//                finalizing the order, creating new tracking in pending status until the payment is processed and the restaurants accepts the order.
+                new FinalizeOrderHandler(orderRepository, orderMapper),
+//                Processing a dummy payment
+                new PaymentProcessHandler(paymentService)
+        );
+        OrderResponseDto orderResponse = handler.handle(orderProcessingContext);
 
-        Coupon coupon = restaurantService.getRestaurantCoupon(request.couponId(), cart.getCurrentRestaurant());
-        OrderPricing pricing = OrderPricing.calculate(cart, cartItems, coupon);
+        this.notifyOrderPlaced(orderProcessingContext.getCustomerEmail(),
+                orderResponse.orderId());
 
-        paymentService.processPayment(); // dummy template for processing payment
-
-        Order savedOrder = createAndPersistOrder(customer,
-                cartItems, cart.getCurrentRestaurant(), pricing, request.deliveryAddress());
-
-        notifyOrderPlaced(savedOrder);
-
-        return orderMapper.toResponse(savedOrder);
+        return orderResponse;
     }
 
 
@@ -95,32 +85,25 @@ public class OrderServiceImp implements OrderService {
             throw new CancelledOrderException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 
         OrderStatus status = OrderStatus.CANCELLED;
-        log.info("Initiating status update for Order ID: {} to Status: {}", orderId, status);
 
-        createNewOrderTracking(status, status.getDescription(), order);
+        OrderTracking.createNewOrderTracking(status, status.getDescription(), order);
 
-        log.debug("Dispatching asynchronous status update email to: {}", order.getCustomerEmail());
         sendStatusUpdateEmail(order.getCustomerEmail(), status.getDescription());
 
-        log.info("Successfully completed status update for Order ID: {}", orderId);
 
     }
 
     @Transactional
     @Override
-    public void updateOrderStatus(UUID orderId) {
+    public void handlerOrderStatusUpdate(UUID orderId) {
 
         Order order = getAndValidateOrder(orderId);
         OrderStatus newStatus = getNextStatus(order.getStatus());
 
-        log.info("Initiating status update for Order ID: {} to Status: {}", orderId, newStatus);
+        OrderTracking.createNewOrderTracking(newStatus, newStatus.getDescription(), order);
 
-        createNewOrderTracking(newStatus, newStatus.getDescription(), order);
-
-        log.debug("Dispatching asynchronous status update email to: {}", order.getCustomerEmail());
         sendStatusUpdateEmail(order.getCustomerEmail(), newStatus.getDescription());
 
-        log.info("Successfully completed status update for Order ID: {}", orderId);
     }
 
     @Transactional(readOnly = true)
@@ -139,7 +122,7 @@ public class OrderServiceImp implements OrderService {
     @Transactional(readOnly = true)
     @Override
     public OrderDetailsDto getOrderDetails(UUID orderId) {
-        UUID userId = userService.getDummyLoggedInUser().getId();
+        UUID userId = userService.getDummyLoggedInUser().getUserId();
         log.debug("Fetching order details for Order ID: {} by customer user ID: {}", orderId, userId);
 
         Order order = orderRepository.fetchOrderDetailsForCustomer(orderId, userId)
@@ -155,7 +138,7 @@ public class OrderServiceImp implements OrderService {
     @Transactional(readOnly = true)
     @Override
     public Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable) {
-        UUID userId = userService.getDummyLoggedInUser().getId();
+        UUID userId = userService.getDummyLoggedInUser().getUserId();
         log.debug("Fetching order history for user ID: {} with status filter: {}", userId, status);
 
         Page<Order> orders = (status != null)
@@ -174,28 +157,15 @@ public class OrderServiceImp implements OrderService {
 
     private Order getAndValidateOrder(UUID orderId) {
         User user = userService.getDummyLoggedInUser();
-        log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, user.getId());
+        log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, user.getUserId());
 
-        return orderRepository.findOrderByIdAndAdminId(orderId, user.getId())
+        return orderRepository.findOrderByIdAndAdminId(orderId, user.getUserId())
                 .orElseThrow(() -> {
-                    log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, user.getId());
+                    log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, user.getUserId());
                     return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
                 });
     }
 
-    private void createNewOrderTracking(OrderStatus status, String description, Order order) {
-        log.debug("Appending new tracking event to Order ID: {}. Status: {}", order.getOrderId(), status);
-
-        OrderTracking tracking = OrderTracking.
-                builder()
-                .description(description)
-                .status(status)
-                .build();
-
-        order.addTrackingEvent(tracking);
-        order.setStatus(status);
-
-    }
 
     private OrderStatus getNextStatus(OrderStatus status) {
         return switch (status) {
@@ -210,91 +180,29 @@ public class OrderServiceImp implements OrderService {
 
     //    dummy template
     private void sendStatusUpdateEmail(String email, String staus) {
-        emailService.sendEmailAsync(email, "Order Status Update", String.format
+        EmailEventRecord emailEventRecord = new EmailEventRecord(email,
+                "Order Status Update", String.format
                 ("Your order status just got updated, %s", staus));
+        publisher.publishEvent(emailEventRecord);
     }
 
-    private void notifyOrderPlaced(Order order) {
-
-        emailService.sendEmailAsync(
-                order.getCustomer().getUser().getEmail(),
-                "Order Confirmation",
-                "Your order has been placed. Order ID: " + order.getOrderId()
+    private OrderProcessingContext buildContext(PlaceOrderRequestDto request, UUID customerId) {
+        return new OrderProcessingContext(
+                request,
+                () -> cartService.getCartByIdAndCustomerIdWithLock(request.cartId(), customerId),// cart fetch and lock supplier
+                () -> cartService.getCartItemsWithDetails(request.cartId()), // cart items supplier
+                () -> customerService.getCustomerReference(customerId), // customer supplier
+                () -> restaurantService.getRestaurantCoupon(request.couponId()) // coupon supplier
         );
-
-    }
-//    private void validateRestaurantIsOpen(Cart cart) {
-//        RestaurantBranch branch = cart.getCurrentRestaurant();
-//        if (!branch.isOpen()) {
-//            log.error("Restaurant {} is closed", branch.getId());
-//            throw new ResourceUnavailableException(ErrorMessage.RESTAURANT_CLOSED.getMessage());
-//        }
-//    }
-//
-//    private Cart validateCartExists(Customer customer) {
-//        Cart cart = customer.getCart();
-//        if (cart == null) {
-//            log.error("Cart not found for user {}", userId);
-//            throw new ResourceNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage());
-//        }
-//        return cart;
-//    }
-
-    private void validateCartItemsAvailability(Set<CartItem> cartItems) {
-        List<String> unavailableItemNames = cartItems
-                .stream()
-                .filter(item -> !item.isAvailable())
-                .map(item -> item.getMenuItem().getName())
-                .toList();
-
-        if (!unavailableItemNames.isEmpty()) {
-            log.error("Unavailable cart items: {}", unavailableItemNames);
-            throw new ResourceUnavailableException("Some items in the cart are not available: " + unavailableItemNames);
-        }
     }
 
-    private Order createAndPersistOrder
-            (Customer customer, Set<CartItem> cartItems, RestaurantBranch branch
-                    , OrderPricing pricing, DeliveryAddressDto deliveryAddress) {
+    private void notifyOrderPlaced(String customerEmail, UUID orderId) {
+        EmailEventRecord emailEventRecord = new EmailEventRecord(customerEmail,
+                "Order Confirmation",
+                "Your order has been placed. Order ID: " + orderId);
+        publisher.publishEvent(emailEventRecord);
 
 
-        DeliveryAddress deliveryAddressToPersist = resolveDeliveryAddress(customer, deliveryAddress);
-
-        Order order = Order.builder()
-                .customer(customer)
-                .deliveryAddress(deliveryAddressToPersist)
-                .branch(branch)
-                .subtotal(pricing.subtotal())
-                .total(pricing.total())
-                .fee(pricing.deliveryFee())
-                .discountValue(pricing.discount())
-                .status(OrderStatus.PENDING)
-                .build();
-
-        Order savedOrder = orderRepository.save(order);
-        savedOrder.setItems(buildOrderItems(cartItems, savedOrder));
-
-        createNewOrderTracking(OrderStatus.PENDING, OrderStatus.PENDING.getDescription(), savedOrder);
-
-        return savedOrder;
     }
 
-    private Set<OrderItem> buildOrderItems(Set<CartItem> cartItems, Order order) {
-        return cartItems.stream()
-                .map(cartItem -> OrderItem.builder()
-                        .menuItem(cartItem.getMenuItem())
-                        .quantity(cartItem.getQuantity())
-                        .unitPrice(cartItem.getMenuItem().getPrice())
-                        .subtotal(cartItem.getTotalPrice())
-                        .order(order)
-                        .build())
-                .collect(Collectors.toSet());
-    }
-
-    private DeliveryAddress resolveDeliveryAddress(Customer customer, DeliveryAddressDto deliveryAddressDto) {
-        if (deliveryAddressDto == null) {
-            return DeliveryAddress.from(customer.getDefaultAddress());
-        }
-        return DeliveryAddress.from(deliveryAddressDto);
-    }
 }

@@ -18,7 +18,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                 JOIN FETCH o.trackingHistory th
                 JOIN FETCH o.customer c
                 JOIN FETCH c.user
-                WHERE o.orderId = :orderId AND o.branch.admin.id = :adminId
+                WHERE o.orderId = :orderId AND o.branch.admin.userId = :adminId
             """)
     Optional<Order> findOrderByIdAndAdminId(@Param("orderId") UUID orderId, @Param("adminId") UUID adminId);
 
@@ -29,7 +29,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                     JOIN FETCH c.user
                     JOIN FETCH o.branch b
                     JOIN FETCH b.restaurant
-                    WHERE o.branch.id = :branchId
+                    WHERE o.branch.restaurantBranchId = :branchId
                     """,
             countQuery = "SELECT COUNT(o) FROM Order o WHERE o.branch.id = :branchId"
     )
@@ -42,7 +42,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                     JOIN FETCH c.user
                     JOIN FETCH o.branch b
                     JOIN FETCH b.restaurant
-                    WHERE o.branch.id = :branchId AND o.status = :status
+                    WHERE o.branch.restaurantBranchId = :branchId AND o.status = :status
                     """,
             countQuery = "SELECT COUNT(o) FROM Order o WHERE o.branch.id = :branchId AND o.status = :status"
     )
@@ -58,7 +58,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                 JOIN FETCH o.branch b
                 JOIN FETCH b.restaurant
                 LEFT JOIN FETCH o.coupon
-                WHERE o.orderId = :orderId AND o.customer.user.id = :userId
+                WHERE o.orderId = :orderId AND o.customer.user.userId = :userId
             """)
     Optional<Order> fetchOrderDetailsForCustomer(@Param("orderId") UUID orderId, @Param("userId") UUID userId);
 
@@ -69,7 +69,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                     JOIN FETCH c.user
                     JOIN FETCH o.branch b
                     JOIN FETCH b.restaurant
-                    WHERE o.customer.user.id = :userId
+                    WHERE o.customer.user.userId = :userId
                     """,
             countQuery = "SELECT COUNT(o) FROM Order o WHERE o.customer.user.id = :userId"
     )
@@ -82,13 +82,18 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                     JOIN FETCH c.user
                     JOIN FETCH o.branch b
                     JOIN FETCH b.restaurant
-                    WHERE o.customer.user.id = :userId AND o.status = :status
+                    WHERE o.customer.user.userId = :userId AND o.status = :status
                     """,
             countQuery = "SELECT COUNT(o) FROM Order o WHERE o.customer.user.id = :userId AND o.status = :status"
     )
     Page<Order> findOrdersByUserIdAndStatus(@Param("userId") UUID userId, @Param("status") OrderStatus status, Pageable pageable);
 
-    boolean existsByCustomerIdAndBranchRestaurantIdAndStatus(UUID customerId, UUID restaurantId, OrderStatus status);
 
+    @Query("""
+        SELECT COUNT(o) FROM Order o
+        WHERE o.customer.customerId = :customerId
+          AND o.branch.restaurant.restaurantId = :restaurantId
+          AND o.status = :status
+    """)
     long countByCustomerIdAndBranchRestaurantIdAndStatus(UUID customerId, UUID restaurantId, OrderStatus status);
 }

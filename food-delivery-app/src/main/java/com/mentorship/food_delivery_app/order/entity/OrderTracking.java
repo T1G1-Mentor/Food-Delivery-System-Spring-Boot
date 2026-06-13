@@ -20,7 +20,7 @@ public class OrderTracking {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "order_tracking_id")
-    private UUID id;
+    private UUID orderTrackingId;
 
     @Column(name = "order_tracking_description", nullable = false)
     private String description;
@@ -36,4 +36,16 @@ public class OrderTracking {
     @CreationTimestamp
     @Column(name = "order_tracking_created_at", updatable = false)
     private Instant createdAt;
+
+    public static void createNewOrderTracking(OrderStatus status, String description, Order order) {
+
+        OrderTracking tracking = OrderTracking.
+                builder()
+                .description(description)
+                .status(status)
+                .build();
+
+        order.addTrackingEvent(tracking);
+        order.setStatus(status);
+    }
 }

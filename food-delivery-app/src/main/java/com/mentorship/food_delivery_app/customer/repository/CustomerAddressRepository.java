@@ -34,7 +34,7 @@ public interface CustomerAddressRepository extends CrudRepository<CustomerAddres
     @Query(
             """
                     SELECT new com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto(
-                        ca.id,
+                        ca.customerAddressId,
                         ca.label,
                         ca.city,
                         ca.street,
@@ -42,11 +42,11 @@ public interface CustomerAddressRepository extends CrudRepository<CustomerAddres
                         ca.apartment,
                         ca.phoneNumber,
                         ca.note,
-                                (CASE WHEN c.defaultAddress.id = ca.id THEN true ELSE false END)
+                                (CASE WHEN c.defaultAddress.customerAddressId = ca.customerAddressId THEN true ELSE false END)
                                 )
                         FROM CustomerAddress ca
                         JOIN ca.customer c
-                        WHERE ca.id = :addressId AND c.id = :customerId
+                        WHERE ca.customerAddressId = :addressId AND c.customerId = :customerId
                     """)
     Optional<CustomerAddressResponseDto> findDtoByIdAndCustomerId(UUID addressId, UUID customerId);
 
@@ -64,7 +64,7 @@ public interface CustomerAddressRepository extends CrudRepository<CustomerAddres
                            )
                            FROM CustomerAddress ca
                            JOIN ca.customer c
-                           WHERE c.id = :customerId
+                           WHERE c.customerId = :customerId
             """)
     List<CustomerAddressResponseDto> findAllDtoByCustomerId(UUID customerId);
 }

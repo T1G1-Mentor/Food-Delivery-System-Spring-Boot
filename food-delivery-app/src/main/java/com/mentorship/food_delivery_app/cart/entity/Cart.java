@@ -22,7 +22,7 @@ public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "cart_id")
-    private UUID id;
+    private UUID cartId;
 
     @Column(name = "is_locked")
     private boolean isLocked;

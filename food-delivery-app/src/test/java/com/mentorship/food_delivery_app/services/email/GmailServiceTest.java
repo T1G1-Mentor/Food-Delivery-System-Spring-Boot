@@ -1,6 +1,7 @@
 package com.mentorship.food_delivery_app.services.email;
 
-import com.mentorship.food_delivery_app.common.services.implementation.GmailService;
+import com.mentorship.food_delivery_app.common.dto.EmailEventRecord;
+import com.mentorship.food_delivery_app.common.service.implementation.GmailService;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.jmx.export.assembler.MethodExclusionMBeanInfoAssembler;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -32,16 +34,13 @@ class GmailServiceTest {
     @Captor
     private ArgumentCaptor<MimeMessage> messageCaptor;
 
-    private String to  ;
-    private String subject  ;
-    private String body  ;
     private MimeMessage realMimeMessage ;
+    private EmailEventRecord emailEventRecord;
 
     @BeforeEach
     public void setup(){
-         to = "user@test.com";
-         subject = "Welcome!";
-         body = "Thanks for signing up.";
+
+         emailEventRecord = new EmailEventRecord("user@test.com","Welcome!","Thanks for signing up.");
          realMimeMessage = new JavaMailSenderImpl().createMimeMessage();
         when(mailSender.createMimeMessage()).thenReturn(realMimeMessage);
     }
@@ -55,7 +54,8 @@ class GmailServiceTest {
             AND: Logger should print success message
             """)
     void sendEmailAsync_ShouldSendEmailSuccessfully(CapturedOutput output) throws Exception {
-        gmailService.sendEmailAsync(to, subject, body);
+
+        gmailService.sendEmailAsync(emailEventRecord);
 
         verify(mailSender, timeout(2000).times(1)).send(realMimeMessage);
 
@@ -76,7 +76,7 @@ class GmailServiceTest {
         doThrow(new MailSendException("SMTP connection failed"))
                 .when(mailSender).send(any(MimeMessage.class));
 
-        assertDoesNotThrow(() -> gmailService.sendEmailAsync(to, subject, body));
+        assertDoesNotThrow(() -> gmailService.sendEmailAsync(emailEventRecord));
 
         verify(mailSender, timeout(2000).times(1)).send(realMimeMessage);
 

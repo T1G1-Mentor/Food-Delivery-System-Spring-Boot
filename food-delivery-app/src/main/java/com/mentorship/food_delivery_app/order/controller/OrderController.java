@@ -2,6 +2,8 @@ package com.mentorship.food_delivery_app.order.controller;
 
 import java.util.UUID;
 
+import com.mentorship.food_delivery_app.customer.entity.Customer;
+import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -31,17 +33,20 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrderController {
     private final OrderService orderService;
+    private final CustomerService customerService;
 
     @PostMapping
     public ResponseEntity<OrderResponseDto> placeOrder(@RequestBody @Valid PlaceOrderRequestDto request) {
-        OrderResponseDto order = orderService.placeOrder(request);
+        Customer customer =customerService.getLoggedinCustomer();// will be extracted from the token
+
+        OrderResponseDto order = orderService.placeOrder(request, customer.getCustomerId());
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
     // @PreAuthorize("hasRole('ADMIN')") // spring security is not enabled yet
     @PostMapping("/{orderId}/status")
     public ResponseEntity<Void> updateStatus(@PathVariable UUID orderId) {
-        orderService.updateOrderStatus(orderId);
+        orderService.handlerOrderStatusUpdate(orderId);
         return ResponseEntity.noContent().build();
     }
 

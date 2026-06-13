@@ -21,7 +21,7 @@ public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "customer_id")
-    private UUID id;
+    private UUID customerId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_user_id", nullable = false, unique = true)
