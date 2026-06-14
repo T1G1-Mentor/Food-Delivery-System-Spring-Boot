@@ -66,7 +66,7 @@ sequenceDiagram
 
     actor Admin
 
-    box rgb(40, 44, 52) API Layer
+    box  API Layer
         participant Filter as Security/Validation Filter
         participant Controller as RestaurantMenuManagementController
     end
@@ -74,66 +74,84 @@ sequenceDiagram
     box Core Domain (Services)
         participant MenuService as RestaurantMenuService
         participant ItemService as MenuItemService
+        participant Entity as MenuItem (Entity)
     end
 
-    box rgb(50, 40, 60) Persistence Layer
+    box  Persistence Layer
         participant MenuRepo as RestaurantMenuRepository
         participant ItemRepo as MenuItemRepository
+        participant DB as Database
     end
 
 %% 1. Request Initiation & Validation
-    Admin->>Filter: POST /api/v1/.../menu-items (MenuItemRequestDto)
+Admin->>Filter: POST /api/v1/.../menu-items (MenuItemRequestDto)
 
-    activate Filter
-    Filter->>Filter: Validate Admin Access
-    Filter->>Controller: Forward Request
-    deactivate Filter
+activate Filter
+Filter->>Filter: Validate Admin Access
+Filter->>Controller: Forward Request
+deactivate Filter
 
-    activate Controller
-    Controller->>Controller: Validate DTO fields
+activate Controller
+Controller->>Controller: Validate DTO fields
 
 %% 2. Orchestration Menu Fetch & Validation
-    Note over MenuService: Transactional Boundary Starts (REQUIRED)
-    Controller->>MenuService: createMenuItem(dto, menuId, branchId)
-    activate MenuService
+Note over MenuService, DB: Transactional Boundary Starts (REQUIRED)
+Controller->>MenuService: createMenuItem(dto, menuId, branchId)
+activate MenuService
 
-    MenuService->>MenuService: getRestaurantMenuByIdAndBranchId()
-    MenuService->>MenuRepo: findByIdAndBranchId(menuId, branchId)
-    activate MenuRepo
-    MenuRepo-->>MenuService: Optional<RestaurantMenu>
-    deactivate MenuRepo
+MenuService->>MenuService: getRestaurantMenuByIdAndBranchId()
+MenuService->>MenuRepo: findByIdAndBranchId(menuId, branchId)
+activate MenuRepo
+MenuRepo-->>MenuService: Optional<RestaurantMenu>
+deactivate MenuRepo
 
-    alt Menu Not Found
-        MenuService-->>Controller: throws RestaurantMenuNotFoundException
-        Controller-->>Admin: 404 Not Found
-    else Menu Found but Disabled
-        MenuService-->>Controller: throws DisabledRestaurantMenuException
-        Controller-->>Admin: 400 Bad Request
-    end
+alt Menu Not Found
+MenuService-->>Controller: throws RestaurantMenuNotFoundException
+Controller-->>Admin: 404 Not Found
+else Menu Found but Disabled
+MenuService-->>Controller: throws DisabledRestaurantMenuException <br/> This alternative flow is commented for now
+Controller-->>Admin: 400 Bad Request
+end
 
-%% 3. Item Creation
-    MenuService->>ItemService: createMenuItem(dto, restaurantMenu)
-    activate ItemService
+%% 3. Item Creation & Entity Interaction
+MenuService->>ItemService: createMenuItem(dto, restaurantMenu)
+activate ItemService
 
-    Note over ItemService: Joins existing Transaction
+Note right of ItemService: Joins existing Transaction
 
-    ItemService->>ItemService: buildMenuItem(dto)
-    ItemService->>ItemRepo: save(menuItem)
-    activate ItemRepo
-    ItemRepo-->>ItemService: Saved MenuItem Entity
-    deactivate ItemRepo
+ItemService->>Entity: buildMenuItem(name, description, price)
+activate Entity
+Note right of Entity: Static Factory Method Execution
+Entity-->>ItemService: menuItem instance
+deactivate Entity
 
-%% 4. Return Flow
-    ItemService-->>MenuService: Saved MenuItem (Kept for internal use)
-    deactivate ItemService
+ItemService->>Entity: setMenu(restaurantMenu)
+activate Entity
+Entity-->>ItemService: (State Updated)
+deactivate Entity
 
+ItemService->>ItemRepo: save(menuItem)
+activate ItemRepo
+ItemRepo-->>ItemService: Saved MenuItem Entity
+deactivate ItemRepo
 
-    MenuService-->>Controller: (void / returns nothing)
-    Note left of MenuService: Transaction Commits
-    deactivate MenuService
+%% 4. Return Flow & Transaction Commit
+ItemService-->>MenuService: (void)
+deactivate ItemService
 
-    Controller-->>Admin: 201 Created (Empty Body or Generic Success)
-    deactivate Controller
+Note over MenuService, DB: Implicit Transaction Commit.<br/>Hibernate flushes the INSERT statement.
+MenuService->>DB: Executing: INSERT INTO menu_item ...
+activate DB
+DB-->>MenuService: (Insert Successful)
+deactivate DB
+
+Note over MenuService, DB: Transactional Boundary Ends (Inside the proxy before it returns to the controller)
+
+MenuService-->>Controller: (void)
+deactivate MenuService
+
+Controller-->>Admin: 201 Created (Empty Body or Generic Success)
+deactivate Controller
 ```
 #### 2.2.2 Update menu item sequence diagram
 ```mermaid
@@ -142,18 +160,18 @@ sequenceDiagram
     
     actor Admin
     
-    box rgb(40, 44, 52) API Layer
+    box  API Layer
         participant Filter as Security/Validation Filter
         participant Controller as RestaurantMenuManagementController
     end
     
-    box rgb(30, 50, 60) Core Domain (Services)
+    box  Core Domain (Services)
         participant MenuService as RestaurantMenuService
         participant ItemService as MenuItemService
         participant Entity as MenuItem (Entity)
     end
     
-    box rgb(50, 40, 60) Persistence Layer
+    box Persistence Layer
         participant MenuRepo as RestaurantMenuRepository
         participant ItemRepo as MenuItemRepository
         participant DB as Database

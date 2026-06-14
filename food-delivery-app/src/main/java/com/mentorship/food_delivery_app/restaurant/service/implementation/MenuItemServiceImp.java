@@ -22,7 +22,10 @@ public class MenuItemServiceImp implements MenuItemService {
     @Override
     public void createMenuItem(MenuItemRequestDto menuItemRequestDto,
                                RestaurantMenu restaurantMenu) {
-        MenuItem menuItem = buildMenuItem(menuItemRequestDto);
+        MenuItem menuItem = MenuItem.buildMenuItem(menuItemRequestDto.menuItemName(),
+                menuItemRequestDto.menuItemDescription(),
+                menuItemRequestDto.menuItemPrice());
+
         menuItem.setMenu(restaurantMenu);
         menuItemRepository.save(menuItem);
     }
@@ -46,13 +49,5 @@ public class MenuItemServiceImp implements MenuItemService {
                 .orElseThrow(()-> new MenuItemNotFoundException(ErrorMessage.MENU_ITEM_NOT_FOUND.getMessage()));
     }
 
-    private MenuItem buildMenuItem(MenuItemRequestDto menuItemRequestDto){
-        return MenuItem.builder()
-                .description(menuItemRequestDto.menuItemDescription())
-                .name(menuItemRequestDto.menuItemName())
-                .price(menuItemRequestDto.menuItemPrice())
-                .isAvailable(true)
-                .build();
-    }
 }
 

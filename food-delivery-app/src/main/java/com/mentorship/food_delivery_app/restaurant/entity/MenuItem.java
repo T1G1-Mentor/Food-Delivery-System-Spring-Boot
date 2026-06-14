@@ -1,6 +1,7 @@
 package com.mentorship.food_delivery_app.restaurant.entity;
 
 import com.mentorship.food_delivery_app.common.audit.Auditable;
+import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
@@ -37,6 +38,15 @@ public class MenuItem extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_menu_id", nullable = false)
     private RestaurantMenu menu;
+
+    public static MenuItem buildMenuItem(String name, String description, BigDecimal price) {
+        return MenuItem.builder()
+                .description(description)
+                .name(name)
+                .price(price)
+                .isAvailable(true)
+                .build();
+    }
 
     public RestaurantBranch getRestaurantBranch() {
         return this.menu.getRestaurantBranch();
