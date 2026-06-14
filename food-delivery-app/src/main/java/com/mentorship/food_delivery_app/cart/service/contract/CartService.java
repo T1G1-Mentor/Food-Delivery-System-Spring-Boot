@@ -18,11 +18,11 @@ public interface CartService {
      *
      * @param cartItemRequest the request dto with value of the new item to add to cart.
      */
-    CartResponseDto addToCart(CartItemRequestDto cartItemRequest);
+    CartResponseDto addToCart(CartItemRequestDto cartItemRequest, UUID customerId);
 
-    CartResponseDto viewCartItems();
+    CartResponseDto viewCartItems(UUID customerId);
 
-    CartResponseDto modifyCartItem(UUID menuItemId, CartItemModifyRequestDto cartItemRequest);
+    CartResponseDto modifyCartItem(UUID customerId, UUID menuItemId, CartItemModifyRequestDto cartItemRequest);
 
 
     /**
@@ -31,7 +31,7 @@ public interface CartService {
      * @param menuItemId The UUID value of the cart item id.
      *
      */
-    void removeCartItem(UUID menuItemId);
+    void removeCartItem(UUID customerId, UUID menuItemId);
 
 
     /**
@@ -47,7 +47,7 @@ public interface CartService {
      * clears the cart immediately and sets {@code isLocked} to {@code false}
      *
      */
-    void clearLoggedInCustomerCart();
+    void clearLoggedInCustomerCart(UUID customerId);
 
     void lockCart(UUID cartId);
 

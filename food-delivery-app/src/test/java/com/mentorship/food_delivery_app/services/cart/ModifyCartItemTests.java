@@ -13,8 +13,8 @@ import com.mentorship.food_delivery_app.cart.service.implementation.CartServiceI
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
-import com.mentorship.food_delivery_app.user.exceptions.CartItemNotFoundException;
-import com.mentorship.food_delivery_app.user.exceptions.CartNotFoundException;
+import com.mentorship.food_delivery_app.cart.exceptions.CartItemNotFoundException;
+import com.mentorship.food_delivery_app.cart.exceptions.CartNotFoundException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -86,7 +87,6 @@ class ModifyCartItemTests {
     class SuccessScenarios {
         @BeforeEach
         void assumptions() {
-            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
             when(cartRepository.findByCustomerId(any()))
                     .thenReturn(Optional.of(cart));
             when(cartItemRepository.findAllByCartId(cartId))
@@ -107,7 +107,7 @@ class ModifyCartItemTests {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(3, null);
 
 
-            CartResponseDto result = cartService.modifyCartItem(menuItemId, request);
+            CartResponseDto result = cartService.modifyCartItem(any(), menuItemId, request);
 
             assertThat(cartItem.getQuantity()).isEqualTo(3);
             assertThat(result).isEqualTo(buildCartResponse());
@@ -120,7 +120,7 @@ class ModifyCartItemTests {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(null, "Extra spicy");
 
 
-            cartService.modifyCartItem(menuItemId, request);
+            cartService.modifyCartItem(any(), menuItemId, request);
 
             assertThat(cartItem.getNote()).isEqualTo("Extra spicy");
 
@@ -132,7 +132,7 @@ class ModifyCartItemTests {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(5, "Well done");
 
 
-            cartService.modifyCartItem(menuItemId, request);
+            cartService.modifyCartItem(any(), menuItemId, request);
 
             assertThat(cartItem.getQuantity()).isEqualTo(5);
             assertThat(cartItem.getNote()).isEqualTo("Well done");
@@ -144,7 +144,7 @@ class ModifyCartItemTests {
         void shouldClearNote_whenEmptyStringProvided() {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(null, "");
 
-            cartService.modifyCartItem(menuItemId, request);
+            cartService.modifyCartItem(any(), menuItemId, request);
 
             assertThat(cartItem.getNote()).isEmpty();
 
@@ -213,12 +213,11 @@ class ModifyCartItemTests {
             CartItemModifyRequestDto request =
                     new CartItemModifyRequestDto(1, null);
 
-            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
             when(cartRepository.findByCustomerId(any()))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> cartService.modifyCartItem(menuItemId, request))
-                    .isInstanceOf(CartNotFoundException.class);
+            assertThrows(CartNotFoundException.class,
+                    ()->cartService.modifyCartItem(any(), menuItemId, request));
 
         }
 
@@ -228,13 +227,12 @@ class ModifyCartItemTests {
             CartItemModifyRequestDto request
                     = new CartItemModifyRequestDto(1, null);
 
-            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
             when(cartRepository.findByCustomerId(any()))
                     .thenReturn(Optional.of(cart));
             when(cartItemRepository.findAllByCartId(any()))
                     .thenReturn(Set.of());
 
-            assertThatThrownBy(() -> cartService.modifyCartItem(menuItemId, request))
+            assertThatThrownBy(() -> cartService.modifyCartItem(any(), menuItemId, request))
                     .isInstanceOf(CartItemNotFoundException.class);
 
         }
@@ -254,7 +252,6 @@ class ModifyCartItemTests {
         void shouldFetchCartItem_withCorrectIds() {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(2, null);
 
-            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
             when(cartRepository.findByCustomerId(any()))
                     .thenReturn(Optional.of(cart));
             when(cartItemRepository.findAllByCartId(cartId))
@@ -262,7 +259,7 @@ class ModifyCartItemTests {
             when(cartMapper.toResponse(cart, cartItems)).
                     thenReturn(buildCartResponse());
 
-            cartService.modifyCartItem(menuItemId, request);
+            cartService.modifyCartItem(any(), menuItemId, request);
 
             verify(cartItemRepository, times(1))
                     .findAllByCartId(cartId);
@@ -273,13 +270,12 @@ class ModifyCartItemTests {
         void shouldCallMapper_exactlyOnce() {
             CartItemModifyRequestDto request = new CartItemModifyRequestDto(2, null);
 
-            when(customerService.getLoggedinCustomer()).thenReturn(new Customer());
             when(cartRepository.findByCustomerId(any()))
                     .thenReturn(Optional.of(cart));
             when(cartItemRepository.findAllByCartId(cartId))
                     .thenReturn(cartItems);
 
-            cartService.modifyCartItem(menuItemId, request);
+            cartService.modifyCartItem(any(), menuItemId, request);
 
             verify(cartMapper, times(1))
                     .toResponse(cart, cartItems);
