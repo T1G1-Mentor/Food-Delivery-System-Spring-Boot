@@ -389,6 +389,19 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
 
+    @ExceptionHandler(DisabledRestaurantMenuException.class)
+    public ResponseEntity<ErrorResponseDto> handleDisabledRestaurantMenu(DisabledRestaurantMenuException ex) {
+        log.warn("Disabled Restaurant Menu Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
+    }
+
+    @ExceptionHandler(RestaurantMenuNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleRestaurantMenuNotFound(RestaurantMenuNotFoundException ex) {
+        log.warn("Restaurant Menu Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
     // -------------------------------------------------------------------
     //  CUSTOMER EXCEPTIONS
     // -------------------------------------------------------------------
