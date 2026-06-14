@@ -1,6 +1,7 @@
 package com.mentorship.food_delivery_app.restaurant.controller;
 
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
+import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantMenuService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,5 +31,16 @@ public class RestaurantMenuManagementController {
                 restaurantMenuId, branchId);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PutMapping("/restaurant-menus/{restaurantMenuId}/menu-items")
+    public ResponseEntity<Void> updateMenuItem(@PathVariable UUID branchId,
+                                               @PathVariable UUID restaurantMenuId,
+                                               @RequestBody @Valid UpdateMenuItemRequestDto menuItemRequestDto){
+
+        restaurantMenuService.updateMenuItem(menuItemRequestDto,
+                restaurantMenuId, branchId);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
