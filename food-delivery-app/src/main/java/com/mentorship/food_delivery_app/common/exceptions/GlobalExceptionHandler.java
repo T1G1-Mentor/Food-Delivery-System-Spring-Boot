@@ -402,6 +402,13 @@ public class GlobalExceptionHandler {
 
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
     }
+
+    @ExceptionHandler(MenuItemNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleMenuItemNotFound(MenuItemNotFoundException ex) {
+        log.warn("Menu Item Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
     // -------------------------------------------------------------------
     //  CUSTOMER EXCEPTIONS
     // -------------------------------------------------------------------
