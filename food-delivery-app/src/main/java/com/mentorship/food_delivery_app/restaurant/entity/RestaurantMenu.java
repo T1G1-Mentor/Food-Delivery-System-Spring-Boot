@@ -31,4 +31,7 @@ public class RestaurantMenu extends Auditable {
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, orphanRemoval = true)
     private Set<MenuItem> items;
 
+    @Column(name = "is_enabled")
+    private boolean isEnabled;
+
 }
