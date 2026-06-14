@@ -2,9 +2,8 @@ package com.mentorship.food_delivery_app.restaurant.service.implementation;
 
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
-import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
+import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantMenu;
-import com.mentorship.food_delivery_app.restaurant.exceptions.DisabledRestaurantMenuException;
 import com.mentorship.food_delivery_app.restaurant.exceptions.RestaurantMenuNotFoundException;
 import com.mentorship.food_delivery_app.restaurant.repository.RestaurantMenuRepository;
 import com.mentorship.food_delivery_app.restaurant.service.contract.MenuItemService;
@@ -26,12 +25,29 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
     public void createMenuItem(MenuItemRequestDto menuItemRequestDto
             , UUID restaurantMenuId
             , UUID branchId) {
-        RestaurantMenu restaurantMenu = this.getRestaurantMenuByIdAndBranchId(restaurantMenuId, branchId);
-
-        if (!restaurantMenu.isEnabled())
-            throw new DisabledRestaurantMenuException(ErrorMessage.RESTAURANT_MENU_DISABLED.getMessage());
+        RestaurantMenu restaurantMenu = getAndValidateRestaurantMenu(restaurantMenuId, branchId);
 
          menuItemService.createMenuItem(menuItemRequestDto,restaurantMenu);
+    }
+
+    @Transactional
+    public void updateMenuItem(UpdateMenuItemRequestDto menuItemRequestDto,
+                               UUID restaurantMenuId,
+                               UUID branchId){
+        // we first validate that this menu belongs to the restaurant
+        RestaurantMenu restaurantMenu = getAndValidateRestaurantMenu(restaurantMenuId, branchId);
+
+        menuItemService.updateMenuItem(menuItemRequestDto,
+                restaurantMenu.getRestaurantMenuId());
+    }
+
+    private RestaurantMenu getAndValidateRestaurantMenu(UUID restaurantMenuId, UUID branchId) {
+        return this.getRestaurantMenuByIdAndBranchId(restaurantMenuId, branchId);
+
+//        if (!restaurantMenu.isEnabled())
+//            throw new DisabledRestaurantMenuException(ErrorMessage.RESTAURANT_MENU_DISABLED.getMessage());
+
+//        return restaurantMenu;
     }
 
     @Override
