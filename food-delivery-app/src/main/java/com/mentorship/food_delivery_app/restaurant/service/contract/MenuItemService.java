@@ -5,5 +5,5 @@ import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantMenu;
 
 public interface MenuItemService {
-    MenuItem createMenuItem(MenuItemRequestDto menuItemRequestDto, RestaurantMenu restaurantMenu);
+    void createMenuItem(MenuItemRequestDto menuItemRequestDto, RestaurantMenu restaurantMenu);
 }

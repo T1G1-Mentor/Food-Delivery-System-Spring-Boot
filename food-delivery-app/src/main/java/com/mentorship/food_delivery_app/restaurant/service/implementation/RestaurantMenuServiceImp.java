@@ -23,7 +23,7 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
 
     @Transactional
     @Override
-    public MenuItem createMenuItem(MenuItemRequestDto menuItemRequestDto
+    public void createMenuItem(MenuItemRequestDto menuItemRequestDto
             , UUID restaurantMenuId
             , UUID branchId) {
         RestaurantMenu restaurantMenu = this.getRestaurantMenuByIdAndBranchId(restaurantMenuId, branchId);
@@ -31,7 +31,7 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
         if (!restaurantMenu.isEnabled())
             throw new DisabledRestaurantMenuException(ErrorMessage.RESTAURANT_MENU_DISABLED.getMessage());
 
-        return menuItemService.createMenuItem(menuItemRequestDto,restaurantMenu);
+         menuItemService.createMenuItem(menuItemRequestDto,restaurantMenu);
     }
 
     @Override

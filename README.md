@@ -67,11 +67,10 @@ sequenceDiagram
 
     box rgb(40, 44, 52) API Layer
         participant Filter as Security/Validation Filter
-        participant Controller as RestaurantManagementController
+        participant Controller as RestaurantMenuManagementController
     end
 
     box Core Domain (Services)
-        participant RestService as RestaurantService
         participant MenuService as RestaurantMenuService
         participant ItemService as MenuItemService
     end
@@ -92,16 +91,11 @@ sequenceDiagram
     activate Controller
     Controller->>Controller: Validate DTO fields
 
-%% 2. Orchestration
-    Note over RestService: Transactional Boundary Starts (REQUIRED)
-    Controller->>RestService: createMenuItem(dto, menuId, branchId)
-    activate RestService
-
-    RestService->>MenuService: createMenuItem(dto, menuId, branchId)
+%% 2. Orchestration Menu Fetch & Validation
+    Note over MenuService: Transactional Boundary Starts (REQUIRED)
+    Controller->>MenuService: createMenuItem(dto, menuId, branchId)
     activate MenuService
 
-
-%% 3. Menu Fetch & Validation
     MenuService->>MenuService: getRestaurantMenuByIdAndBranchId()
     MenuService->>MenuRepo: findByIdAndBranchId(menuId, branchId)
     activate MenuRepo
@@ -116,7 +110,7 @@ sequenceDiagram
         Controller-->>Admin: 400 Bad Request
     end
 
-%% 4. Item Creation
+%% 3. Item Creation
     MenuService->>ItemService: createMenuItem(dto, restaurantMenu)
     activate ItemService
 
@@ -128,17 +122,14 @@ sequenceDiagram
     ItemRepo-->>ItemService: Saved MenuItem Entity
     deactivate ItemRepo
 
-%% 5. Return Flow
+%% 4. Return Flow
     ItemService-->>MenuService: Saved MenuItem (Kept for internal use)
     deactivate ItemService
 
 
-    MenuService-->>RestService: Saved MenuItem (Kept for internal use)
+    MenuService-->>Controller: (void / returns nothing)
+    Note left of MenuService: Transaction Commits
     deactivate MenuService
-
-    RestService-->>Controller: (void / returns nothing)
-    Note left of RestService: Transaction Commits
-    deactivate RestService
 
     Controller-->>Admin: 201 Created (Empty Body or Generic Success)
     deactivate Controller

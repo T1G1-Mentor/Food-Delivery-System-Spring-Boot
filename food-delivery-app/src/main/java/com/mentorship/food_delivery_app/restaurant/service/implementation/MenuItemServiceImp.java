@@ -15,11 +15,11 @@ public class MenuItemServiceImp implements MenuItemService {
     private final MenuItemRepository menuItemRepository;
     @Transactional
     @Override
-    public MenuItem createMenuItem(MenuItemRequestDto menuItemRequestDto,
+    public void createMenuItem(MenuItemRequestDto menuItemRequestDto,
                                RestaurantMenu restaurantMenu) {
         MenuItem menuItem = buildMenuItem(menuItemRequestDto);
         menuItem.setMenu(restaurantMenu);
-        return menuItemRepository.save(menuItem);
+        menuItemRepository.save(menuItem);
     }
 
     private MenuItem buildMenuItem(MenuItemRequestDto menuItemRequestDto){
