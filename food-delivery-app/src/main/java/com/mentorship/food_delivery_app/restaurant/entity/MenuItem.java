@@ -1,10 +1,10 @@
 package com.mentorship.food_delivery_app.restaurant.entity;
 
 import com.mentorship.food_delivery_app.common.audit.Auditable;
-import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.SQLDelete;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -17,6 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @DynamicUpdate
+@SQLDelete(sql = "UPDATE menu_item SET is_deleted = true WHERE menu_item_id = ?")
 public class MenuItem extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -34,6 +35,9 @@ public class MenuItem extends Auditable {
 
     @Column(name = "is_available")
     private boolean isAvailable;
+
+    @Column(name = "is_deleted")
+    private boolean isDeleted;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_menu_id", nullable = false)
