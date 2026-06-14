@@ -11,16 +11,22 @@ import java.util.UUID;
 public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
 
     @Query("""
-    SELECT mi FROM MenuItem mi
-    JOIN FETCH menu m
-    JOIN FETCH restaurantBranch
-    WHERE mi.menuItemId = :menuItemId
-""")
+                SELECT mi FROM MenuItem mi
+                JOIN FETCH menu m
+                JOIN FETCH restaurantBranch
+                WHERE mi.menuItemId = :menuItemId
+            """)
     Optional<MenuItem> findById(UUID menuItemId);
 
     @Query("""
-    SELECT mi FROM MenuItem mi
-    WHERE mi.menuItemId IN :menuItemIds
-""")
+                SELECT mi FROM MenuItem mi
+                WHERE mi.menuItemId IN :menuItemIds
+            """)
     List<MenuItem> findMenuItemsByIds(List<UUID> menuItemIds);
+
+    @Query("""
+                SELECT mi FROM MenuItem mi
+                WHERE mi.menuItemId = :menuItemId AND mi.menu.restaurantMenuId = :restaurantMenuId
+            """)
+    Optional<MenuItem> findByIdAndMenuId(UUID menuItemId, UUID restaurantMenuId);
 }

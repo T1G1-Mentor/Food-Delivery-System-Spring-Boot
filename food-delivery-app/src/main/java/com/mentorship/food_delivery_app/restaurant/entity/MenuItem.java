@@ -3,6 +3,7 @@ package com.mentorship.food_delivery_app.restaurant.entity;
 import com.mentorship.food_delivery_app.common.audit.Auditable;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@DynamicUpdate
 public class MenuItem extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -38,5 +40,15 @@ public class MenuItem extends Auditable {
 
     public RestaurantBranch getRestaurantBranch() {
         return this.menu.getRestaurantBranch();
+    }
+
+    public void applyModifications(String name, String description, BigDecimal price) {
+        if (name != null && !this.name.equals(name))
+            this.name = name;
+        if (description != null && !this.description.equals(description))
+            this.description = description;
+        if (price != null && !this.price.equals(price))
+            this.price = price;
+
     }
 }
