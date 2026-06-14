@@ -1,6 +1,7 @@
 package com.mentorship.food_delivery_app.restaurant.service.implementation;
 
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
+import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
@@ -10,9 +11,11 @@ import com.mentorship.food_delivery_app.restaurant.exceptions.RestaurantBranchNo
 import com.mentorship.food_delivery_app.restaurant.repository.CouponRepository;
 import com.mentorship.food_delivery_app.restaurant.repository.MenuItemRepository;
 import com.mentorship.food_delivery_app.restaurant.repository.RestaurantBranchRepository;
+import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantMenuService;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +26,7 @@ public class RestaurantServiceImp implements RestaurantService {
     private final MenuItemRepository menuItemRepository;
     private final CouponRepository couponRepository;
     private final RestaurantBranchRepository restaurantBranchRepository;
+    private final RestaurantMenuService restaurantMenuService;
 
     @Override
     public MenuItem getMenuItemById(UUID menuItemId) {
@@ -48,5 +52,12 @@ public class RestaurantServiceImp implements RestaurantService {
         return restaurantBranchRepository.findByRestaurantBranchId(restaurantBranchId)
                 .orElseThrow(()->
                         new RestaurantBranchNotFoundException(ErrorMessage.RESTAURANT_BRANCH_NOT_FOUND.getMessage()));
+    }
+
+    @Transactional
+    @Override
+    public void createMenuItem(MenuItemRequestDto menuItemRequestDto, UUID restaurantMenuId, UUID branchId) {
+        restaurantMenuService.createMenuItem(menuItemRequestDto,
+                restaurantMenuId, branchId);
     }
 }
