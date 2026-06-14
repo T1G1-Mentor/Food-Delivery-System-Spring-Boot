@@ -41,22 +41,108 @@ Handles all identity and access concerns: sign-up flows for customers and restau
 
 Allows restaurant owners to register and manage their restaurant, maintain menus, and lets customers search and discover restaurants.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/restaurants` | Register restaurant |
-| PUT | `/restaurants/{id}` | Update restaurant |
-| PATCH | `/restaurants/{id}/status` | Enable / disable restaurant |
-| GET | `/restaurants` | View all restaurants |
-| GET | `/restaurants/top-rated` | Top rating restaurants |
-| GET | `/restaurants/recommendations` | Restaurant recommendations |
-| GET | `/restaurants/search` | Search restaurants |
-| POST | `/restaurants/{id}/menus` | Create a new menu |
-| PUT | `/restaurants/{id}/menus/{menuId}` | Update menu |
-| DELETE | `/restaurants/{id}/menus/{menuId}` | Delete menu |
-| PATCH | `/restaurants/{id}/menus/{menuId}/status` | Enable / disable menu |
-| GET | `/restaurants/{id}/menus/history` | View history list of menus |
-| GET | `/restaurants/{id}/menus/search` | Search menu items |
+| Method | Endpoint                                        | Description                 |
+|--------|-------------------------------------------------|-----------------------------|
+| POST   | `/restaurants`                                  | Register restaurant         |
+| PUT    | `/restaurants/{id}`                             | Update restaurant           |
+| PATCH  | `/restaurants/{id}/status`                      | Enable / disable restaurant |
+| GET    | `/restaurants`                                  | View all restaurants        |
+| GET    | `/restaurants/top-rated`                        | Top rating restaurants      |
+| GET    | `/restaurants/recommendations`                  | Restaurant recommendations  |
+| GET    | `/restaurants/search`                           | Search restaurants          |
+| POST   | `/restaurants/{id}/menus`                       | Create a new menu           |
+| PUT    | `/restaurants/{id}/menus/{menuId}`              | Update menu                 |
+| DELETE | `/restaurants/{id}/menus/{menuId}`              | Delete menu                 |
+| PATCH  | `/restaurants/{id}/menus/{menuId}/status`       | Enable / disable menu       |
+| GET    | `/restaurants/{id}/menus/history`               | View history list of menus  |
+| GET    | `/restaurants/{id}/menus/search`                | Search menu items           |
+| POST   | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items` | Create menu item            |
 
+#### 2.2.1 Create menu item sequence diagram
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor Admin
+
+    box rgb(40, 44, 52) API Layer
+        participant Filter as Security/Validation Filter
+        participant Controller as RestaurantManagementController
+    end
+
+    box Core Domain (Services)
+        participant RestService as RestaurantService
+        participant MenuService as RestaurantMenuService
+        participant ItemService as MenuItemService
+    end
+
+    box rgb(50, 40, 60) Persistence Layer
+        participant MenuRepo as RestaurantMenuRepository
+        participant ItemRepo as MenuItemRepository
+    end
+
+%% 1. Request Initiation & Validation
+    Admin->>Filter: POST /api/v1/.../menu-items (MenuItemRequestDto)
+
+    activate Filter
+    Filter->>Filter: Validate Admin Access
+    Filter->>Controller: Forward Request
+    deactivate Filter
+
+    activate Controller
+    Controller->>Controller: Validate DTO fields
+
+%% 2. Orchestration
+    Note over RestService: Transactional Boundary Starts (REQUIRED)
+    Controller->>RestService: createMenuItem(dto, menuId, branchId)
+    activate RestService
+
+    RestService->>MenuService: createMenuItem(dto, menuId, branchId)
+    activate MenuService
+
+
+%% 3. Menu Fetch & Validation
+    MenuService->>MenuService: getRestaurantMenuByIdAndBranchId()
+    MenuService->>MenuRepo: findByIdAndBranchId(menuId, branchId)
+    activate MenuRepo
+    MenuRepo-->>MenuService: Optional<RestaurantMenu>
+    deactivate MenuRepo
+
+    alt Menu Not Found
+        MenuService-->>Controller: throws RestaurantMenuNotFoundException
+        Controller-->>Admin: 404 Not Found
+    else Menu Found but Disabled
+        MenuService-->>Controller: throws DisabledRestaurantMenuException
+        Controller-->>Admin: 400 Bad Request
+    end
+
+%% 4. Item Creation
+    MenuService->>ItemService: createMenuItem(dto, restaurantMenu)
+    activate ItemService
+
+    Note over ItemService: Joins existing Transaction
+
+    ItemService->>ItemService: buildMenuItem(dto)
+    ItemService->>ItemRepo: save(menuItem)
+    activate ItemRepo
+    ItemRepo-->>ItemService: Saved MenuItem Entity
+    deactivate ItemRepo
+
+%% 5. Return Flow
+    ItemService-->>MenuService: Saved MenuItem (Kept for internal use)
+    deactivate ItemService
+
+
+    MenuService-->>RestService: Saved MenuItem (Kept for internal use)
+    deactivate MenuService
+
+    RestService-->>Controller: (void / returns nothing)
+    Note left of RestService: Transaction Commits
+    deactivate RestService
+
+    Controller-->>Admin: 201 Created (Empty Body or Generic Success)
+    deactivate Controller
+```
 ---
 
 ### 3. Cart Management
