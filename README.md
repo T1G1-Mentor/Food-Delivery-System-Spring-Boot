@@ -57,6 +57,7 @@ Allows restaurant owners to register and manage their restaurant, maintain menus
 | GET    | `/restaurants/{id}/menus/history`               | View history list of menus  |
 | GET    | `/restaurants/{id}/menus/search`                | Search menu items           |
 | POST   | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items` | Create menu item            |
+| PUT    | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items` | Update menu item            |
 
 #### 2.2.1 Create menu item sequence diagram
 ```mermaid
@@ -132,6 +133,101 @@ sequenceDiagram
     deactivate MenuService
 
     Controller-->>Admin: 201 Created (Empty Body or Generic Success)
+    deactivate Controller
+```
+#### 2.2.2 Update menu item sequence diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    
+    actor Admin
+    
+    box rgb(40, 44, 52) API Layer
+        participant Filter as Security/Validation Filter
+        participant Controller as RestaurantMenuManagementController
+    end
+    
+    box rgb(30, 50, 60) Core Domain (Services)
+        participant MenuService as RestaurantMenuService
+        participant ItemService as MenuItemService
+        participant Entity as MenuItem (Entity)
+    end
+    
+    box rgb(50, 40, 60) Persistence Layer
+        participant MenuRepo as RestaurantMenuRepository
+        participant ItemRepo as MenuItemRepository
+        participant DB as Database
+    end
+
+    %% 1. Request Initiation & Validation
+    Admin->>Filter: PUT /.../{menuId}/menu-items (UpdateMenuItemRequestDto)
+    
+    activate Filter
+    Note right of Filter: Security Context checks Admin permissions
+    Filter->>Filter: Validate Admin Access
+    Filter->>Controller: Forward Request
+    deactivate Filter
+    
+    activate Controller
+    Note right of Controller: @Valid triggers DTO constraints
+    Controller->>Controller: Validate DTO fields
+    
+    %% 2. Orchestration
+    Controller->>MenuService: updateMenuItem(dto, menuId, branchId)
+    activate MenuService
+    
+    Note over MenuService, DB: Transactional Boundary Starts (REQUIRED)
+    
+    %% 3. Menu Fetch & Ownership Validation
+    MenuService->>MenuService: getAndValidateRestaurantMenu()
+    MenuService->>MenuRepo: findByIdAndBranchId(menuId, branchId)
+    activate MenuRepo
+    MenuRepo-->>MenuService: Optional<RestaurantMenu>
+    deactivate MenuRepo
+    
+    alt Menu Not Found
+        MenuService-->>Controller: throws RestaurantMenuNotFoundException
+        Controller-->>Admin: 404 Not Found
+    end
+    
+    %% 4. Item Fetch & Verification
+    MenuService->>ItemService: updateMenuItem(dto, menuId)
+    activate ItemService
+    
+    Note over ItemService: Joins existing Transaction
+    
+    ItemService->>ItemService: getMenuItemByIdAndMenuId()
+    ItemService->>ItemRepo: findByIdAndMenuId(itemId, menuId)
+    activate ItemRepo
+    ItemRepo-->>ItemService: Optional<MenuItem>
+    deactivate ItemRepo
+    
+    alt Item Not Found
+        ItemService-->>Controller: throws MenuItemNotFoundException
+        Controller-->>Admin: 404 Not Found
+    end
+    
+    %% 5. Entity State Mutation (DDD)
+    ItemService->>Entity: applyModifications(name, description, price)
+    activate Entity
+    Note right of Entity: Rich Domain Model in action:<br/>Entity alters its own internal state
+    Entity-->>ItemService: (State Updated In Memory)
+    deactivate Entity
+    
+    %% 6. Return Flow & Implicit Database Sync
+    ItemService-->>MenuService: (void)
+    deactivate ItemService
+    
+    Note over MenuService, DB: Transaction Commits.<br/>Hibernate Dirty Checking detects entity changes.
+    MenuService->>DB: Executing: UPDATE menu_item SET ...
+    activate DB
+    DB-->>MenuService: (Update Successful)
+    deactivate DB
+    
+    MenuService-->>Controller: (void)
+    deactivate MenuService
+    
+    Controller-->>Admin: 204 No Content
     deactivate Controller
 ```
 ---
