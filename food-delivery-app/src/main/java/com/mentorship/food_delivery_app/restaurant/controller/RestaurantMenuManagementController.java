@@ -1,7 +1,7 @@
 package com.mentorship.food_delivery_app.restaurant.controller;
 
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
-import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
+import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantMenuService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,8 +13,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/restaurants/branchs/{branchId}")
 @RequiredArgsConstructor
-public class RestaurantManagementController {
-    private final RestaurantService restaurantService;
+public class RestaurantMenuManagementController {
+    private final RestaurantMenuService restaurantMenuService;
 
 
 
@@ -26,7 +26,7 @@ public class RestaurantManagementController {
                                                @PathVariable UUID restaurantMenuId,
                                                @RequestBody @Valid MenuItemRequestDto menuItemRequestDto){
 
-        restaurantService.createMenuItem(menuItemRequestDto,
+        restaurantMenuService.createMenuItem(menuItemRequestDto,
                 restaurantMenuId, branchId);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();

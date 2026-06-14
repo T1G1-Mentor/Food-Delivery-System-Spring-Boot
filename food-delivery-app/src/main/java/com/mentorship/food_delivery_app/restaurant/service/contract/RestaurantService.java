@@ -25,5 +25,4 @@ public interface RestaurantService {
 
     RestaurantBranch getRestaurantBranchById(UUID restaurantBranchId);
 
-    void createMenuItem(MenuItemRequestDto menuItemRequestDto, UUID restaurantMenuId, UUID restaurantId);
 }

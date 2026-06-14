@@ -54,10 +54,4 @@ public class RestaurantServiceImp implements RestaurantService {
                         new RestaurantBranchNotFoundException(ErrorMessage.RESTAURANT_BRANCH_NOT_FOUND.getMessage()));
     }
 
-    @Transactional
-    @Override
-    public void createMenuItem(MenuItemRequestDto menuItemRequestDto, UUID restaurantMenuId, UUID branchId) {
-        restaurantMenuService.createMenuItem(menuItemRequestDto,
-                restaurantMenuId, branchId);
-    }
 }
