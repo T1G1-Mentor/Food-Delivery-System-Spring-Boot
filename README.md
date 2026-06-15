@@ -62,7 +62,7 @@ restaurants.
 | DELETE | `/restaurants/{id}/menus/{menuId}`                                                           | Delete menu                 |
 | PATCH  | `/restaurants/{id}/menus/{menuId}/status`                                                    | Enable / disable menu       |
 | GET    | `/restaurants/{id}/menus/history`                                                            | View history list of menus  |
-| GET    | `/restaurants/{id}/menus/search`                                                             | Search menu items           |
+| GET    | `public/discover/menu-items?query=...`                                                       | Search menu items           |
 | POST   | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items`            | Create menu item            |
 | PUT    | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items`            | Update menu item            |
 | DELETE | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items/menuItemId` | Delete menu item            |
@@ -316,6 +316,7 @@ sequenceDiagram
 ```
 
 #### 2.2.4 Get all menu items by menu id sequence diagram
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -374,6 +375,63 @@ sequenceDiagram
     Controller -->> Customer: 200 OK (List<MenuItemDto>)
     deactivate Controller
 ```
+
+#### 2.2.5
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer
+
+    box API Layer
+        participant Controller as PublicDiscoveryController
+    end
+
+    box Search Facade
+        participant Discovery as DiscoveryService
+    end
+
+    box Persistence Layer
+        participant Repo as MenuItemRepository
+        participant DB as Database
+    end
+
+    Customer ->> Controller: GET /api/v1/public/discover/menu-items?query={query}
+    activate Controller
+    Note over Discovery, Repo: Read-Only Transaction Starts
+    Controller ->> Discovery: searchMenuItem(query)
+    activate Discovery
+    Discovery ->> Repo: searchMenuItem(query)
+    activate Repo
+    Repo ->> DB: Execute Native Search Query
+    activate DB
+    DB -->> Repo: ResultSet
+    deactivate DB
+    Note right of Repo: Maps directly to List<SearchMenuItemResponse>
+    Repo -->> Discovery: List<SearchMenuItemResponse>
+    deactivate Repo
+    Note over Discovery, Repo: Read-Only Transaction Ends
+    Discovery -->> Controller: List<SearchMenuItemResponse>
+    deactivate Discovery
+    Controller -->> Customer: 200 OK (JSON Payload)
+    deactivate Controller
+```
+
+##### Decision what & why
+
+- Database and Full Text Search Index
+    - A FULL TEXT SEARCH index on the menu items table creating a vector to search in. while writing an optimized query
+      that first filters out the items we need then joins the tables utilizing PK indexes on those tables
+- Service and Controller designs
+    - Discovery service that interacts directly with the repository?
+        - Yup: The separation we relied on earlier was about restricting the access to the aggregates (following DDD)
+          protecting the system ,applying business roles, and managing transactions
+          the public search operation does not require any of these restrictions overhead.
+        - Projections: Creating an interface that includes the fields or the data we need to return to our customers and
+          retrieving only the data we need from our DB increases our application performance.
+            - reduces the network overhead (no over fetching)
+            - no mapping inside our application (more processing and resource consuming)
+
 ### 3. Cart Management
 
 Manages a customer's shopping cart — adding and modifying items, viewing cart contents, and proceeding to checkout.
