@@ -7,10 +7,12 @@ import com.mentorship.food_delivery_app.restaurant.entity.RestaurantMenu;
 import java.util.UUID;
 
 public interface RestaurantMenuService {
-    void createMenuItem(MenuItemRequestDto menuItemRequestDto, UUID restaurantMenuId, UUID restaurantId);
+    void createMenuItem(MenuItemRequestDto menuItemRequestDto, UUID restaurantMenuId, UUID branchId);
 
     RestaurantMenu getRestaurantMenuByIdAndBranchId(UUID restaurantMenuId, UUID branchId);
 
     void updateMenuItem(UpdateMenuItemRequestDto menuItemRequestDto
             , UUID restaurantMenuId, UUID branchId);
+
+    void deleteMenuItem(UUID menuItemId, UUID restaurantMenuId, UUID branchId);
 }

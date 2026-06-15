@@ -41,6 +41,15 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
                 restaurantMenu.getRestaurantMenuId());
     }
 
+    @Transactional
+    @Override
+    public void deleteMenuItem(UUID menuItemId, UUID restaurantMenuId, UUID branchId) {
+        RestaurantMenu restaurantMenu= getAndValidateRestaurantMenu(restaurantMenuId,
+                branchId);
+        menuItemService.deleteMenuItem(menuItemId,
+                restaurantMenu.getRestaurantMenuId());
+    }
+
     private RestaurantMenu getAndValidateRestaurantMenu(UUID restaurantMenuId, UUID branchId) {
         return this.getRestaurantMenuByIdAndBranchId(restaurantMenuId, branchId);
 
