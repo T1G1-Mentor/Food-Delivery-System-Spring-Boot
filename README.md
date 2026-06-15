@@ -315,6 +315,65 @@ sequenceDiagram
     deactivate Controller
 ```
 
+#### 2.2.4 Get all menu items by menu id sequence diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer
+
+    box API Layer
+        participant Controller as PublicRestaurantController
+    end
+
+    box Core Domain (Services)
+        participant MenuService as RestaurantMenuService
+        participant ItemService as MenuItemService
+    end
+
+    box Persistence Layer
+        participant MenuRepo as RestaurantMenuRepository
+        participant ItemRepo as MenuItemRepository
+    end
+
+%% 1. Request Initiation
+    Customer ->> Controller: GET /api/v1/public/.../menus/{menuId}/items
+    activate Controller
+%% 2. Aggregate Root Validation & Tx Boundary
+    Note over MenuService, ItemRepo: Read-Only Transaction Starts<br/>(@Transactional(readOnly = true))
+    Controller ->> MenuService: getAllMenuItemsByMenuId(menuId, branchId)
+    activate MenuService
+    MenuService ->> MenuService: getRestaurantMenuByIdAndBranchId()
+    MenuService ->> MenuRepo: findByIdAndBranchId(menuId, branchId)
+    activate MenuRepo
+    MenuRepo -->> MenuService: Optional<RestaurantMenu>
+    deactivate MenuRepo
+
+    alt Menu Not Found
+        MenuService -->> Controller: throws RestaurantMenuNotFoundException
+        Controller -->> Customer: 404 Not Found
+    else Menu is Disabled
+        MenuService -->> Controller: throws DisabledRestaurantMenuException
+        Controller -->> Customer: 403 Forbidden / 400 Bad Request
+    end
+
+%% 3. Delegating to Child Service
+    MenuService ->> ItemService: getAllMenuItemsByMenuId(menuId)
+    activate ItemService
+%% 4. Database Fetch & DTO Projection
+    ItemService ->> ItemRepo: findAllByMenuId(menuId)
+    activate ItemRepo
+    Note right of ItemRepo: Repository executes SELECT<br/>and maps directly to List<MenuItemDto>
+    ItemRepo -->> ItemService: List<MenuItemDto>
+    deactivate ItemRepo
+%% 5. Return Flow & Tx Closure
+    ItemService -->> MenuService: List<MenuItemDto>
+    deactivate ItemService
+    Note over MenuService, ItemRepo: Read-Only Transaction Ends.<br/>(Hibernate skips dirty checking & flushing).
+    MenuService -->> Controller: List<MenuItemDto>
+    deactivate MenuService
+    Controller -->> Customer: 200 OK (List<MenuItemDto>)
+    deactivate Controller
+```
 ### 3. Cart Management
 
 Manages a customer's shopping cart — adding and modifying items, viewing cart contents, and proceeding to checkout.
