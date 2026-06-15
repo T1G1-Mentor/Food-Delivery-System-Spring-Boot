@@ -244,3 +244,9 @@ INSERT INTO role (role_name)
     VALUES
         ('ROLE_ADMIN'),('ROLE_CUSTOMER');
 
+ALTER TABLE menu_item
+    ADD COLUMN   search_vector tsvector GENERATED ALWAYS AS (
+        setweight(to_tsvector('english', coalesce(menu_item_name, '')), 'A') || ' ' ||
+        setweight(to_tsvector('english', coalesce(menu_item_description, '')) , 'B') ) STORED;
+
+CREATE INDEX idx_menu_item_search ON menu_item USING GIN (search_vector );
