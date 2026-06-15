@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -18,13 +19,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @DynamicUpdate
 @SQLDelete(sql = "UPDATE menu_item SET is_deleted = true WHERE menu_item_id = ?")
+@SQLRestriction("is_deleted = false")
 public class MenuItem extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "menu_item_id")
     private UUID menuItemId;
 
-    @Column(name = "menu_item_description", length = 255)
+    @Column(name = "menu_item_description")
     private String description;
 
     @Column(name = "menu_item_name", nullable = false, length = 50)

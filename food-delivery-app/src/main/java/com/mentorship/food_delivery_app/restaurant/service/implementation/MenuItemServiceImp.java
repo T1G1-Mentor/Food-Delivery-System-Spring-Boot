@@ -18,6 +18,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MenuItemServiceImp implements MenuItemService {
     private final MenuItemRepository menuItemRepository;
+
     @Transactional
     @Override
     public void createMenuItem(MenuItemRequestDto menuItemRequestDto,
@@ -32,7 +33,15 @@ public class MenuItemServiceImp implements MenuItemService {
 
     @Transactional
     @Override
-    public void updateMenuItem(UpdateMenuItemRequestDto menuItemRequestDto, UUID restaurantMenuId){
+    public void deleteMenuItem(UUID menuItemId, UUID restaurantMenuId){
+//        to validate that the menu item belongs to that menu
+        MenuItem menuItem = getMenuItemByIdAndMenuId(menuItemId,
+                restaurantMenuId);
+        menuItemRepository.deleteById(menuItem.getMenuItemId());
+    }
+    @Transactional
+    @Override
+    public void updateMenuItem(UpdateMenuItemRequestDto menuItemRequestDto, UUID restaurantMenuId) {
 
         MenuItem menuItem = getMenuItemByIdAndMenuId(menuItemRequestDto.menuItemId()
                 , restaurantMenuId);
@@ -46,7 +55,7 @@ public class MenuItemServiceImp implements MenuItemService {
     @Override
     public MenuItem getMenuItemByIdAndMenuId(UUID menuItemId, UUID restaurantMenuId) {
         return menuItemRepository.findByIdAndMenuId(menuItemId, restaurantMenuId)
-                .orElseThrow(()-> new MenuItemNotFoundException(ErrorMessage.MENU_ITEM_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new MenuItemNotFoundException(ErrorMessage.MENU_ITEM_NOT_FOUND.getMessage()));
     }
 
 }
