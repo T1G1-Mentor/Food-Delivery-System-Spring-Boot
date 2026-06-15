@@ -3,6 +3,7 @@ package com.mentorship.food_delivery_app.restaurant.repository;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.SearchMenuItemResponse;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
+import lombok.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -34,14 +35,14 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
     Optional<MenuItem> findByIdAndMenuId(UUID menuItemId, UUID restaurantMenuId);
 
     @Query("""
-    SELECT new com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto(
-    mi.menuItemId,
-    mi.name,
-    mi.description,
-    mi.price
-    ) FROM MenuItem mi
-    WHERE mi.menu.restaurantMenuId = :restaurantMenuId
-""")
+                SELECT new com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto(
+                mi.menuItemId,
+                mi.name,
+                mi.description,
+                mi.price
+                ) FROM MenuItem mi
+                WHERE mi.menu.restaurantMenuId = :restaurantMenuId
+            """)
     List<MenuItemDto> findAllByMenuId(UUID restaurantMenuId);
 
     @Query(value = """
