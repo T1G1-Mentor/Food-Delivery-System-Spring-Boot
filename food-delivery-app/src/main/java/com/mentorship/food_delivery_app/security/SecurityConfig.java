@@ -2,6 +2,7 @@ package com.mentorship.food_delivery_app.security;
 
 import com.mentorship.food_delivery_app.security.filters.FilterChainExceptionHandler;
 import com.mentorship.food_delivery_app.security.filters.JwtAuthFilter;
+import com.mentorship.food_delivery_app.user.entity.enums.RoleName;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,9 +33,9 @@ public class SecurityConfig {
                 .addFilterAfter(jwtAuthFilter, FilterChainExceptionHandler.class)
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/**").permitAll()
-                                        .requestMatchers("/api/v1/**/auth").permitAll()
+                                auth.requestMatchers("/api/public/**").permitAll()
                                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                                        .requestMatchers("/api/v1/customers/**").hasRole("CUSTOMER")
                 );
 
         return http.build();
