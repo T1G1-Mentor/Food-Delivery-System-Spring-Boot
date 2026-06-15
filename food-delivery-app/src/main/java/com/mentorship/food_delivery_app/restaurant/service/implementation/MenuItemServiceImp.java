@@ -3,6 +3,7 @@ package com.mentorship.food_delivery_app.restaurant.service.implementation;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
+import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantMenu;
 import com.mentorship.food_delivery_app.restaurant.exceptions.MenuItemNotFoundException;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -52,6 +54,11 @@ public class MenuItemServiceImp implements MenuItemService {
 
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<MenuItemDto> getAllMenuItemsByMenuId(UUID restaurantMenuId){
+        return menuItemRepository.findAllByMenuId(restaurantMenuId);
+    }
     @Override
     public MenuItem getMenuItemByIdAndMenuId(UUID menuItemId, UUID restaurantMenuId) {
         return menuItemRepository.findByIdAndMenuId(menuItemId, restaurantMenuId)
