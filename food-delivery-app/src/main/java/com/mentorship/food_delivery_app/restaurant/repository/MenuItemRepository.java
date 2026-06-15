@@ -12,8 +12,8 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
 
     @Query("""
                 SELECT mi FROM MenuItem mi
-                JOIN FETCH menu m
-                JOIN FETCH restaurantBranch
+                JOIN FETCH mi.menu m
+                JOIN FETCH m.restaurantBranch
                 WHERE mi.menuItemId = :menuItemId
             """)
     Optional<MenuItem> findById(UUID menuItemId);

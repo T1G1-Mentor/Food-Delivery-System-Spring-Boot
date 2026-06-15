@@ -13,4 +13,6 @@ public interface MenuItemService {
     void updateMenuItem(UpdateMenuItemRequestDto menuItemRequestDto, UUID restaurantMenuId);
 
     MenuItem getMenuItemByIdAndMenuId(UUID menuItemId, UUID restaurantMenuId);
+
+    void deleteMenuItem(UUID menuItemId, UUID restaurantMenuId);
 }

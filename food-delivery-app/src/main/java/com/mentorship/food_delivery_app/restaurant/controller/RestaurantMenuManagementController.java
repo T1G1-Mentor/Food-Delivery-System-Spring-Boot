@@ -43,4 +43,15 @@ public class RestaurantMenuManagementController {
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
+    @DeleteMapping("/restaurant-menus/{restaurantMenuId}/menu-items/{menuItemId}")
+    public ResponseEntity<Void> deleteMenuItem(@PathVariable UUID branchId,
+                                               @PathVariable UUID restaurantMenuId,
+                                               @PathVariable UUID menuItemId){
+
+        restaurantMenuService.deleteMenuItem(menuItemId,
+                restaurantMenuId, branchId);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }
