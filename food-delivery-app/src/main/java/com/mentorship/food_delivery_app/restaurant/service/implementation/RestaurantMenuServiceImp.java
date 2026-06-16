@@ -4,6 +4,8 @@ import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.CreateMenuDto;
+import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantMenu;
 import com.mentorship.food_delivery_app.restaurant.exceptions.DisabledRestaurantBranchException;
 import com.mentorship.food_delivery_app.restaurant.exceptions.DisabledRestaurantMenuException;
@@ -72,6 +74,16 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
                         (ErrorMessage.RESTAURANT_MENU_NOT_FOUND.getMessage()));
     }
 
+    @Transactional
+    @Override
+    public void createRestaurantMenu(CreateMenuDto createMenuDto, RestaurantBranch branch){
+
+        RestaurantMenu menu=RestaurantMenu.
+                createMenu(createMenuDto.restaurantMenuName());
+        menu.setRestaurantBranch(branch);
+
+        restaurantMenuRepository.save(menu);
+    }
 
     private boolean validateRestaurantMenuExists(UUID menuId, UUID branchId) {
         Boolean isEnabled = restaurantMenuRepository.isEnabledByIdAndBranchId(menuId, branchId);

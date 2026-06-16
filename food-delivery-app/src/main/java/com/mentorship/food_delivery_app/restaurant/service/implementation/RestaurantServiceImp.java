@@ -4,6 +4,7 @@ import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.CreateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
@@ -93,6 +94,15 @@ public class RestaurantServiceImp implements RestaurantService {
                 branchId);
     }
 
+    @Transactional
+    @Override
+    public void createRestaurantMenu(CreateMenuDto createMenuDto, UUID branchId){
+        RestaurantBranch branch = getAndValidateRestaurantBranch(branchId);
+
+        restaurantMenuService.createRestaurantMenu(createMenuDto,
+                branch);
+    }
+
     private void validateRestaurant(UUID branchId) {
         Boolean isEnabled = restaurantBranchRepository.isEnabledById(branchId);
 
@@ -102,4 +112,12 @@ public class RestaurantServiceImp implements RestaurantService {
             throw new DisabledRestaurantBranchException(ErrorMessage.RESTAURANT_BRANCH_DISABLED.getMessage());
     }
 
+    private RestaurantBranch getAndValidateRestaurantBranch(UUID branchId){
+        RestaurantBranch branch = getRestaurantBranchById(branchId);
+
+        if (!branch.isEnabled())
+            throw new DisabledRestaurantBranchException(ErrorMessage.RESTAURANT_BRANCH_DISABLED.getMessage());
+
+        return branch;
+    }
 }

@@ -2,6 +2,8 @@ package com.mentorship.food_delivery_app.restaurant.entity;
 
 import com.mentorship.food_delivery_app.common.audit.Auditable;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.Set;
@@ -34,4 +36,10 @@ public class RestaurantMenu extends Auditable {
     @Column(name = "is_enabled")
     private boolean isEnabled;
 
+    public static RestaurantMenu createMenu( String menuName) {
+        return RestaurantMenu.
+                builder()
+                .name(menuName)
+                .isEnabled(true).build();
+    }
 }
