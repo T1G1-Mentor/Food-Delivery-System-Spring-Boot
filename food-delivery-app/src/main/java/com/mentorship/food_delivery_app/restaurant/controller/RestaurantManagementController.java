@@ -2,6 +2,7 @@ package com.mentorship.food_delivery_app.restaurant.controller;
 
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.ChangeMenuStatusDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.CreateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.UpdateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
@@ -54,6 +55,17 @@ public class RestaurantManagementController {
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();
+    }
+
+    @PatchMapping("/restaurant-menus/{menuId}/status")
+    public ResponseEntity<Void> toggleRestaurantMenuStatus(@PathVariable UUID menuId,
+                                                           @PathVariable UUID branchId,
+                                                           @RequestBody @Valid ChangeMenuStatusDto changeMenuStatusDto) {
+        restaurantService.toggleRestaurantMenuStatus(menuId,
+                branchId,
+                changeMenuStatusDto.isEnabled());
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     // -------------------------------------------------------------------

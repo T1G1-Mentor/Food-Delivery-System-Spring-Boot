@@ -61,7 +61,7 @@ restaurants.
 | PUT    | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Update menu                 |
 | DELETE | `/restaurants/branchs/{branchId}/restaurant-menus/{menuId}`                                  | Delete menu                 |
 | DELETE | `/public/restaurants/branchs/{branchId}/restaurant-menus`                                    | Get all menus by branch id  |
-| PATCH  | `/restaurants/{id}/menus/{menuId}/status`                                                    | Enable / disable menu       |
+| PATCH  | `/restaurants/branches/{branchId}/restaurant-menus/{menuId}/status`                          | Enable / Disable menu       |
 | GET    | `/restaurants/{id}/menus/history`                                                            | View history list of menus  |
 | GET    | `public/discover/menu-items?query=...`                                                       | Search menu items           |
 | POST   | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items`            | Create menu item            |
@@ -102,12 +102,10 @@ sequenceDiagram
     deactivate Filter
     activate Controller
     Controller ->> Controller: Validate DTO fields
-
 %% 2. Aggregate Root Entry & Branch Validation
     Note over RestService, DB: Transactional Boundary Starts
     Controller ->> RestService: createMenuItem(dto, menuId, branchId)
     activate RestService
-
     RestService ->> RestService: validateRestaurantBranch(branchId)
     RestService ->> BranchRepo: isEnabledById(branchId)
     activate BranchRepo
@@ -151,19 +149,16 @@ sequenceDiagram
     activate ItemRepo
     ItemRepo -->> ItemService: Saved MenuItem Entity
     deactivate ItemRepo
-
 %% 5. Return Flow & Transaction Commit
     ItemService -->> MenuService: (void)
     deactivate ItemService
     MenuService -->> RestService: (void)
     deactivate MenuService
-
     Note over RestService, DB: Implicit Transaction Commit.<br/>Hibernate flushes the INSERT statement.
     RestService ->> DB: Executing: INSERT INTO menu_item ...
     activate DB
     DB -->> RestService: (Insert Successful)
     deactivate DB
-
     Note over RestService, DB: Transactional Boundary Ends
     RestService -->> Controller: (void)
     deactivate RestService
@@ -207,12 +202,10 @@ sequenceDiagram
     activate Controller
     Note right of Controller: @Valid triggers DTO constraints
     Controller ->> Controller: Validate DTO fields
-
 %% 2. Aggregate Root Entry & Branch Validation
     Controller ->> RestService: updateMenuItem(dto, menuId, branchId)
     activate RestService
     Note over RestService, DB: Transactional Boundary Starts
-
     RestService ->> RestService: validateRestaurantBranch(branchId)
     RestService ->> BranchRepo: isEnabledById(branchId)
     activate BranchRepo
@@ -262,19 +255,16 @@ sequenceDiagram
     Note right of Entity: Rich Domain Model in action:<br/>Entity alters its own internal state
     Entity -->> ItemService: (State Updated In Memory)
     deactivate Entity
-
 %% 6. Return Flow & Implicit Database Sync
     ItemService -->> MenuService: (void)
     deactivate ItemService
     MenuService -->> RestService: (void)
     deactivate MenuService
-
     Note over RestService, DB: Transaction Commits.<br/>Hibernate Dirty Checking detects entity changes.
     RestService ->> DB: Executing: UPDATE menu_item SET ...
     activate DB
     DB -->> RestService: (Update Successful)
     deactivate DB
-
     RestService -->> Controller: (void)
     deactivate RestService
     Controller -->> Admin: 204 No Content
@@ -313,12 +303,10 @@ sequenceDiagram
     Filter ->> Controller: Forward Request
     deactivate Filter
     activate Controller
-
 %% 2. Aggregate Root Entry & Branch Validation
     Note over RestService, DB: Transactional Boundary Starts
     Controller ->> RestService: deleteMenuItem(itemId, menuId, branchId)
     activate RestService
-
     RestService ->> RestService: validateRestaurantBranch(branchId)
     RestService ->> BranchRepo: isEnabledById(branchId)
     activate BranchRepo
@@ -333,7 +321,7 @@ sequenceDiagram
 %% 3. Menu Fetch & Validation
     RestService ->> MenuService: deleteMenuItem(itemId, menuId, branchId)
     activate MenuService
-    MenuService->> MenuService: validateRestaurantMenuExists(menuId, branchId)
+    MenuService ->> MenuService: validateRestaurantMenuExists(menuId, branchId)
     MenuService ->> MenuRepo: isEnabledByIdAndBranchId(menuId, branchId)
     activate MenuRepo
     MenuRepo -->> MenuService: Boolean
@@ -366,19 +354,16 @@ sequenceDiagram
     activate ItemRepo
     ItemRepo -->> ItemService: (void)
     deactivate ItemRepo
-
 %% 5. Return Flow & Transaction Commit
     ItemService -->> MenuService: (void)
     deactivate ItemService
     MenuService -->> RestService: (void)
     deactivate MenuService
-
     Note over RestService, DB: Transaction Commits.<br/>Hibernate issues the DELETE (soft delete).
     RestService ->> DB: Executing: UPDATE menu_item SET is_deleted = true
     activate DB
     DB -->> RestService: (Execution Successful)
     deactivate DB
-
     Note over RestService, DB: Transactional Boundary Ends
     RestService -->> Controller: (void)
     deactivate RestService
@@ -412,12 +397,10 @@ sequenceDiagram
 %% 1. Request Initiation
     Customer ->> Controller: GET /api/v1/public/.../menus/{menuId}/items
     activate Controller
-
 %% 2. Aggregate Root Entry & Branch Validation
     Note over RestService, ItemRepo: Read-Only Transaction Starts
     Controller ->> RestService: getAllMenuItemsByMenuId(menuId, branchId)
     activate RestService
-
     RestService ->> RestService: validateRestaurantBranch(branchId)
     RestService ->> BranchRepo: isEnabledById(branchId)
     activate BranchRepo
@@ -452,20 +435,17 @@ sequenceDiagram
 %% 4. Delegating to Child Service
     MenuService ->> ItemService: getAllMenuItemsByMenuId(menuId)
     activate ItemService
-
 %% 5. Database Fetch & DTO Projection
     ItemService ->> ItemRepo: findAllByMenuId(menuId)
     activate ItemRepo
     Note right of ItemRepo: Repository executes SELECT<br/>and maps directly to List<MenuItemDto>
     ItemRepo -->> ItemService: List<MenuItemDto>
     deactivate ItemRepo
-
 %% 6. Return Flow & Tx Closure
     ItemService -->> MenuService: List<MenuItemDto>
     deactivate ItemService
     MenuService -->> RestService: List<MenuItemDto>
     deactivate MenuService
-
     Note over RestService, ItemRepo: Read-Only Transaction Ends.<br/>(Hibernate skips dirty checking & flushing).
     RestService -->> Controller: List<MenuItemDto>
     deactivate RestService
@@ -513,6 +493,7 @@ sequenceDiagram
     Controller -->> Customer: 200 OK (JSON Payload)
     deactivate Controller
 ```
+
 ##### Decision what & why
 
 - Database and Full Text Search Index
@@ -529,6 +510,7 @@ sequenceDiagram
             - no mapping inside our application (more processing and resource consuming)
 
 #### 2.2.6 Create new menu sequence diagram
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -551,12 +533,10 @@ sequenceDiagram
 
     Admin ->> Controller: POST /restaurant-menus (CreateMenuDto, branchId)
     activate Controller
-
     Note over RestService, MenuRepo: Transactional Boundary Starts
     Controller ->> RestService: createRestaurantMenu(dto, branchId)
     activate RestService
-
-    %% Branch Fetch and Validation
+%% Branch Fetch and Validation
     RestService ->> RestService: getAndValidateRestaurantBranch(branchId)
     RestService ->> BranchRepo: findById(branchId)
     activate BranchRepo
@@ -569,43 +549,37 @@ sequenceDiagram
         RestService -->> Controller: throw DisabledRestaurantBranchException
     end
 
-    %% Menu Creation Delegation
+%% Menu Creation Delegation
     RestService ->> MenuService: createRestaurantMenu(dto, branch)
     activate MenuService
-
-    %% Rich Domain Entity Initialization
+%% Rich Domain Entity Initialization
     MenuService ->> Entity: createMenu(dto.restaurantMenuName())
     activate Entity
     Note right of Entity: Static Factory Method Execution
     Entity -->> MenuService: menu instance
     deactivate Entity
-
-    %% JPA Association
+%% JPA Association
     MenuService ->> Entity: setRestaurantBranch(branch)
     activate Entity
     Entity -->> MenuService: (Relationship Established)
     deactivate Entity
-
-    %% Persistence
+%% Persistence
     MenuService ->> MenuRepo: save(menu)
     activate MenuRepo
     MenuRepo -->> MenuService: Saved RestaurantMenu Entity
     deactivate MenuRepo
-
-    %% Return Flow
+%% Return Flow
     MenuService -->> RestService: (void)
     deactivate MenuService
-
     RestService -->> Controller: (void)
     deactivate RestService
-    
     Note over RestService, MenuRepo: Transactional Boundary Ends (Hibernate Flush/Commit)
-
     Controller -->> Admin: 201 Created
     deactivate Controller
 ```
 
 #### 2.2.7 Update menu sequence diagram
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -628,11 +602,9 @@ sequenceDiagram
 
     Admin ->> Controller: PUT /restaurant-menus/{menuId} (UpdateMenuDto, branchId)
     activate Controller
-
     Note over RestService, MenuRepo: Transactional Boundary Starts
     Controller ->> RestService: updateRestaurantMenu(dto, menuId, branchId)
     activate RestService
-
 %% Branch Validation (Optimized Boolean Check)
     RestService ->> RestService: validateRestaurant(branchId)
     RestService ->> BranchRepo: isEnabledById(branchId)
@@ -649,7 +621,6 @@ sequenceDiagram
 %% Delegation to Menu Service
     RestService ->> MenuService: updateRestaurantMenu(dto, menuId, branchId)
     activate MenuService
-
 %% Menu Entity Fetch
     MenuService ->> MenuService: getRestaurantMenuByIdAndBranchId()
     MenuService ->> MenuRepo: findByIdAndBranchId(menuId, branchId)
@@ -667,21 +638,18 @@ sequenceDiagram
     Note right of Entity: Rich Domain Entity updates its own internal state
     Entity -->> MenuService: (State Updated in Memory)
     deactivate Entity
-
 %% Return Flow
     MenuService -->> RestService: (void)
     deactivate MenuService
-
     RestService -->> Controller: (void)
     deactivate RestService
-
     Note over RestService, MenuRepo: Transactional Boundary Ends.<br/>Hibernate Dirty Checking executes UPDATE automatically.
-
     Controller -->> Admin: 204 No Content
     deactivate Controller
 ```
 
 #### 2.2.8 Delete menu sequence diagram
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -703,11 +671,9 @@ sequenceDiagram
 
     Admin ->> Controller: DELETE /restaurant-menus/{menuId} (branchId)
     activate Controller
-
     Note over RestService, MenuRepo: Transactional Boundary Starts
     Controller ->> RestService: deleteRestaurantMenu(menuId, branchId)
     activate RestService
-
 %% Branch Validation (Optimized Boolean Check)
     RestService ->> RestService: validateRestaurant(branchId)
     RestService ->> BranchRepo: isEnabledById(branchId)
@@ -724,7 +690,6 @@ sequenceDiagram
 %% Delegation to Menu Service
     RestService ->> MenuService: deleteRestaurantMenu(menuId, branchId)
     activate MenuService
-
 %% Menu Validation (Optimized Boolean Check)
     MenuService ->> MenuService: validateRestaurantMenuExists(menuId, branchId)
     MenuService ->> MenuRepo: isEnabledByIdAndBranchId(menuId, branchId)
@@ -742,21 +707,91 @@ sequenceDiagram
     Note right of MenuRepo: Spring Data JPA intercepts and executes<br/>Hibernate @SQLDelete (Soft Delete)
     MenuRepo -->> MenuService: (void)
     deactivate MenuRepo
-
 %% Return Flow
     MenuService -->> RestService: (void)
     deactivate MenuService
-
     RestService -->> Controller: (void)
     deactivate RestService
-
     Note over RestService, MenuRepo: Transactional Boundary Ends.<br/>Database executes UPDATE statement.
-
     Controller -->> Admin: 204 No Content
     deactivate Controller
 ```
 
-#### 2.2.9 Get all menus by branch id sequence diagram
+#### 2.2.9 Toggle menu status Enable/Disable sequence diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin
+
+    box API Layer
+        participant Controller as RestaurantManagementController
+    end
+
+    box Core Domain (Services)
+        participant RestService as RestaurantService
+        participant MenuService as RestaurantMenuService
+    end
+
+    box Persistence Layer
+        participant BranchRepo as RestaurantBranchRepository
+        participant MenuRepo as RestaurantMenuRepository
+    end
+
+    Admin ->> Controller: PATCH /restaurant-menus/{menuId}/status (DTO)
+    activate Controller
+    Note over RestService, MenuRepo: Transactional Boundary Starts
+    Controller ->> RestService: toggleRestaurantMenuStatus(menuId, branchId, isEnabled)
+    activate RestService
+%% Branch Validation (Gatekeeper Pattern)
+    RestService ->> RestService: validateRestaurant(branchId)
+    RestService ->> BranchRepo: isEnabledById(branchId)
+    activate BranchRepo
+    BranchRepo -->> RestService: Boolean (isBranchEnabled)
+    deactivate BranchRepo
+
+    alt isBranchEnabled is NULL
+        RestService -->> Controller: throw RestaurantBranchNotFoundException
+    else isBranchEnabled is FALSE
+        RestService -->> Controller: throw DisabledRestaurantBranchException
+    end
+
+%% Delegation to Menu Service
+    RestService ->> MenuService: toggleRestaurantMenuStatus(menuId, branchId, isEnabled)
+    activate MenuService
+%% Menu Validation & State Retrieval
+    MenuService ->> MenuService: validateRestaurantMenuExists(menuId, branchId)
+    MenuService ->> MenuRepo: isEnabledByIdAndBranchId(menuId, branchId)
+    activate MenuRepo
+    MenuRepo -->> MenuService: Boolean (currentState)
+    deactivate MenuRepo
+
+    alt currentState is NULL
+        MenuService -->> RestService: throw RestaurantMenuNotFoundException
+    end
+
+%% Idempotency Check & Update
+    alt currentState == isEnabled
+        Note right of MenuService: Idempotency Check:<br/>Already in desired state.
+        MenuService -->> RestService: (return immediately)
+    else State requires change
+        MenuService ->> MenuRepo: updateMenuStatus(menuId, isEnabled)
+        activate MenuRepo
+        Note right of MenuRepo: Executes @Modifying<br/>JPQL UPDATE query
+        MenuRepo -->> MenuService: (void)
+        deactivate MenuRepo
+        MenuService -->> RestService: (void)
+    end
+    deactivate MenuService
+    RestService -->> Controller: (void)
+    deactivate RestService
+    Note over RestService, MenuRepo: Transactional Boundary Ends.<br/>Transaction commits.
+    Controller -->> Admin: 204 No Content
+    deactivate Controller
+```
+
+#### 2.2.10 Get all menus by branch id sequence diagram
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -778,12 +813,10 @@ sequenceDiagram
 
     Customer ->> Controller: GET /restaurant-menus (branchId)
     activate Controller
-
     Note over RestService, MenuRepo: Read-Only Transaction Starts
     Controller ->> RestService: getAllMenusByBranchId(branchId)
     activate RestService
-
-    %% Branch Validation (Optimized Boolean Check)
+%% Branch Validation (Optimized Boolean Check)
     RestService ->> RestService: validateRestaurant(branchId)
     RestService ->> BranchRepo: isEnabledById(branchId)
     activate BranchRepo
@@ -796,29 +829,25 @@ sequenceDiagram
         RestService -->> Controller: throw DisabledRestaurantBranchException
     end
 
-    %% Delegation to Menu Service
+%% Delegation to Menu Service
     RestService ->> MenuService: getAllMenusByBranchId(branchId)
     activate MenuService
-
-    %% Optimized Database Fetch (DTO Projection)
+%% Optimized Database Fetch (DTO Projection)
     MenuService ->> MenuRepo: findAllByBranchId(branchId)
     activate MenuRepo
     Note right of MenuRepo: JPQL Constructor Expression executes<br/>and maps directly to List<RestaurantMenuDto>
     MenuRepo -->> MenuService: List<RestaurantMenuDto>
     deactivate MenuRepo
-
-    %% Return Flow
+%% Return Flow
     MenuService -->> RestService: List<RestaurantMenuDto>
     deactivate MenuService
-
     RestService -->> Controller: List<RestaurantMenuDto>
     deactivate RestService
-    
     Note over RestService, MenuRepo: Read-Only Transaction Ends
-
     Controller -->> Customer: 200 OK
     deactivate Controller
 ```
+
 ---
 
 ### 3. Cart Management

@@ -102,10 +102,22 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
         restaurantMenuRepository.deleteById(menuId);
     }
 
+    @Transactional
     @Override
-    public List<RestaurantMenuDto> getAllMenusByBranchId(UUID branchId){
+    public void toggleRestaurantMenuStatus(UUID menuId, UUID branchId, Boolean isEnabled) {
+        Boolean currentState = validateRestaurantMenuExists(menuId, branchId);
+
+        if (currentState.equals(isEnabled))
+            return;
+
+        restaurantMenuRepository.updateMenuStatus(menuId, isEnabled);
+    }
+
+    @Override
+    public List<RestaurantMenuDto> getAllMenusByBranchId(UUID branchId) {
         return restaurantMenuRepository.findAllByBranchId(branchId);
     }
+
     private boolean validateRestaurantMenuExists(UUID menuId, UUID branchId) {
         Boolean isEnabled = restaurantMenuRepository.isEnabledByIdAndBranchId(menuId, branchId);
 

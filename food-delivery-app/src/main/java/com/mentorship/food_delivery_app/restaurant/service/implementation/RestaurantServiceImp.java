@@ -132,6 +132,16 @@ public class RestaurantServiceImp implements RestaurantService {
         return restaurantMenuService.getAllMenusByBranchId(branchId);
     }
 
+    @Transactional
+    @Override
+    public void toggleRestaurantMenuStatus(UUID menuId, UUID branchId, Boolean isEnabled){
+        validateRestaurant(branchId);
+
+        restaurantMenuService.toggleRestaurantMenuStatus(menuId,
+                branchId,
+                isEnabled);
+    }
+
     private void validateRestaurant(UUID branchId) {
         Boolean isEnabled = restaurantBranchRepository.isEnabledById(branchId);
 

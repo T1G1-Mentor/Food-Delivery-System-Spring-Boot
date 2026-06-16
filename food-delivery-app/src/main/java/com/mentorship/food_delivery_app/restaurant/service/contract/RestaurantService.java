@@ -50,4 +50,7 @@ public interface RestaurantService {
 
     @Transactional(readOnly = true)
     List<RestaurantMenuDto> getAllMenusByBranchId(UUID branchId);
+
+    @Transactional
+    void toggleRestaurantMenuStatus(UUID menuId, UUID branchId, Boolean isEnabled);
 }
