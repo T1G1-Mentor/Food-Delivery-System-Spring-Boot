@@ -28,4 +28,7 @@ public interface RestaurantMenuService {
 
     @Transactional
     void updateRestaurantMenu(UpdateMenuDto updateMenuDto, UUID menuId, UUID branchId);
+
+    @Transactional
+    void deleteRestaurantMenu(UUID menuId, UUID branchId);
 }

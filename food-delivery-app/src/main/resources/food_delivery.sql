@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS restaurant_menu(
     restaurant_menu_rest_branch_id UUID NOT NULL, --  REFERENCES restaurant_branch(branch_id)
     restaurant_menu_name VARCHAR(30) NOT NULL ,
     is_enabled BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN DEFAULT FALSE, -- For sof delete operation
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP,
     created_by UUID NOT NULL , --REFERENCES users(user_id)

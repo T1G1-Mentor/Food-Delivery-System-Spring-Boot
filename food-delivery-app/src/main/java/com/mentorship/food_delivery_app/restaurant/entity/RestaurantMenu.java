@@ -4,6 +4,8 @@ import com.mentorship.food_delivery_app.common.audit.Auditable;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.Set;
 import java.util.UUID;
@@ -16,6 +18,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @DynamicUpdate
+@SQLDelete(sql = "UPDATE restaurant_menu SET is_deleted = true WHERE restaurant_menu_id = ?")
+@SQLRestriction("is_deleted = false")
 public class RestaurantMenu extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -35,6 +39,9 @@ public class RestaurantMenu extends Auditable {
 
     @Column(name = "is_enabled")
     private boolean isEnabled;
+
+    @Column(name = "is_deleted")
+    private boolean isDeleted;
 
     public static RestaurantMenu createMenu(String menuName) {
         return RestaurantMenu.

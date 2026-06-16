@@ -59,7 +59,7 @@ restaurants.
 | GET    | `/restaurants/search`                                                                        | Search restaurants          |
 | POST   | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Create a new menu           |
 | PUT    | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Update menu                 |
-| DELETE | `/restaurants/{id}/menus/{menuId}`                                                           | Delete menu                 |
+| DELETE | `/restaurants/branchs/{branchId}/restaurant-menus/{menuId}`                                  | Delete menu                 |
 | PATCH  | `/restaurants/{id}/menus/{menuId}/status`                                                    | Enable / disable menu       |
 | GET    | `/restaurants/{id}/menus/history`                                                            | View history list of menus  |
 | GET    | `public/discover/menu-items?query=...`                                                       | Search menu items           |
@@ -675,6 +675,81 @@ sequenceDiagram
     deactivate RestService
 
     Note over RestService, MenuRepo: Transactional Boundary Ends.<br/>Hibernate Dirty Checking executes UPDATE automatically.
+
+    Controller -->> Admin: 204 No Content
+    deactivate Controller
+```
+
+#### 2.2.7 Delete menu sequence diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin
+
+    box API Layer
+        participant Controller as RestaurantManagementController
+    end
+
+    box Core Domain (Services)
+        participant RestService as RestaurantService
+        participant MenuService as RestaurantMenuService
+    end
+
+    box Persistence Layer
+        participant BranchRepo as RestaurantBranchRepository
+        participant MenuRepo as RestaurantMenuRepository
+    end
+
+    Admin ->> Controller: DELETE /restaurant-menus/{menuId} (branchId)
+    activate Controller
+
+    Note over RestService, MenuRepo: Transactional Boundary Starts
+    Controller ->> RestService: deleteRestaurantMenu(menuId, branchId)
+    activate RestService
+
+%% Branch Validation (Optimized Boolean Check)
+    RestService ->> RestService: validateRestaurant(branchId)
+    RestService ->> BranchRepo: isEnabledById(branchId)
+    activate BranchRepo
+    BranchRepo -->> RestService: Boolean (isEnabled)
+    deactivate BranchRepo
+
+    alt isEnabled is NULL
+        RestService -->> Controller: throw RestaurantBranchNotFoundException
+    else isEnabled is FALSE
+        RestService -->> Controller: throw DisabledRestaurantBranchException
+    end
+
+%% Delegation to Menu Service
+    RestService ->> MenuService: deleteRestaurantMenu(menuId, branchId)
+    activate MenuService
+
+%% Menu Validation (Optimized Boolean Check)
+    MenuService ->> MenuService: validateRestaurantMenuExists(menuId, branchId)
+    MenuService ->> MenuRepo: isEnabledByIdAndBranchId(menuId, branchId)
+    activate MenuRepo
+    MenuRepo -->> MenuService: Boolean (isEnabled)
+    deactivate MenuRepo
+
+    alt isEnabled is NULL
+        MenuService -->> RestService: throw RestaurantMenuNotFoundException
+    end
+
+%% Deletion Execution
+    MenuService ->> MenuRepo: deleteById(menuId)
+    activate MenuRepo
+    Note right of MenuRepo: Spring Data JPA intercepts and executes<br/>Hibernate @SQLDelete (Soft Delete)
+    MenuRepo -->> MenuService: (void)
+    deactivate MenuRepo
+
+%% Return Flow
+    MenuService -->> RestService: (void)
+    deactivate MenuService
+
+    RestService -->> Controller: (void)
+    deactivate RestService
+
+    Note over RestService, MenuRepo: Transactional Boundary Ends.<br/>Database executes UPDATE statement.
 
     Controller -->> Admin: 204 No Content
     deactivate Controller

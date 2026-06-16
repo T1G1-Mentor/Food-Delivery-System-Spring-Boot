@@ -93,6 +93,14 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
         menu.applyModifications(updateMenuDto.restaurantMenuName());
     }
 
+    @Transactional
+    @Override
+    public void deleteRestaurantMenu(UUID menuId, UUID branchId) {
+        validateRestaurantMenuExists(menuId, branchId);
+
+        restaurantMenuRepository.deleteById(menuId);
+    }
+
     private boolean validateRestaurantMenuExists(UUID menuId, UUID branchId) {
         Boolean isEnabled = restaurantMenuRepository.isEnabledByIdAndBranchId(menuId, branchId);
 

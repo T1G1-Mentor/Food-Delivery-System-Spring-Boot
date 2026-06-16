@@ -43,4 +43,7 @@ public interface RestaurantService {
 
     @Transactional
     void updateRestaurantMenu(UpdateMenuDto updateMenuDto, UUID menuId, UUID branchId);
+
+    @Transactional
+    void deleteRestaurantMenu(UUID menuId, UUID branchId);
 }

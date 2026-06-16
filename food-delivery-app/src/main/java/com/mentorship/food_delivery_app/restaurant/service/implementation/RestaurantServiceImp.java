@@ -97,7 +97,7 @@ public class RestaurantServiceImp implements RestaurantService {
 
     @Transactional
     @Override
-    public void createRestaurantMenu(CreateMenuDto createMenuDto, UUID branchId){
+    public void createRestaurantMenu(CreateMenuDto createMenuDto, UUID branchId) {
         RestaurantBranch branch = getAndValidateRestaurantBranch(branchId);
 
         restaurantMenuService.createRestaurantMenu(createMenuDto,
@@ -114,6 +114,15 @@ public class RestaurantServiceImp implements RestaurantService {
                 branchId);
     }
 
+    @Transactional
+    @Override
+    public void deleteRestaurantMenu(UUID menuId, UUID branchId) {
+        validateRestaurant(branchId);
+
+        restaurantMenuService.deleteRestaurantMenu(menuId,
+                branchId);
+    }
+
     private void validateRestaurant(UUID branchId) {
         Boolean isEnabled = restaurantBranchRepository.isEnabledById(branchId);
 
@@ -123,7 +132,7 @@ public class RestaurantServiceImp implements RestaurantService {
             throw new DisabledRestaurantBranchException(ErrorMessage.RESTAURANT_BRANCH_DISABLED.getMessage());
     }
 
-    private RestaurantBranch getAndValidateRestaurantBranch(UUID branchId){
+    private RestaurantBranch getAndValidateRestaurantBranch(UUID branchId) {
         RestaurantBranch branch = getRestaurantBranchById(branchId);
 
         if (!branch.isEnabled())

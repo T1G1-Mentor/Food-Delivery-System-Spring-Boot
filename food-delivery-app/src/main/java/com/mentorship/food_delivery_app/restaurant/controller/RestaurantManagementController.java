@@ -46,6 +46,16 @@ public class RestaurantManagementController {
                 .build();
     }
 
+    @DeleteMapping("/restaurant-menus/{menuId}")
+    public ResponseEntity<Void> deleteRestaurantMenu(@PathVariable UUID menuId,
+                                                     @PathVariable UUID branchId) {
+        restaurantService.deleteRestaurantMenu(menuId, branchId);
+
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
+    }
+
     // -------------------------------------------------------------------
     //  MENU ITEM MANAGEMENT
     // -------------------------------------------------------------------
