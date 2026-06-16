@@ -60,6 +60,7 @@ restaurants.
 | POST   | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Create a new menu           |
 | PUT    | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Update menu                 |
 | DELETE | `/restaurants/branchs/{branchId}/restaurant-menus/{menuId}`                                  | Delete menu                 |
+| DELETE | `/public/restaurants/branchs/{branchId}/restaurant-menus`                                    | Get all menus by branch id  |
 | PATCH  | `/restaurants/{id}/menus/{menuId}/status`                                                    | Enable / disable menu       |
 | GET    | `/restaurants/{id}/menus/history`                                                            | View history list of menus  |
 | GET    | `public/discover/menu-items?query=...`                                                       | Search menu items           |
@@ -680,7 +681,7 @@ sequenceDiagram
     deactivate Controller
 ```
 
-#### 2.2.7 Delete menu sequence diagram
+#### 2.2.8 Delete menu sequence diagram
 ```mermaid
 sequenceDiagram
     autonumber
@@ -752,6 +753,70 @@ sequenceDiagram
     Note over RestService, MenuRepo: Transactional Boundary Ends.<br/>Database executes UPDATE statement.
 
     Controller -->> Admin: 204 No Content
+    deactivate Controller
+```
+
+#### 2.2.9 Get all menus by branch id sequence diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer
+
+    box API Layer
+        participant Controller as PublicRestaurantController
+    end
+
+    box Core Domain (Services)
+        participant RestService as RestaurantService
+        participant MenuService as RestaurantMenuService
+    end
+
+    box Persistence Layer
+        participant BranchRepo as RestaurantBranchRepository
+        participant MenuRepo as RestaurantMenuRepository
+    end
+
+    Customer ->> Controller: GET /restaurant-menus (branchId)
+    activate Controller
+
+    Note over RestService, MenuRepo: Read-Only Transaction Starts
+    Controller ->> RestService: getAllMenusByBranchId(branchId)
+    activate RestService
+
+    %% Branch Validation (Optimized Boolean Check)
+    RestService ->> RestService: validateRestaurant(branchId)
+    RestService ->> BranchRepo: isEnabledById(branchId)
+    activate BranchRepo
+    BranchRepo -->> RestService: Boolean (isEnabled)
+    deactivate BranchRepo
+
+    alt isEnabled is NULL
+        RestService -->> Controller: throw RestaurantBranchNotFoundException
+    else isEnabled is FALSE
+        RestService -->> Controller: throw DisabledRestaurantBranchException
+    end
+
+    %% Delegation to Menu Service
+    RestService ->> MenuService: getAllMenusByBranchId(branchId)
+    activate MenuService
+
+    %% Optimized Database Fetch (DTO Projection)
+    MenuService ->> MenuRepo: findAllByBranchId(branchId)
+    activate MenuRepo
+    Note right of MenuRepo: JPQL Constructor Expression executes<br/>and maps directly to List<RestaurantMenuDto>
+    MenuRepo -->> MenuService: List<RestaurantMenuDto>
+    deactivate MenuRepo
+
+    %% Return Flow
+    MenuService -->> RestService: List<RestaurantMenuDto>
+    deactivate MenuService
+
+    RestService -->> Controller: List<RestaurantMenuDto>
+    deactivate RestService
+    
+    Note over RestService, MenuRepo: Read-Only Transaction Ends
+
+    Controller -->> Customer: 200 OK
     deactivate Controller
 ```
 ---

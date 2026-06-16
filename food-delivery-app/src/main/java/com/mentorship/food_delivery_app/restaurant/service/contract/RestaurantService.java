@@ -5,6 +5,7 @@ import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMe
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.CreateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.UpdateMenuDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.response.RestaurantMenuDto;
 import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
@@ -46,4 +47,7 @@ public interface RestaurantService {
 
     @Transactional
     void deleteRestaurantMenu(UUID menuId, UUID branchId);
+
+    @Transactional(readOnly = true)
+    List<RestaurantMenuDto> getAllMenusByBranchId(UUID branchId);
 }

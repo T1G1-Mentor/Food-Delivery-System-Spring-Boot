@@ -1,6 +1,7 @@
 package com.mentorship.food_delivery_app.restaurant.controller;
 
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.response.RestaurantMenuDto;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,15 @@ public class PublicRestaurantController {
                 restaurantService
                         .getAllMenuItemsByMenuId(restaurantMenuId,
                                 branchId)
+        );
+    }
+
+    @GetMapping("/restaurant-menus")
+    public ResponseEntity<List<RestaurantMenuDto>> getAllMenusByBranchId(@PathVariable UUID branchId) {
+
+        return ResponseEntity.ok(
+                restaurantService
+                        .getAllMenusByBranchId(branchId)
         );
     }
 }

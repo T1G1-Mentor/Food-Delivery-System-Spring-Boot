@@ -6,6 +6,7 @@ import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMe
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.CreateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.UpdateMenuDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.response.RestaurantMenuDto;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantMenu;
 import com.mentorship.food_delivery_app.restaurant.exceptions.DisabledRestaurantMenuException;
@@ -101,6 +102,10 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
         restaurantMenuRepository.deleteById(menuId);
     }
 
+    @Override
+    public List<RestaurantMenuDto> getAllMenusByBranchId(UUID branchId){
+        return restaurantMenuRepository.findAllByBranchId(branchId);
+    }
     private boolean validateRestaurantMenuExists(UUID menuId, UUID branchId) {
         Boolean isEnabled = restaurantMenuRepository.isEnabledByIdAndBranchId(menuId, branchId);
 
