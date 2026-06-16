@@ -14,4 +14,10 @@ public interface RestaurantMenuRepository extends JpaRepository<RestaurantMenu, 
     WHERE rm.restaurantMenuId = :restaurantMenuId AND rm.restaurantBranch.restaurantBranchId = :branchId
 """)
     Optional<RestaurantMenu> findByIdAndBranchId(UUID restaurantMenuId, UUID branchId);
+
+    @Query(""" 
+    SELECT m.isEnabled FROM RestaurantMenu m
+    WHERE m.restaurantMenuId = :menuId AND m.restaurantBranch.restaurantBranchId = :branchId
+""")
+    Boolean isEnabledByIdAndBranchId(UUID menuId, UUID branchId);
 }

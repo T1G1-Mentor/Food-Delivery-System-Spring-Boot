@@ -13,4 +13,11 @@ public interface RestaurantBranchRepository extends CrudRepository<RestaurantBra
     WHERE r.restaurantBranchId = :restaurantBranchId
 """)
     Optional<RestaurantBranch> findByRestaurantBranchId(UUID restaurantBranchId);
+
+    @Query(""" 
+    SELECT b.isEnabled FROM RestaurantBranch b
+    WHERE b.restaurantBranchId = :branchId
+""")
+    Boolean isEnabledById(UUID branchId);
+
 }

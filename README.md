@@ -76,16 +76,18 @@ sequenceDiagram
 
     box API Layer
         participant Filter as Security/Validation Filter
-        participant Controller as RestaurantMenuManagementController
+        participant Controller as RestaurantManagementController
     end
 
     box Core Domain (Services)
+        participant RestService as RestaurantService
         participant MenuService as RestaurantMenuService
         participant ItemService as MenuItemService
         participant Entity as MenuItem (Entity)
     end
 
     box Persistence Layer
+        participant BranchRepo as RestaurantBranchRepository
         participant MenuRepo as RestaurantMenuRepository
         participant ItemRepo as MenuItemRepository
         participant DB as Database
@@ -99,9 +101,25 @@ sequenceDiagram
     deactivate Filter
     activate Controller
     Controller ->> Controller: Validate DTO fields
-%% 2. Orchestration Menu Fetch & Validation
-    Note over MenuService, DB: Transactional Boundary Starts (REQUIRED)
-    Controller ->> MenuService: createMenuItem(dto, menuId, branchId)
+
+%% 2. Aggregate Root Entry & Branch Validation
+    Note over RestService, DB: Transactional Boundary Starts
+    Controller ->> RestService: createMenuItem(dto, menuId, branchId)
+    activate RestService
+
+    RestService ->> RestService: validateRestaurantBranch(branchId)
+    RestService ->> BranchRepo: isEnabledById(branchId)
+    activate BranchRepo
+    BranchRepo -->> RestService: Boolean
+    deactivate BranchRepo
+
+    alt Branch Not Found / Disabled
+        RestService -->> Controller: throws Exception
+        Controller -->> Admin: 404 Not Found / 400 Bad Request
+    end
+
+%% 3. Orchestration Menu Fetch & Validation
+    RestService ->> MenuService: createMenuItem(dto, menuId, branchId)
     activate MenuService
     MenuService ->> MenuService: getRestaurantMenuByIdAndBranchId()
     MenuService ->> MenuRepo: findByIdAndBranchId(menuId, branchId)
@@ -110,14 +128,12 @@ sequenceDiagram
     deactivate MenuRepo
 
     alt Menu Not Found
-        MenuService -->> Controller: throws RestaurantMenuNotFoundException
+        MenuService -->> RestService: throws RestaurantMenuNotFoundException
+        RestService -->> Controller: throws Exception
         Controller -->> Admin: 404 Not Found
-    else Menu Found but Disabled
-        MenuService -->> Controller: throws DisabledRestaurantMenuException <br/> This alternative flow is commented for now
-        Controller -->> Admin: 400 Bad Request
     end
 
-%% 3. Item Creation & Entity Interaction
+%% 4. Item Creation & Entity Interaction
     MenuService ->> ItemService: createMenuItem(dto, restaurantMenu)
     activate ItemService
     Note right of ItemService: Joins existing Transaction
@@ -134,18 +150,23 @@ sequenceDiagram
     activate ItemRepo
     ItemRepo -->> ItemService: Saved MenuItem Entity
     deactivate ItemRepo
-%% 4. Return Flow & Transaction Commit
+
+%% 5. Return Flow & Transaction Commit
     ItemService -->> MenuService: (void)
     deactivate ItemService
-    Note over MenuService, DB: Implicit Transaction Commit.<br/>Hibernate flushes the INSERT statement.
-    MenuService ->> DB: Executing: INSERT INTO menu_item ...
-    activate DB
-    DB -->> MenuService: (Insert Successful)
-    deactivate DB
-    Note over MenuService, DB: Transactional Boundary Ends (Inside the proxy before it returns to the controller)
-    MenuService -->> Controller: (void)
+    MenuService -->> RestService: (void)
     deactivate MenuService
-    Controller -->> Admin: 201 Created (Empty Body or Generic Success)
+
+    Note over RestService, DB: Implicit Transaction Commit.<br/>Hibernate flushes the INSERT statement.
+    RestService ->> DB: Executing: INSERT INTO menu_item ...
+    activate DB
+    DB -->> RestService: (Insert Successful)
+    deactivate DB
+
+    Note over RestService, DB: Transactional Boundary Ends
+    RestService -->> Controller: (void)
+    deactivate RestService
+    Controller -->> Admin: 201 Created
     deactivate Controller
 ```
 
@@ -158,16 +179,18 @@ sequenceDiagram
 
     box API Layer
         participant Filter as Security/Validation Filter
-        participant Controller as RestaurantMenuManagementController
+        participant Controller as RestaurantManagementController
     end
 
     box Core Domain (Services)
+        participant RestService as RestaurantService
         participant MenuService as RestaurantMenuService
         participant ItemService as MenuItemService
         participant Entity as MenuItem (Entity)
     end
 
     box Persistence Layer
+        participant BranchRepo as RestaurantBranchRepository
         participant MenuRepo as RestaurantMenuRepository
         participant ItemRepo as MenuItemRepository
         participant DB as Database
@@ -183,19 +206,35 @@ sequenceDiagram
     activate Controller
     Note right of Controller: @Valid triggers DTO constraints
     Controller ->> Controller: Validate DTO fields
-%% 2. Orchestration
-    Controller ->> MenuService: updateMenuItem(dto, menuId, branchId)
-    activate MenuService
-    Note over MenuService, DB: Transactional Boundary Starts (REQUIRED)
+
+%% 2. Aggregate Root Entry & Branch Validation
+    Controller ->> RestService: updateMenuItem(dto, menuId, branchId)
+    activate RestService
+    Note over RestService, DB: Transactional Boundary Starts
+
+    RestService ->> RestService: validateRestaurantBranch(branchId)
+    RestService ->> BranchRepo: isEnabledById(branchId)
+    activate BranchRepo
+    BranchRepo -->> RestService: Boolean
+    deactivate BranchRepo
+
+    alt Branch Not Found / Disabled
+        RestService -->> Controller: throws Exception
+        Controller -->> Admin: 404 Not Found / 400 Bad Request
+    end
+
 %% 3. Menu Fetch & Ownership Validation
-    MenuService ->> MenuService: getAndValidateRestaurantMenu()
-    MenuService ->> MenuRepo: findByIdAndBranchId(menuId, branchId)
+    RestService ->> MenuService: updateMenuItem(dto, menuId, branchId)
+    activate MenuService
+    MenuService ->> MenuService: validateRestaurantMenuExists(menuId, branchId)
+    MenuService ->> MenuRepo: isEnabledByIdAndBranchId(menuId, branchId)
     activate MenuRepo
-    MenuRepo -->> MenuService: Optional<RestaurantMenu>
+    MenuRepo -->> MenuService: Boolean
     deactivate MenuRepo
 
     alt Menu Not Found
-        MenuService -->> Controller: throws RestaurantMenuNotFoundException
+        MenuService -->> RestService: throws RestaurantMenuNotFoundException
+        RestService -->> Controller: throws Exception
         Controller -->> Admin: 404 Not Found
     end
 
@@ -210,7 +249,9 @@ sequenceDiagram
     deactivate ItemRepo
 
     alt Item Not Found
-        ItemService -->> Controller: throws MenuItemNotFoundException
+        ItemService -->> MenuService: throws MenuItemNotFoundException
+        MenuService -->> RestService: throws Exception
+        RestService -->> Controller: throws Exception
         Controller -->> Admin: 404 Not Found
     end
 
@@ -220,21 +261,24 @@ sequenceDiagram
     Note right of Entity: Rich Domain Model in action:<br/>Entity alters its own internal state
     Entity -->> ItemService: (State Updated In Memory)
     deactivate Entity
+
 %% 6. Return Flow & Implicit Database Sync
     ItemService -->> MenuService: (void)
     deactivate ItemService
-    Note over MenuService, DB: Transaction Commits.<br/>Hibernate Dirty Checking detects entity changes.
-    MenuService ->> DB: Executing: UPDATE menu_item SET ...
-    activate DB
-    DB -->> MenuService: (Update Successful)
-    deactivate DB
-    MenuService -->> Controller: (void)
+    MenuService -->> RestService: (void)
     deactivate MenuService
+
+    Note over RestService, DB: Transaction Commits.<br/>Hibernate Dirty Checking detects entity changes.
+    RestService ->> DB: Executing: UPDATE menu_item SET ...
+    activate DB
+    DB -->> RestService: (Update Successful)
+    deactivate DB
+
+    RestService -->> Controller: (void)
+    deactivate RestService
     Controller -->> Admin: 204 No Content
     deactivate Controller
 ```
-
----
 
 #### 2.2.3 Delete menu item sequence diagram
 
@@ -245,15 +289,17 @@ sequenceDiagram
 
     box API Layer
         participant Filter as Security/Validation Filter
-        participant Controller as RestaurantMenuManagementController
+        participant Controller as RestaurantManagementController
     end
 
     box Core Domain (Services)
+        participant RestService as RestaurantService
         participant MenuService as RestaurantMenuService
         participant ItemService as MenuItemService
     end
 
     box Persistence Layer
+        participant BranchRepo as RestaurantBranchRepository
         participant MenuRepo as RestaurantMenuRepository
         participant ItemRepo as MenuItemRepository
         participant DB as Database
@@ -266,22 +312,39 @@ sequenceDiagram
     Filter ->> Controller: Forward Request
     deactivate Filter
     activate Controller
-%% 2. Orchestration & Menu Fetch
-    Note over MenuService, DB: Transactional Boundary Starts (REQUIRED)
-    Controller ->> MenuService: deleteMenuItem(itemId, menuId, branchId)
+
+%% 2. Aggregate Root Entry & Branch Validation
+    Note over RestService, DB: Transactional Boundary Starts
+    Controller ->> RestService: deleteMenuItem(itemId, menuId, branchId)
+    activate RestService
+
+    RestService ->> RestService: validateRestaurantBranch(branchId)
+    RestService ->> BranchRepo: isEnabledById(branchId)
+    activate BranchRepo
+    BranchRepo -->> RestService: Boolean
+    deactivate BranchRepo
+
+    alt Branch Not Found / Disabled
+        RestService -->> Controller: throws Exception
+        Controller -->> Admin: 404 Not Found / 400 Bad Request
+    end
+
+%% 3. Menu Fetch & Validation
+    RestService ->> MenuService: deleteMenuItem(itemId, menuId, branchId)
     activate MenuService
-    MenuService ->> MenuService: getAndValidateRestaurantMenu()
-    MenuService ->> MenuRepo: findByIdAndBranchId(menuId, branchId)
+    MenuService->> MenuService: validateRestaurantMenuExists(menuId, branchId)
+    MenuService ->> MenuRepo: isEnabledByIdAndBranchId(menuId, branchId)
     activate MenuRepo
-    MenuRepo -->> MenuService: Optional<RestaurantMenu>
+    MenuRepo -->> MenuService: Boolean
     deactivate MenuRepo
 
     alt Menu Not Found
-        MenuService -->> Controller: throws RestaurantMenuNotFoundException
+        MenuService -->> RestService: throws RestaurantMenuNotFoundException
+        RestService -->> Controller: throws Exception
         Controller -->> Admin: 404 Not Found
     end
 
-%% 3. Item Fetch & Deletion
+%% 4. Item Fetch & Deletion
     MenuService ->> ItemService: deleteMenuItem(itemId, menuId)
     activate ItemService
     Note right of ItemService: Joins existing Transaction
@@ -292,7 +355,9 @@ sequenceDiagram
     deactivate ItemRepo
 
     alt Item Not Found
-        ItemService -->> Controller: throws MenuItemNotFoundException
+        ItemService -->> MenuService: throws MenuItemNotFoundException
+        MenuService -->> RestService: throws Exception
+        RestService -->> Controller: throws Exception
         Controller -->> Admin: 404 Not Found
     end
 
@@ -300,17 +365,22 @@ sequenceDiagram
     activate ItemRepo
     ItemRepo -->> ItemService: (void)
     deactivate ItemRepo
-%% 4. Return Flow & Transaction Commit
+
+%% 5. Return Flow & Transaction Commit
     ItemService -->> MenuService: (void)
     deactivate ItemService
-    Note over MenuService, DB: Transaction Commits.<br/>Hibernate issues the DELETE (soft delete).
-    MenuService ->> DB: Executing: UPDATE MenuItem SET isDeleted = FALSE
-    activate DB
-    DB -->> MenuService: (Execution Successful)
-    deactivate DB
-    Note over MenuService, DB: Transactional Boundary Ends
-    MenuService -->> Controller: (void)
+    MenuService -->> RestService: (void)
     deactivate MenuService
+
+    Note over RestService, DB: Transaction Commits.<br/>Hibernate issues the DELETE (soft delete).
+    RestService ->> DB: Executing: UPDATE menu_item SET is_deleted = true
+    activate DB
+    DB -->> RestService: (Execution Successful)
+    deactivate DB
+
+    Note over RestService, DB: Transactional Boundary Ends
+    RestService -->> Controller: (void)
+    deactivate RestService
     Controller -->> Admin: 204 No Content
     deactivate Controller
 ```
@@ -327,11 +397,13 @@ sequenceDiagram
     end
 
     box Core Domain (Services)
+        participant RestService as RestaurantService
         participant MenuService as RestaurantMenuService
         participant ItemService as MenuItemService
     end
 
     box Persistence Layer
+        participant BranchRepo as RestaurantBranchRepository
         participant MenuRepo as RestaurantMenuRepository
         participant ItemRepo as MenuItemRepository
     end
@@ -339,44 +411,68 @@ sequenceDiagram
 %% 1. Request Initiation
     Customer ->> Controller: GET /api/v1/public/.../menus/{menuId}/items
     activate Controller
-%% 2. Aggregate Root Validation & Tx Boundary
-    Note over MenuService, ItemRepo: Read-Only Transaction Starts<br/>(@Transactional(readOnly = true))
-    Controller ->> MenuService: getAllMenuItemsByMenuId(menuId, branchId)
+
+%% 2. Aggregate Root Entry & Branch Validation
+    Note over RestService, ItemRepo: Read-Only Transaction Starts
+    Controller ->> RestService: getAllMenuItemsByMenuId(menuId, branchId)
+    activate RestService
+
+    RestService ->> RestService: validateRestaurantBranch(branchId)
+    RestService ->> BranchRepo: isEnabledById(branchId)
+    activate BranchRepo
+    BranchRepo -->> RestService: Boolean
+    deactivate BranchRepo
+
+    alt Branch Not Found / Disabled
+        RestService -->> Controller: throws Exception
+        Controller -->> Customer: 404 Not Found / 400 Bad Request
+    end
+
+%% 3. Menu Validation
+    RestService ->> MenuService: getAllMenuItemsByMenuId(menuId, branchId)
     activate MenuService
-    MenuService ->> MenuService: getRestaurantMenuByIdAndBranchId()
-    MenuService ->> MenuRepo: findByIdAndBranchId(menuId, branchId)
+    MenuService ->> MenuService: validateRestaurantMenu(menuId, branchId)
+    MenuService ->> MenuService: validateRestaurantMenuExists(menuId, branchId)
+    MenuService ->> MenuRepo: isEnabledByIdAndBranchId(menuId, branchId)
     activate MenuRepo
-    MenuRepo -->> MenuService: Optional<RestaurantMenu>
+    MenuRepo -->> MenuService: Boolean
     deactivate MenuRepo
 
     alt Menu Not Found
-        MenuService -->> Controller: throws RestaurantMenuNotFoundException
+        MenuService -->> RestService: throws RestaurantMenuNotFoundException
+        RestService -->> Controller: throws Exception
         Controller -->> Customer: 404 Not Found
     else Menu is Disabled
-        MenuService -->> Controller: throws DisabledRestaurantMenuException
-        Controller -->> Customer: 403 Forbidden / 400 Bad Request
+        MenuService -->> RestService: throws DisabledRestaurantMenuException
+        RestService -->> Controller: throws Exception
+        Controller -->> Customer: 400 Bad Request
     end
 
-%% 3. Delegating to Child Service
+%% 4. Delegating to Child Service
     MenuService ->> ItemService: getAllMenuItemsByMenuId(menuId)
     activate ItemService
-%% 4. Database Fetch & DTO Projection
+
+%% 5. Database Fetch & DTO Projection
     ItemService ->> ItemRepo: findAllByMenuId(menuId)
     activate ItemRepo
     Note right of ItemRepo: Repository executes SELECT<br/>and maps directly to List<MenuItemDto>
     ItemRepo -->> ItemService: List<MenuItemDto>
     deactivate ItemRepo
-%% 5. Return Flow & Tx Closure
+
+%% 6. Return Flow & Tx Closure
     ItemService -->> MenuService: List<MenuItemDto>
     deactivate ItemService
-    Note over MenuService, ItemRepo: Read-Only Transaction Ends.<br/>(Hibernate skips dirty checking & flushing).
-    MenuService -->> Controller: List<MenuItemDto>
+    MenuService -->> RestService: List<MenuItemDto>
     deactivate MenuService
+
+    Note over RestService, ItemRepo: Read-Only Transaction Ends.<br/>(Hibernate skips dirty checking & flushing).
+    RestService -->> Controller: List<MenuItemDto>
+    deactivate RestService
     Controller -->> Customer: 200 OK (List<MenuItemDto>)
     deactivate Controller
 ```
 
-#### 2.2.5
+#### 2.2.5 Search menu item
 
 ```mermaid
 sequenceDiagram
@@ -416,7 +512,7 @@ sequenceDiagram
     Controller -->> Customer: 200 OK (JSON Payload)
     deactivate Controller
 ```
-
+---
 ##### Decision what & why
 
 - Database and Full Text Search Index

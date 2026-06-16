@@ -45,6 +45,8 @@ public class RestaurantBranch extends Auditable {
     @Column(name = "branch_estimated_delivery_time")
     private Integer estimatedDeliveryTime;
 
+    @Column(name = "is_enabled")
+    private boolean isEnabled;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")

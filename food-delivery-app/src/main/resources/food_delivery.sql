@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS restaurant_branch(
     branch_close_time TIME NOT NULL ,
     branch_phone_number VARCHAR(15) NOT NULL,
     branch_estimated_delivery_time INT,
+    is_enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP,
     created_by UUID NOT NULL , --REFERENCES users(user_id)

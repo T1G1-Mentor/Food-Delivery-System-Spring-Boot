@@ -2,7 +2,7 @@ package com.mentorship.food_delivery_app.restaurant.controller;
 
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
-import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantMenuService;
+import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,8 +14,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/restaurants/branchs/{branchId}")
 @RequiredArgsConstructor
-public class RestaurantMenuManagementController {
-    private final RestaurantMenuService restaurantMenuService;
+public class RestaurantManagementController {
+    private final RestaurantService restaurantService;
 
 
 
@@ -27,7 +27,7 @@ public class RestaurantMenuManagementController {
                                                @PathVariable UUID restaurantMenuId,
                                                @RequestBody @Valid MenuItemRequestDto menuItemRequestDto){
 
-        restaurantMenuService.createMenuItem(menuItemRequestDto,
+        restaurantService.createMenuItem(menuItemRequestDto,
                 restaurantMenuId, branchId);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -38,7 +38,7 @@ public class RestaurantMenuManagementController {
                                                @PathVariable UUID restaurantMenuId,
                                                @RequestBody @Valid UpdateMenuItemRequestDto menuItemRequestDto){
 
-        restaurantMenuService.updateMenuItem(menuItemRequestDto,
+        restaurantService.updateMenuItem(menuItemRequestDto,
                 restaurantMenuId, branchId);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
@@ -49,7 +49,7 @@ public class RestaurantMenuManagementController {
                                                @PathVariable UUID restaurantMenuId,
                                                @PathVariable UUID menuItemId){
 
-        restaurantMenuService.deleteMenuItem(menuItemId,
+        restaurantService.deleteMenuItem(menuItemId,
                 restaurantMenuId, branchId);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
