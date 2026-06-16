@@ -5,11 +5,10 @@ import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItem
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.CreateMenuDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.UpdateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantMenu;
-import com.mentorship.food_delivery_app.restaurant.exceptions.DisabledRestaurantBranchException;
 import com.mentorship.food_delivery_app.restaurant.exceptions.DisabledRestaurantMenuException;
-import com.mentorship.food_delivery_app.restaurant.exceptions.RestaurantBranchNotFoundException;
 import com.mentorship.food_delivery_app.restaurant.exceptions.RestaurantMenuNotFoundException;
 import com.mentorship.food_delivery_app.restaurant.repository.RestaurantMenuRepository;
 import com.mentorship.food_delivery_app.restaurant.service.contract.MenuItemService;
@@ -34,15 +33,15 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
             , UUID branchId) {
         RestaurantMenu restaurantMenu = this.getRestaurantMenuByIdAndBranchId(restaurantMenuId, branchId);
 
-         menuItemService.createMenuItem(menuItemRequestDto,restaurantMenu);
+        menuItemService.createMenuItem(menuItemRequestDto, restaurantMenu);
     }
 
     @Transactional
     public void updateMenuItem(UpdateMenuItemRequestDto menuItemRequestDto,
                                UUID restaurantMenuId,
-                               UUID branchId){
+                               UUID branchId) {
         // we first validate that this menu belongs to the restaurant
-        validateRestaurantMenuExists(restaurantMenuId,branchId);
+        validateRestaurantMenuExists(restaurantMenuId, branchId);
 
         menuItemService.updateMenuItem(menuItemRequestDto,
                 restaurantMenuId);
@@ -51,7 +50,7 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
     @Transactional
     @Override
     public void deleteMenuItem(UUID menuItemId, UUID restaurantMenuId, UUID branchId) {
-       validateRestaurantMenuExists(restaurantMenuId, branchId);
+        validateRestaurantMenuExists(restaurantMenuId, branchId);
 
         menuItemService.deleteMenuItem(menuItemId,
                 restaurantMenuId);
@@ -60,7 +59,7 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
     @Transactional(readOnly = true)
     @Override
     public List<MenuItemDto> getAllMenuItemsByMenuId(UUID restaurantMenuId, UUID branchId) {
-        validateRestaurantMenu(restaurantMenuId,branchId);
+        validateRestaurantMenu(restaurantMenuId, branchId);
 
         return menuItemService
                 .getAllMenuItemsByMenuId(restaurantMenuId);
@@ -70,19 +69,28 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
     @Override
     public RestaurantMenu getRestaurantMenuByIdAndBranchId(UUID restaurantMenuId, UUID branchId) {
         return restaurantMenuRepository.findByIdAndBranchId(restaurantMenuId, branchId)
-                .orElseThrow(()-> new RestaurantMenuNotFoundException
+                .orElseThrow(() -> new RestaurantMenuNotFoundException
                         (ErrorMessage.RESTAURANT_MENU_NOT_FOUND.getMessage()));
     }
 
     @Transactional
     @Override
-    public void createRestaurantMenu(CreateMenuDto createMenuDto, RestaurantBranch branch){
+    public void createRestaurantMenu(CreateMenuDto createMenuDto, RestaurantBranch branch) {
 
-        RestaurantMenu menu=RestaurantMenu.
+        RestaurantMenu menu = RestaurantMenu.
                 createMenu(createMenuDto.restaurantMenuName());
         menu.setRestaurantBranch(branch);
 
         restaurantMenuRepository.save(menu);
+    }
+
+    @Transactional
+    @Override
+    public void updateRestaurantMenu(UpdateMenuDto updateMenuDto, UUID menuId, UUID branchId) {
+        RestaurantMenu menu = getRestaurantMenuByIdAndBranchId(menuId,
+                branchId);
+
+        menu.applyModifications(updateMenuDto.restaurantMenuName());
     }
 
     private boolean validateRestaurantMenuExists(UUID menuId, UUID branchId) {
@@ -93,8 +101,9 @@ public class RestaurantMenuServiceImp implements RestaurantMenuService {
 
         return isEnabled;
     }
-    private void validateRestaurantMenu(UUID menuId, UUID branchId){
-        if (!validateRestaurantMenuExists(menuId,branchId))
+
+    private void validateRestaurantMenu(UUID menuId, UUID branchId) {
+        if (!validateRestaurantMenuExists(menuId, branchId))
             throw new DisabledRestaurantMenuException(ErrorMessage.RESTAURANT_MENU_DISABLED.getMessage());
     }
 }

@@ -4,10 +4,10 @@ import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItem
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.CreateMenuDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.UpdateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
-import com.mentorship.food_delivery_app.restaurant.entity.RestaurantMenu;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -40,4 +40,7 @@ public interface RestaurantService {
     List<MenuItemDto> getAllMenuItemsByMenuId(UUID restaurantMenuId, UUID branchId);
 
     void createRestaurantMenu(CreateMenuDto createMenuDto, UUID branchId);
+
+    @Transactional
+    void updateRestaurantMenu(UpdateMenuDto updateMenuDto, UUID menuId, UUID branchId);
 }

@@ -58,7 +58,7 @@ restaurants.
 | GET    | `/restaurants/recommendations`                                                               | Restaurant recommendations  |
 | GET    | `/restaurants/search`                                                                        | Search restaurants          |
 | POST   | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Create a new menu           |
-| PUT    | `/restaurants/{id}/menus/{menuId}`                                                           | Update menu                 |
+| PUT    | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Update menu                 |
 | DELETE | `/restaurants/{id}/menus/{menuId}`                                                           | Delete menu                 |
 | PATCH  | `/restaurants/{id}/menus/{menuId}/status`                                                    | Enable / disable menu       |
 | GET    | `/restaurants/{id}/menus/history`                                                            | View history list of menus  |
@@ -512,7 +512,6 @@ sequenceDiagram
     Controller -->> Customer: 200 OK (JSON Payload)
     deactivate Controller
 ```
----
 ##### Decision what & why
 
 - Database and Full Text Search Index
@@ -604,6 +603,84 @@ sequenceDiagram
     Controller -->> Admin: 201 Created
     deactivate Controller
 ```
+
+#### 2.2.7 Update menu sequence diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin
+
+    box API Layer
+        participant Controller as RestaurantManagementController
+    end
+
+    box Core Domain (Services)
+        participant RestService as RestaurantService
+        participant MenuService as RestaurantMenuService
+        participant Entity as RestaurantMenu (Entity)
+    end
+
+    box Persistence Layer
+        participant BranchRepo as RestaurantBranchRepository
+        participant MenuRepo as RestaurantMenuRepository
+    end
+
+    Admin ->> Controller: PUT /restaurant-menus/{menuId} (UpdateMenuDto, branchId)
+    activate Controller
+
+    Note over RestService, MenuRepo: Transactional Boundary Starts
+    Controller ->> RestService: updateRestaurantMenu(dto, menuId, branchId)
+    activate RestService
+
+%% Branch Validation (Optimized Boolean Check)
+    RestService ->> RestService: validateRestaurant(branchId)
+    RestService ->> BranchRepo: isEnabledById(branchId)
+    activate BranchRepo
+    BranchRepo -->> RestService: Boolean (isEnabled)
+    deactivate BranchRepo
+
+    alt isEnabled is NULL
+        RestService -->> Controller: throw RestaurantBranchNotFoundException
+    else isEnabled is FALSE
+        RestService -->> Controller: throw DisabledRestaurantBranchException
+    end
+
+%% Delegation to Menu Service
+    RestService ->> MenuService: updateRestaurantMenu(dto, menuId, branchId)
+    activate MenuService
+
+%% Menu Entity Fetch
+    MenuService ->> MenuService: getRestaurantMenuByIdAndBranchId()
+    MenuService ->> MenuRepo: findByIdAndBranchId(menuId, branchId)
+    activate MenuRepo
+    MenuRepo -->> MenuService: Optional<RestaurantMenu>
+    deactivate MenuRepo
+
+    alt Menu Not Found
+        MenuService -->> RestService: throw RestaurantMenuNotFoundException
+    end
+
+%% State Mutation (Rich Domain Model)
+    MenuService ->> Entity: applyModifications(dto.restaurantMenuName())
+    activate Entity
+    Note right of Entity: Rich Domain Entity updates its own internal state
+    Entity -->> MenuService: (State Updated in Memory)
+    deactivate Entity
+
+%% Return Flow
+    MenuService -->> RestService: (void)
+    deactivate MenuService
+
+    RestService -->> Controller: (void)
+    deactivate RestService
+
+    Note over RestService, MenuRepo: Transactional Boundary Ends.<br/>Hibernate Dirty Checking executes UPDATE automatically.
+
+    Controller -->> Admin: 204 No Content
+    deactivate Controller
+```
+---
+
 ### 3. Cart Management
 
 Manages a customer's shopping cart — adding and modifying items, viewing cart contents, and proceeding to checkout.

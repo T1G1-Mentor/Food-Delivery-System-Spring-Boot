@@ -5,6 +5,7 @@ import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.MenuItem
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.request.UpdateMenuItemRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.MenuItemDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.CreateMenuDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.UpdateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.entity.Coupon;
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
@@ -101,6 +102,16 @@ public class RestaurantServiceImp implements RestaurantService {
 
         restaurantMenuService.createRestaurantMenu(createMenuDto,
                 branch);
+    }
+
+    @Transactional
+    @Override
+    public void updateRestaurantMenu(UpdateMenuDto updateMenuDto, UUID menuId, UUID branchId) {
+        validateRestaurant(branchId);
+
+        restaurantMenuService.updateRestaurantMenu(updateMenuDto,
+                menuId,
+                branchId);
     }
 
     private void validateRestaurant(UUID branchId) {

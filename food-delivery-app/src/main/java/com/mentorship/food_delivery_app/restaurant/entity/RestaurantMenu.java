@@ -2,9 +2,8 @@ package com.mentorship.food_delivery_app.restaurant.entity;
 
 import com.mentorship.food_delivery_app.common.audit.Auditable;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.Set;
 import java.util.UUID;
@@ -16,6 +15,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@DynamicUpdate
 public class RestaurantMenu extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -36,10 +36,15 @@ public class RestaurantMenu extends Auditable {
     @Column(name = "is_enabled")
     private boolean isEnabled;
 
-    public static RestaurantMenu createMenu( String menuName) {
+    public static RestaurantMenu createMenu(String menuName) {
         return RestaurantMenu.
                 builder()
                 .name(menuName)
                 .isEnabled(true).build();
+    }
+
+    public void applyModifications(String menuName) {
+        if (menuName != null && !menuName.equals(this.name))
+            this.name = menuName;
     }
 }
