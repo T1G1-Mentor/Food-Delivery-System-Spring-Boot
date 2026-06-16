@@ -57,7 +57,7 @@ restaurants.
 | GET    | `/restaurants/top-rated`                                                                     | Top rating restaurants      |
 | GET    | `/restaurants/recommendations`                                                               | Restaurant recommendations  |
 | GET    | `/restaurants/search`                                                                        | Search restaurants          |
-| POST   | `/restaurants/{id}/menus`                                                                    | Create a new menu           |
+| POST   | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Create a new menu           |
 | PUT    | `/restaurants/{id}/menus/{menuId}`                                                           | Update menu                 |
 | DELETE | `/restaurants/{id}/menus/{menuId}`                                                           | Delete menu                 |
 | PATCH  | `/restaurants/{id}/menus/{menuId}/status`                                                    | Enable / disable menu       |
@@ -528,6 +528,82 @@ sequenceDiagram
             - reduces the network overhead (no over fetching)
             - no mapping inside our application (more processing and resource consuming)
 
+#### 2.2.6 Create new menu sequence diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin
+
+    box API Layer
+        participant Controller as RestaurantManagementController
+    end
+
+    box Core Domain (Services)
+        participant RestService as RestaurantService
+        participant MenuService as RestaurantMenuService
+        participant Entity as RestaurantMenu (Entity)
+    end
+
+    box Persistence Layer
+        participant BranchRepo as RestaurantBranchRepository
+        participant MenuRepo as RestaurantMenuRepository
+    end
+
+    Admin ->> Controller: POST /restaurant-menus (CreateMenuDto, branchId)
+    activate Controller
+
+    Note over RestService, MenuRepo: Transactional Boundary Starts
+    Controller ->> RestService: createRestaurantMenu(dto, branchId)
+    activate RestService
+
+    %% Branch Fetch and Validation
+    RestService ->> RestService: getAndValidateRestaurantBranch(branchId)
+    RestService ->> BranchRepo: findById(branchId)
+    activate BranchRepo
+    BranchRepo -->> RestService: Optional<RestaurantBranch>
+    deactivate BranchRepo
+
+    alt Branch Not Found
+        RestService -->> Controller: throw RestaurantBranchNotFoundException
+    else branch.isEnabled() == false
+        RestService -->> Controller: throw DisabledRestaurantBranchException
+    end
+
+    %% Menu Creation Delegation
+    RestService ->> MenuService: createRestaurantMenu(dto, branch)
+    activate MenuService
+
+    %% Rich Domain Entity Initialization
+    MenuService ->> Entity: createMenu(dto.restaurantMenuName())
+    activate Entity
+    Note right of Entity: Static Factory Method Execution
+    Entity -->> MenuService: menu instance
+    deactivate Entity
+
+    %% JPA Association
+    MenuService ->> Entity: setRestaurantBranch(branch)
+    activate Entity
+    Entity -->> MenuService: (Relationship Established)
+    deactivate Entity
+
+    %% Persistence
+    MenuService ->> MenuRepo: save(menu)
+    activate MenuRepo
+    MenuRepo -->> MenuService: Saved RestaurantMenu Entity
+    deactivate MenuRepo
+
+    %% Return Flow
+    MenuService -->> RestService: (void)
+    deactivate MenuService
+
+    RestService -->> Controller: (void)
+    deactivate RestService
+    
+    Note over RestService, MenuRepo: Transactional Boundary Ends (Hibernate Flush/Commit)
+
+    Controller -->> Admin: 201 Created
+    deactivate Controller
+```
 ### 3. Cart Management
 
 Manages a customer's shopping cart — adding and modifying items, viewing cart contents, and proceeding to checkout.
