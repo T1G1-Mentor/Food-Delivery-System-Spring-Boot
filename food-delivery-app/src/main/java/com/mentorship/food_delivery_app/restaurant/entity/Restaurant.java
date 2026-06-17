@@ -2,6 +2,9 @@ package com.mentorship.food_delivery_app.restaurant.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.Set;
 import java.util.UUID;
@@ -13,6 +16,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@DynamicUpdate
+@SQLDelete(sql = "UPDATE restaurant SET is_deleted = true WHERE restaurant_id = ?")
+@SQLRestriction("is_deleted = false")
 public class Restaurant {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -24,6 +30,9 @@ public class Restaurant {
 
     @Column(name = "restaurant_description", nullable = false)
     private String description;
+
+    @Column(name = "is_deleted")
+    private boolean isDeleted;
 
     @OneToMany(mappedBy = "restaurant", orphanRemoval = true)
     private Set<RestaurantRate> ratings;
@@ -44,4 +53,11 @@ public class Restaurant {
     @OneToMany(mappedBy = "restaurant",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, orphanRemoval = true)
     private Set<RestaurantBranch> branches;
+
+    public void applyModifications(String name, String description) {
+        if (name != null && !name.equals(this.name))
+            this.name = name;
+        if (description != null && !description.equals(this.description))
+            this.description = description;
+    }
 }

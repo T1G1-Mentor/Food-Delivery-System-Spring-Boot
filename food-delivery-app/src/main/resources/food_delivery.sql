@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS restaurant_branch(
     branch_close_time TIME NOT NULL ,
     branch_phone_number VARCHAR(15) NOT NULL,
     branch_estimated_delivery_time INT,
+    is_enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP,
     created_by UUID NOT NULL , --REFERENCES users(user_id)
@@ -90,6 +91,8 @@ CREATE TABLE IF NOT EXISTS restaurant_menu(
     restaurant_menu_id UUID PRIMARY KEY DEFAULT uuidv7(),
     restaurant_menu_rest_branch_id UUID NOT NULL, --  REFERENCES restaurant_branch(branch_id)
     restaurant_menu_name VARCHAR(30) NOT NULL ,
+    is_enabled BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN DEFAULT FALSE, -- For sof delete operation
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP,
     created_by UUID NOT NULL , --REFERENCES users(user_id)
@@ -102,6 +105,7 @@ CREATE TABLE IF NOT EXISTS menu_item(
     menu_item_name VARCHAR(50) NOT NULL ,
     menu_item_price DECIMAL(9,2) NOT NULL CHECK ( menu_item_price > 0 ),
     is_available BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN DEFAULT FALSE, -- For sof delete operation
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP,
     created_by UUID NOT NULL , --REFERENCES users(user_id)
@@ -118,6 +122,8 @@ CREATE TABLE IF NOT EXISTS restaurant_rate(
 );
 -- Migration for existing installations:
 -- ALTER TABLE restaurant_rate ADD COLUMN IF NOT EXISTS restaurant_rate_title VARCHAR(100) NOT NULL DEFAULT '';
+-- ALTER TABLE restaurant ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+-- ALTER TABLE restaurant_branch ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
 -- ALTER TABLE restaurant_rate ALTER COLUMN restaurant_rate_rating TYPE DECIMAL(3,1);
 -- ALTER TABLE restaurant_rate ALTER COLUMN restaurant_rate_comment DROP NOT NULL;
 CREATE TABLE IF NOT EXISTS coupon(
@@ -242,3 +248,9 @@ INSERT INTO role (role_name)
     VALUES
         ('ROLE_ADMIN'),('ROLE_CUSTOMER');
 
+ALTER TABLE menu_item
+    ADD COLUMN   search_vector tsvector GENERATED ALWAYS AS (
+        setweight(to_tsvector('english', coalesce(menu_item_name, '')), 'A') || ' ' ||
+        setweight(to_tsvector('english', coalesce(menu_item_description, '')) , 'B') ) STORED;
+
+CREATE INDEX idx_menu_item_search ON menu_item USING GIN (search_vector );

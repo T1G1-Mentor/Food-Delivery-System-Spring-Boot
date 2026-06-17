@@ -1,9 +1,40 @@
 package com.mentorship.food_delivery_app.restaurant.repository;
 
+import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.response.RestaurantMenuDto;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantMenu;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface RestaurantMenuRepository extends JpaRepository<RestaurantMenu, UUID> {
+
+    @Query("""
+                SELECT rm FROM RestaurantMenu rm
+                WHERE rm.restaurantMenuId = :restaurantMenuId AND rm.restaurantBranch.restaurantBranchId = :branchId
+            """)
+    Optional<RestaurantMenu> findByIdAndBranchId(UUID restaurantMenuId, UUID branchId);
+
+    @Query(""" 
+                SELECT m.isEnabled FROM RestaurantMenu m
+                WHERE m.restaurantMenuId = :menuId AND m.restaurantBranch.restaurantBranchId = :branchId
+            """)
+    Boolean isEnabledByIdAndBranchId(UUID menuId, UUID branchId);
+
+    @Query("""
+                SELECT new com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.response.RestaurantMenuDto(
+                rm.name
+                ) FROM RestaurantMenu rm
+                WHERE rm.restaurantBranch.restaurantBranchId = :branchId
+            """)
+    List<RestaurantMenuDto> findAllByBranchId(UUID branchId);
+
+    @Modifying
+    @Query("""
+                UPDATE RestaurantMenu rm SET rm.isEnabled = :isEnabled WHERE rm.restaurantMenuId = :menuId
+            """)
+    void updateMenuStatus(UUID menuId, Boolean isEnabled);
 }

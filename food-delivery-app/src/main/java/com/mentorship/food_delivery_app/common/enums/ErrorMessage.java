@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.common.enums;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -28,8 +29,11 @@ public enum ErrorMessage {
     RESTAURANT_BRANCH_NOT_FOUND("This restaurant branch does not exist."),
     RESTAURANT_BRANCH_CLOSED("The restaurant is currently closed."),
     EMAIL_ALREADY_EXISTS("The email you provided already exists, please try another one."),
-    ROLE_NOT_FOUND("The role you are looking for does not exist.");
-
+    ROLE_NOT_FOUND("The role you are looking for does not exist."),
+    RESTAURANT_MENU_NOT_FOUND("The menu you are locking for does not exist."),
+    RESTAURANT_MENU_DISABLED("This restaurant menu is currently disabled. Pleas try again later"),
+    MENU_ITEM_NOT_FOUND("The menu item you are looking for does not exist."),
+    RESTAURANT_BRANCH_DISABLED("This branch is currently disabled. You can call our support for more information.");
     private final String message;
 
 
