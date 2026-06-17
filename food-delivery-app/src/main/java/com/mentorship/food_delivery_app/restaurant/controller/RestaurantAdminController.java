@@ -3,6 +3,7 @@ package com.mentorship.food_delivery_app.restaurant.controller;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.request.CreateRestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.request.UpdateRestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.RestaurantDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.TopRestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantbranch.request.CreateBranchDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantbranch.request.UpdateBranchDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantbranch.response.RestaurantBranchDto;
@@ -51,6 +52,11 @@ public class RestaurantAdminController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String category) {
         return ResponseEntity.ok(restaurantAdminService.searchRestaurants(name, category));
+    }
+
+    @GetMapping("/top")
+    public ResponseEntity<List<TopRestaurantDto>> getTopRestaurants() {
+        return ResponseEntity.ok(restaurantAdminService.getTopRestaurants());
     }
 
     // -------------------------------------------------------------------

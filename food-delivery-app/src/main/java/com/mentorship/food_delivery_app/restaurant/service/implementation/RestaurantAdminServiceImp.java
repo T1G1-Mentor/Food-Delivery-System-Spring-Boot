@@ -4,6 +4,7 @@ import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.request.CreateRestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.request.UpdateRestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.RestaurantDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.TopRestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantbranch.request.CreateBranchDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantbranch.request.UpdateBranchDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantbranch.response.RestaurantBranchDto;
@@ -19,6 +20,8 @@ import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantAd
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.PageRequest;
 
 import java.util.HashSet;
 import java.util.List;
@@ -114,6 +117,12 @@ public class RestaurantAdminServiceImp implements RestaurantAdminService {
                 .stream()
                 .map(RestaurantBranchDto::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<TopRestaurantDto> getTopRestaurants() {
+        return restaurantRepository.findTopByAverageRating(PageRequest.of(0, 10));
     }
 
     private Restaurant getRestaurant(UUID restaurantId) {
