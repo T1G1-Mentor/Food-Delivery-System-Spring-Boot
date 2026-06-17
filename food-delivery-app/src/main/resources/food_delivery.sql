@@ -122,6 +122,8 @@ CREATE TABLE IF NOT EXISTS restaurant_rate(
 );
 -- Migration for existing installations:
 -- ALTER TABLE restaurant_rate ADD COLUMN IF NOT EXISTS restaurant_rate_title VARCHAR(100) NOT NULL DEFAULT '';
+-- ALTER TABLE restaurant ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+-- ALTER TABLE restaurant_branch ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
 -- ALTER TABLE restaurant_rate ALTER COLUMN restaurant_rate_rating TYPE DECIMAL(3,1);
 -- ALTER TABLE restaurant_rate ALTER COLUMN restaurant_rate_comment DROP NOT NULL;
 CREATE TABLE IF NOT EXISTS coupon(
