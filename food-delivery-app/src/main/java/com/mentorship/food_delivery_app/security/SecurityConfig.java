@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .addFilterAfter(jwtAuthFilter, FilterChainExceptionHandler.class)
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/public/**").permitAll()
+                                auth.requestMatchers("/api/v1/public/**").permitAll()
                                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                                         .requestMatchers("/api/v1/customers/**").hasRole("CUSTOMER")
                 );

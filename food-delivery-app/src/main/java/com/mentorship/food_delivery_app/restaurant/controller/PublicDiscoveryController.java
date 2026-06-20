@@ -1,6 +1,8 @@
 package com.mentorship.food_delivery_app.restaurant.controller;
 
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.SearchMenuItemResponse;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.RestaurantDto;
+import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.TopRestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.service.contract.DiscoveryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,5 +25,17 @@ public class PublicDiscoveryController {
                 discoveryService.searchMenuItem(query
                 )
         );
+    }
+
+    @GetMapping("/restaurants")
+    public ResponseEntity<List<RestaurantDto>> searchRestaurants(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String category) {
+        return ResponseEntity.ok(discoveryService.searchRestaurants(name, category));
+    }
+
+    @GetMapping("/restaurants/top")
+    public ResponseEntity<List<TopRestaurantDto>> getTopRestaurants() {
+        return ResponseEntity.ok(discoveryService.getTopRestaurants());
     }
 }

@@ -17,7 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/restaurants/branchs/{branchId}")
 @RequiredArgsConstructor
-public class RestaurantManagementController {
+public class MenuManagementController {
     private final RestaurantService restaurantService;
 
 

@@ -64,15 +64,6 @@ public class RestaurantAdminServiceImp implements RestaurantAdminService {
         restaurantRepository.delete(restaurant);
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public List<RestaurantDto> searchRestaurants(String name, String categoryName) {
-        return restaurantRepository.searchRestaurants(name, categoryName)
-                .stream()
-                .map(RestaurantDto::from)
-                .toList();
-    }
-
     @Transactional
     @Override
     public void createBranch(UUID restaurantId, CreateBranchDto dto) {
@@ -119,11 +110,6 @@ public class RestaurantAdminServiceImp implements RestaurantAdminService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public List<TopRestaurantDto> getTopRestaurants() {
-        return restaurantRepository.findTopByAverageRating(PageRequest.of(0, 10));
-    }
 
     private Restaurant getRestaurant(UUID restaurantId) {
         return restaurantRepository.findById(restaurantId)
