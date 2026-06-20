@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -44,5 +45,51 @@ public class OpenAPIConfig {
                         pathItem.readOperations().
                                 forEach(operation->operation.security(Collections.emptyList()));
                 });
+    }
+
+    @Bean
+    public GroupedOpenApi publicApi(OpenApiCustomizer customizer){
+        return GroupedOpenApi.builder()
+                .group("Public APIs")
+                .addOpenApiCustomizer(customizer)
+                .pathsToMatch("/api/v1/public/**")
+                .pathsToExclude("/api/v1/public/auth/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi adminApi(OpenApiCustomizer customizer){
+        return GroupedOpenApi.builder()
+                .group("Admin APIs")
+                .addOpenApiCustomizer(customizer)
+                .pathsToMatch("/api/v1/admin/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi customerApi(OpenApiCustomizer customizer){
+        return GroupedOpenApi.builder()
+                .group("Customer APIs")
+                .addOpenApiCustomizer(customizer)
+                .pathsToMatch("/api/v1/customers/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi authApi(OpenApiCustomizer customizer){
+        return GroupedOpenApi.builder()
+                .group("Auth APIs")
+                .addOpenApiCustomizer(customizer)
+                .pathsToMatch("/api/v1/public/auth/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi allApis(OpenApiCustomizer customizer){
+        return GroupedOpenApi.builder()
+                .group("All Endpoints")
+                .pathsToMatch("/api/v1/**")
+                .addOpenApiCustomizer(customizer)
+                .build();
     }
 }
