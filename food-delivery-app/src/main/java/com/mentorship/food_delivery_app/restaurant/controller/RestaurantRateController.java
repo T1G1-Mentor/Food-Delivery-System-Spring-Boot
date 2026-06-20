@@ -4,6 +4,7 @@ import com.mentorship.food_delivery_app.restaurant.dto.request.RestaurantRatePat
 import com.mentorship.food_delivery_app.restaurant.dto.request.RestaurantRateRequestDto;
 import com.mentorship.food_delivery_app.restaurant.dto.response.RestaurantRateResponseDto;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantRateService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/customer/restaurant/{restaurantId}/rate")
 @RequiredArgsConstructor
+@Tag(name = "Restaurant Rate Controller", description = "For customers to add ratings and comments for restaurants")
 public class RestaurantRateController {
 
     private final RestaurantRateService restaurantRateService;

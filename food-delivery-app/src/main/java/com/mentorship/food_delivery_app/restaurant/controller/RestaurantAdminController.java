@@ -6,6 +6,7 @@ import com.mentorship.food_delivery_app.restaurant.dto.restaurantbranch.request.
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantbranch.request.UpdateBranchDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantbranch.response.RestaurantBranchDto;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantAdminService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/restaurants")
 @RequiredArgsConstructor
+@Tag(name = "Restaurant Admin Controller", description = "Restaurant management for admins to manage restaurants and their branches")
 public class RestaurantAdminController {
 
     private final RestaurantAdminService restaurantAdminService;

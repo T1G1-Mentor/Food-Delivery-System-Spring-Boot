@@ -1,4 +1,4 @@
-package com.mentorship.food_delivery_app.customer.dto.request;
+package com.mentorship.food_delivery_app.auth.dto;
 
 import jakarta.validation.constraints.*;
 

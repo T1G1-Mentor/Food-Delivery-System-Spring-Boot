@@ -4,6 +4,7 @@ import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.SearchM
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.RestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.TopRestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.service.contract.DiscoveryService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/public/discover")
 @RequiredArgsConstructor
+@Tag(name = "Discovery Controller", description = "More like the home pag to browse restaurants, menus, and menu items")
 public class PublicDiscoveryController {
     private final DiscoveryService discoveryService;
 

@@ -6,6 +6,7 @@ import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.Ch
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.CreateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurantmenu.request.UpdateMenuDto;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/restaurants/branchs/{branchId}")
 @RequiredArgsConstructor
+@Tag(name = "Menu Management Controller", description = "For admins to manage menu, and menu items related to certain restaurant")
 public class MenuManagementController {
     private final RestaurantService restaurantService;
 

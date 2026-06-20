@@ -5,6 +5,7 @@ import com.mentorship.food_delivery_app.customer.dto.customeraddress.request.Mod
 import com.mentorship.food_delivery_app.customer.dto.customeraddress.response.CustomerAddressResponseDto;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/customers/addresses")
 @RequiredArgsConstructor
+@Tag(name = "Customer Address", description = "For customers to manage their addresses")
 public class CustomerAddressController {
     private final CustomerService customerService;
 

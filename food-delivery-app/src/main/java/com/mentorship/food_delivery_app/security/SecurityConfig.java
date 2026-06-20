@@ -23,6 +23,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     private final FilterChainExceptionHandler filterChainExceptionHandler;
     private final JwtAuthFilter jwtAuthFilter;
+    private static final String[] OPEN_API_URLS={
+            "/v3/api-docs",
+            "/v3/api-docs.yaml",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+    };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,7 +40,10 @@ public class SecurityConfig {
                 .addFilterAfter(jwtAuthFilter, FilterChainExceptionHandler.class)
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/v1/public/**").permitAll()
+
+                                auth
+                                        .requestMatchers(OPEN_API_URLS).permitAll()
+                                        .requestMatchers("/api/v1/public/**").permitAll()
                                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                                         .requestMatchers("/api/v1/customers/**").hasRole("CUSTOMER")
                 );

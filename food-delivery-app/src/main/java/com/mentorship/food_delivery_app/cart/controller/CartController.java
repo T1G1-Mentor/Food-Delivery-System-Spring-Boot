@@ -6,6 +6,7 @@ import com.mentorship.food_delivery_app.cart.dto.response.CartResponseDto;
 import com.mentorship.food_delivery_app.cart.service.contract.CartService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.security.entities.SecurityCustomer;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/cart")
 @RequiredArgsConstructor
+@Tag(name = "Cart Controller", description = "Customer cart management")
 public class CartController {
     private final CartService cartService;
 
