@@ -1,8 +1,8 @@
 package com.mentorship.food_delivery_app.security.service;
 
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
-import com.mentorship.food_delivery_app.security.entities.SecurityCustomer;
-import com.mentorship.food_delivery_app.security.entities.SecurityUser;
+import com.mentorship.food_delivery_app.security.entities.CustomerPrincipal;
+import com.mentorship.food_delivery_app.security.entities.UserPrincipal;
 import com.mentorship.food_delivery_app.user.entity.User;
 import com.mentorship.food_delivery_app.user.entity.enums.UserType;
 import com.mentorship.food_delivery_app.user.service.contract.UserService;
@@ -30,10 +30,10 @@ public class SecurityUserDetailsService implements UserDetailsService {
                 .map(role -> new SimpleGrantedAuthority(role.getRoleName().name())).toList();
 
         if (user.getUserType().equals(UserType.USER_ADMIN))
-            return SecurityUser.from(user, roles);
+            return UserPrincipal.from(user, roles);
 
         UUID customerId = customerService.getCustomerIdByUserId(user.getUserId());
 
-        return SecurityCustomer.from(user, customerId, roles);
+        return CustomerPrincipal.from(user, customerId, roles);
     }
 }
