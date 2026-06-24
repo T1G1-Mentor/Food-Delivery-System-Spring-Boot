@@ -1,7 +1,7 @@
 package com.mentorship.food_delivery_app.security.service;
 
-import com.mentorship.food_delivery_app.security.entities.SecurityCustomer;
-import com.mentorship.food_delivery_app.security.entities.SecurityUser;
+import com.mentorship.food_delivery_app.security.entities.CustomerPrincipal;
+import com.mentorship.food_delivery_app.security.entities.UserPrincipal;
 import com.mentorship.food_delivery_app.security.exceptions.InvalidTokenException;
 import com.mentorship.food_delivery_app.security.service.utils.KeyUtils;
 import com.mentorship.food_delivery_app.user.entity.enums.UserType;
@@ -12,8 +12,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -25,12 +28,12 @@ public class JwtService {
     @Value("${app.security.jwt.access-token-expiration}")
     private long accessTokenExpiration;
 
-    public JwtService() throws Exception {
+    public JwtService() throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
         this.privateKey = KeyUtils.loadPrivateKey("/keys/private-key.pem");
         this.publicKey = KeyUtils.loadPublicKey("/keys/public-key.pem");
     }
 
-    public UserDetails decryptToken(String token) {
+    public UserDetails decodeToken(String token) {
         Claims claims = this.getClaims(token);
         String userType = claims.get(ClaimConstants.USER_TYPE.name(), String.class);
         validateValue(userType, ClaimConstants.USER_TYPE.name());
@@ -53,10 +56,10 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
-        if (userDetails instanceof SecurityCustomer customer)
+        if (userDetails instanceof CustomerPrincipal customer)
             return generateCustomerToken(customer);
 
-        return generateUserAdminToken((SecurityUser) userDetails);
+        return generateUserAdminToken((UserPrincipal) userDetails);
     }
 
     private UserDetails buildSecurityUser(Claims claims) {
@@ -73,7 +76,7 @@ public class JwtService {
 
 
         // 4. Build the principal
-        return new SecurityUser(
+        return new UserPrincipal(
                 UUID.fromString(getRequiredClaim(claims, ClaimConstants.USER_ID, String.class)),
                 claims.getSubject(), // Email
                 "",                  // Blank password
@@ -98,7 +101,7 @@ public class JwtService {
 
 
         // 4. Build the principal
-        return new SecurityCustomer(
+        return new CustomerPrincipal(
                 UUID.fromString(getRequiredClaim(claims, ClaimConstants.USER_ID, String.class)),
                 UUID.fromString(getRequiredClaim(claims, ClaimConstants.CUSTOMER_ID, String.class)),
                 claims.getSubject(), // Email
@@ -125,7 +128,7 @@ public class JwtService {
         }
     }
 
-    private String generateUserAdminToken(SecurityUser user) {
+    private String generateUserAdminToken(UserPrincipal user) {
         Map<String, Object> claims = Map.of(
                 ClaimConstants.USER_ID.name(), user.getUserId(),
                 ClaimConstants.ROLES.name(), user.getAuthorities(),
@@ -137,7 +140,7 @@ public class JwtService {
         return buildAccessToken(user.getUsername(), claims);
     }
 
-    private String generateCustomerToken(SecurityCustomer customer) {
+    private String generateCustomerToken(CustomerPrincipal customer) {
         Map<String, Object> claims = Map.of(
                 ClaimConstants.USER_ID.name(), customer.getUserId(),
                 ClaimConstants.CUSTOMER_ID.name(), customer.getCustomerId(),

@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @Getter
-public class SecurityCustomer implements UserDetails {
+public class CustomerPrincipal implements UserDetails {
     private final UUID userId;
     private final UUID customerId;
     private final String email;
@@ -23,8 +23,8 @@ public class SecurityCustomer implements UserDetails {
     private final Collection<? extends GrantedAuthority> roles;
     private final boolean isEnabled;
 
-    public static SecurityCustomer from(User user, UUID customerId, Collection<? extends GrantedAuthority> roles) {
-        return new SecurityCustomer(
+    public static CustomerPrincipal from(User user, UUID customerId, Collection<? extends GrantedAuthority> roles) {
+        return new CustomerPrincipal(
                 user.getUserId(),
                 customerId,
                 user.getEmail(),

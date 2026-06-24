@@ -4,7 +4,7 @@ import com.mentorship.food_delivery_app.auth.dto.CustomerRegistrationDto;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.repository.CustomerRepository;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerAuthService;
-import com.mentorship.food_delivery_app.security.entities.SecurityCustomer;
+import com.mentorship.food_delivery_app.security.entities.CustomerPrincipal;
 import com.mentorship.food_delivery_app.security.service.JwtService;
 import com.mentorship.food_delivery_app.user.entity.Role;
 import com.mentorship.food_delivery_app.user.entity.User;
@@ -41,13 +41,13 @@ public class CustomerAuthServiceImp implements CustomerAuthService {
         Customer customer = Customer.builder().user(user).build();
         Customer savedCustomer = customerRepository.save(customer);
 
-        SecurityCustomer securityCustomer = SecurityCustomer.from(user,
+        CustomerPrincipal customerPrincipal = CustomerPrincipal.from(user,
                 savedCustomer.getCustomerId(),
                 roles.stream().map(role ->
                         new SimpleGrantedAuthority(role.getRoleName()
                                 .name())).toList());
 
-        return jwtService.generateToken(securityCustomer);
+        return jwtService.generateToken(customerPrincipal);
     }
 
     private User buildUser(CustomerRegistrationDto customerRegistrationDto, UserType userType,

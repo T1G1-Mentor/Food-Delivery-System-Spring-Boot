@@ -1,6 +1,6 @@
 package com.mentorship.food_delivery_app.user.service.implementation;
 
-import com.mentorship.food_delivery_app.security.entities.SecurityUser;
+import com.mentorship.food_delivery_app.security.entities.UserPrincipal;
 import com.mentorship.food_delivery_app.security.service.JwtService;
 import com.mentorship.food_delivery_app.user.dto.request.AdminCreationDto;
 import com.mentorship.food_delivery_app.user.entity.Role;
@@ -41,12 +41,12 @@ public class AdminManagementServiceImp implements AdminManagementService {
 
         User savedUser = userRepository.save(user);
 
-        SecurityUser securityUser = SecurityUser.from(savedUser,
+        UserPrincipal userPrincipal = UserPrincipal.from(savedUser,
                 roles.stream().map(role ->
                         new SimpleGrantedAuthority(role.getRoleName()
                                 .name())).toList());
 
-        return jwtService.generateToken(securityUser);
+        return jwtService.generateToken(userPrincipal);
     }
 
     private User buildUser(AdminCreationDto registrationDto, UserType userType,

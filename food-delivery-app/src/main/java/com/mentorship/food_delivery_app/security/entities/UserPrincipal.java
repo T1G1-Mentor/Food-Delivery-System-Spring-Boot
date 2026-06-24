@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Getter
 @RequiredArgsConstructor
-public class SecurityUser implements UserDetails {
+public class UserPrincipal implements UserDetails {
 
     private final UUID userId;
     private final String email;
@@ -23,8 +23,8 @@ public class SecurityUser implements UserDetails {
     private final Collection<? extends GrantedAuthority> roles;
     private final boolean isEnabled;
 
-    public static SecurityUser from(User user, Collection<? extends GrantedAuthority> roles) {
-        return new SecurityUser(
+    public static UserPrincipal from(User user, Collection<? extends GrantedAuthority> roles) {
+        return new UserPrincipal(
                 user.getUserId(),
                 user.getEmail(),
                 user.getPassword(),
