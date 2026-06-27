@@ -1,6 +1,7 @@
 package com.mentorship.food_delivery_app.common.exceptions;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.mentorship.food_delivery_app.auth.exception.InvalidOtpException;
 import com.mentorship.food_delivery_app.cart.exceptions.CartLockedException;
 import com.mentorship.food_delivery_app.cart.exceptions.ItemNotAvailableException;
 import com.mentorship.food_delivery_app.cart.exceptions.RestaurantMismatchException;
@@ -311,6 +312,12 @@ public class GlobalExceptionHandler {
 
     }
 
+    @ExceptionHandler(InvalidOtpException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidOtp(InvalidOtpException ex) {
+        log.warn("Invalid OTP Exception was thrown with cause: {}", ex.getLocalizedMessage());
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid OTP");
+    }
     // -------------------------------------------------------------------
     //  CART EXCEPTIONS
     // -------------------------------------------------------------------
