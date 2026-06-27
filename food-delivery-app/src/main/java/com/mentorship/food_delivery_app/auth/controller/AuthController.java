@@ -2,6 +2,8 @@ package com.mentorship.food_delivery_app.auth.controller;
 
 import com.mentorship.food_delivery_app.auth.dto.LoginDto;
 import com.mentorship.food_delivery_app.auth.dto.CustomerRegistrationDto;
+import com.mentorship.food_delivery_app.auth.dto.OtpRequestDto;
+import com.mentorship.food_delivery_app.auth.dto.OtpVerificationRequestDto;
 import com.mentorship.food_delivery_app.auth.service.contract.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,5 +34,19 @@ public class AuthController {
                 .body(
                         authService.register(customerRegistrationDto)
                 );
+    }
+
+    @PostMapping("/otp/request")
+    public ResponseEntity<Void> requestOtp(@RequestBody @Valid OtpRequestDto otpRequestDto){
+        authService.requestOtp(otpRequestDto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/otp/verify")
+    public ResponseEntity<String> requestOtp(@RequestBody @Valid OtpVerificationRequestDto otpRequestDto){
+
+        return ResponseEntity.ok(
+                authService.verifyOtp(otpRequestDto)
+        );
     }
 }
