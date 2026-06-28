@@ -55,6 +55,15 @@ CREATE TABLE IF NOT EXISTS customer_address(
     customer_address_phone_number VARCHAR(15) NOT NULL ,
     customer_address_note VARCHAR(500)
 );
+CREATE TABLE IF NOT EXISTS otps(
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email       VARCHAR(50)  NOT NULL,
+    code_hash   VARCHAR(255) NOT NULL,
+    expires_at  TIMESTAMP    NOT NULL,
+    used        BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_otps_email ON otps(email);
 ------------------------------RESTAURANT---------------------
 CREATE TABLE IF NOT EXISTS restaurant(
     restaurant_id UUID PRIMARY KEY DEFAULT uuidv7(),

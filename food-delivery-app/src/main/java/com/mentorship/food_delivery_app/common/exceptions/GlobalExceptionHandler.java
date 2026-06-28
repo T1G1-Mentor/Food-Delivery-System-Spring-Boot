@@ -16,6 +16,7 @@ import com.mentorship.food_delivery_app.restaurant.exceptions.*;
 import com.mentorship.food_delivery_app.security.exceptions.InvalidTokenException;
 import com.mentorship.food_delivery_app.cart.exceptions.CartItemNotFoundException;
 import com.mentorship.food_delivery_app.cart.exceptions.CartNotFoundException;
+import com.mentorship.food_delivery_app.auth.exception.OtpException;
 import com.mentorship.food_delivery_app.user.exceptions.UserEmailAlreadyExistsException;
 import com.mentorship.food_delivery_app.user.exceptions.UserRoleNotFoundException;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -476,6 +477,16 @@ public class GlobalExceptionHandler {
         log.warn("Order Not Found Exception was thrown with cause: {}", ex.getLocalizedMessage());
 
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
+    }
+
+    // -------------------------------------------------------------------
+    //  OTP EXCEPTIONS
+    // -------------------------------------------------------------------
+
+    @ExceptionHandler(OtpException.class)
+    public ResponseEntity<ErrorResponseDto> handleOtp(OtpException ex) {
+        log.warn("OTP validation failed: {}", ex.getLocalizedMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
     }
 
     // -------------------------------------------------------------------
