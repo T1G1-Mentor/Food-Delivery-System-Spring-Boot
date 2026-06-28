@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS customer_address(
 CREATE TABLE IF NOT EXISTS restaurant(
     restaurant_id UUID PRIMARY KEY DEFAULT uuidv7(),
     restaurant_name VARCHAR(100) NOT NULL ,
-    restaurant_description VARCHAR(255) NOT NULL
+    restaurant_description VARCHAR(255) NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE
 );
 CREATE TABLE IF NOT EXISTS restaurant_branch(
     branch_id UUID PRIMARY KEY DEFAULT uuidv7(),
@@ -72,6 +73,7 @@ CREATE TABLE IF NOT EXISTS restaurant_branch(
     branch_phone_number VARCHAR(15) NOT NULL,
     branch_estimated_delivery_time INT,
     is_enabled BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP,
     created_by UUID NOT NULL , --REFERENCES users(user_id)
@@ -116,7 +118,7 @@ CREATE TABLE IF NOT EXISTS restaurant_rate(
     restaurant_rate_restaurant_id UUID NOT NULL,-- REFERENCES restaurant(restaurant_id)
     restaurant_rate_customer_id UUID NOT NULL,-- REFERENCES customer(customer_id)
     restaurant_rate_title VARCHAR(100) NOT NULL,
-    restaurant_rate_rating DECIMAL(3,1) CHECK (restaurant_rate_rating >= 0 AND restaurant_rate_rating <= 5),
+    restaurant_rate_rating INT CHECK (restaurant_rate_rating >= 0 AND restaurant_rate_rating <= 5),
     restaurant_rate_comment VARCHAR(500),
     restaurant_rate_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -211,7 +213,7 @@ CREATE TABLE IF NOT EXISTS payment_method(
 );
 
 CREATE TABLE IF NOT EXISTS payment_provider_config(
-    payment_privider_config_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    payment_provider_config_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
      payment_provider_name VARCHAR(20) NOT NULL , --REFERENCES payment_provide(payment_provider_name)
     config_details TEXT NOT NULL
 );
@@ -254,6 +256,24 @@ INSERT INTO user_type (user_type_name)
 INSERT INTO role (role_name)
     VALUES
         ('ROLE_ADMIN'),('ROLE_CUSTOMER');
+
+INSERT INTO users
+(user_id, user_type_name, user_first_name, user_last_name,
+ user_birth_date, user_phone, user_email,
+ user_password, joined_at, last_login, is_enabled)
+VALUES
+    ('019dac9d-de24-7cd4-a04a-608d8e36c470', 'USER_ADMIN', 'John', 'Doe',
+     '1985-06-15', '+1987654321', 'owner@burgerqueen.com',
+     '$2a$10$AhHFAmiHWQefXQvs0OUYieX4hLwXmB2x4z49Cf6rLL/r9OdwAHOly',
+     '2026-04-20 20:38:40.420547', null, true),
+    ('06b4dbae-e495-41b8-b7c1-d9be8c52de0a', 'CUSTOMER', 'Kareem', 'Hassan',
+     '1998-05-20', '+201123456789', 'kareem.hassan@example.com',
+     '$2a$10$AhHFAmiHWQefXQvs0OUYieX4hLwXmB2x4z49Cf6rLL/r9OdwAHOly',
+     '2026-06-12 19:09:50.512631', null, true);
+
+insert into customer (customer_id, customer_user_id)
+values
+    ('be28dfde-f42c-4da0-8e46-79b867e40688', '06b4dbae-e495-41b8-b7c1-d9be8c52de0a');
 
 ALTER TABLE menu_item
     ADD COLUMN   search_vector tsvector GENERATED ALWAYS AS (
