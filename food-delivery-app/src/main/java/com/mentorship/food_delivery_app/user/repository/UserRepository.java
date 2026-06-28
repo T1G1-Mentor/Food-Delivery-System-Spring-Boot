@@ -25,4 +25,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                 WHERE u.email = :email
             """)
     Optional<User> findByEmail(String email);
+
+    @Query("""
+    SELECT u.userId FROM User u
+    WHERE u.email = :email
+""")
+    Optional<UUID> findUserIdByEmail(String email);
 }

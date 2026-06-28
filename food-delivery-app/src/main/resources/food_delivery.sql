@@ -230,7 +230,14 @@ CREATE TABLE IF NOT EXISTS transactions(
     transaction_amount DECIMAL(10,2) CHECK (transaction_amount > 0),
     transaction_time TIMESTAMP DEFAULT  CURRENT_TIMESTAMP
 );
-
+CREATE TABLE IF NOT EXISTS user_otp(
+    user_otp_id UUID PRIMARY KEY DEFAULT uuidv7(),
+    user_otp_user_id UUID NOT NULL, --REFERENCES users(user_id)
+    user_otp_user_email VARCHAR(50) NOT NULL, -- Denormalization for searching
+    otp_code VARCHAR(64) NOT NULL,
+    user_otp_expiration TIMESTAMP NOT NULL ,
+    user_otp_revoked BOOLEAN DEFAULT FALSE
+    );
 INSERT INTO order_status  (order_status)
     VALUES
          ('PENDING'),
