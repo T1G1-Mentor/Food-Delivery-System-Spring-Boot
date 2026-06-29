@@ -8,7 +8,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class BaseIntegrationTest {
+public abstract class BaseIntegrationTest {
 
     protected static final PostgreSQLContainer<?> postgreSQLContainer
             = new PostgreSQLContainer<>("postgres:18.3-alpine")

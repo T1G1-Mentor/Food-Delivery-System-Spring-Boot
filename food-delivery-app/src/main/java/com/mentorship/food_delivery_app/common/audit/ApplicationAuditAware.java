@@ -1,6 +1,6 @@
 package com.mentorship.food_delivery_app.common.audit;
 
-import com.mentorship.food_delivery_app.user.entity.User;
+import com.mentorship.food_delivery_app.security.entities.UserPrincipal;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -18,6 +18,6 @@ public class ApplicationAuditAware implements AuditorAware<UUID> {
                 .map(SecurityContext::getAuthentication)
                 .filter(Authentication::isAuthenticated)
                 .map(Authentication::getPrincipal)
-                .map((user) -> ((User) user).getUserId());
+                .map((user) -> ((UserPrincipal) user).getUserId());
     }
 }
