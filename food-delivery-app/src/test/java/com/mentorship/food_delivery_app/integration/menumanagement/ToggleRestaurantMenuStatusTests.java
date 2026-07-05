@@ -23,10 +23,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -137,7 +139,7 @@ class ToggleRestaurantMenuStatusTests extends BaseIntegrationTest {
         assertThat(menu).isNotNull()
                 .isNotEmpty();
         assertThat(menu.get().getLastModified())
-                .isBeforeOrEqualTo(testMenu.getLastModified());
+                .isCloseTo(testMenu.getLastModified(),within(1, ChronoUnit.MILLIS));
     }
 
     @Test

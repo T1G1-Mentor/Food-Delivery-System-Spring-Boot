@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
+import com.mentorship.food_delivery_app.security.entities.CustomerPrincipal;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,51 +33,30 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/orders")
+@RequestMapping("/api/v1/customers/orders")
 @RequiredArgsConstructor
 @Tag(name = "Order Controller",description = "Order management")
 public class OrderController {
     private final OrderService orderService;
-    private final CustomerService customerService;
 
     @PostMapping
-    public ResponseEntity<OrderResponseDto> placeOrder(@RequestBody @Valid PlaceOrderRequestDto request) {
-        Customer customer =customerService.getLoggedinCustomer();// will be extracted from the token
+    public ResponseEntity<OrderResponseDto> placeOrder(@RequestBody @Valid PlaceOrderRequestDto request,
+                                                       @AuthenticationPrincipal CustomerPrincipal customer) {
 
         OrderResponseDto order = orderService.placeOrder(request, customer.getCustomerId());
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/{orderId}/status")
-    public ResponseEntity<Void> updateStatus(@PathVariable UUID orderId) {
-        orderService.handlerOrderStatusUpdate(orderId);
-        return ResponseEntity.noContent().build();
-    }
 
-     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{orderId}/status")
-    public ResponseEntity<Void> cancelOrder(@PathVariable UUID orderId) {
-        orderService.cancelOrder(orderId);
-        return ResponseEntity.noContent().build();
-    }
 
-    @GetMapping("/{restaurantBranchId}")
-    public ResponseEntity<Page<OrderListItemDto>> listOrders(
-            @PathVariable UUID restaurantBranchId,
-            @RequestParam(required = false) OrderStatus status,
-            @PageableDefault(size = 10, sort = "orderDate") Pageable pageable) {
-        return ResponseEntity.ok(orderService.listOrders(restaurantBranchId, status, pageable));
-    }
-
-    @GetMapping("/customer/history")
+    @GetMapping("/history")
     public ResponseEntity<Page<OrderListItemDto>> getCustomerOrderHistory(
             @RequestParam(required = false) OrderStatus status,
             @PageableDefault(size = 10, sort = "orderDate") Pageable pageable) {
         return ResponseEntity.ok(orderService.getCustomerOrderHistory(status, pageable));
     }
 
-    @GetMapping("/customer/{orderId}")
+    @GetMapping("/{orderId}")
     public ResponseEntity<OrderDetailsDto> getOrderDetails(@PathVariable UUID orderId) {
         return ResponseEntity.ok(orderService.getOrderDetails(orderId));
     }
