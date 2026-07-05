@@ -2,8 +2,8 @@ package com.mentorship.food_delivery_app.security;
 
 import com.mentorship.food_delivery_app.security.filters.FilterChainExceptionHandler;
 import com.mentorship.food_delivery_app.security.filters.JwtAuthFilter;
-import com.mentorship.food_delivery_app.user.entity.enums.RoleName;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
 @EnableWebSecurity
@@ -23,7 +24,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     private final FilterChainExceptionHandler filterChainExceptionHandler;
     private final JwtAuthFilter jwtAuthFilter;
-    private static final String[] OPEN_API_URLS={
+    private static final String[] OPEN_API_URLS = {
             "/v3/api-docs",
             "/v3/api-docs.yaml",
             "/v3/api-docs/**",
@@ -32,12 +33,23 @@ public class SecurityConfig {
     };
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   @Qualifier("handlerExceptionResolver")
+                                                   HandlerExceptionResolver exceptionResolver) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(filterChainExceptionHandler, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtAuthFilter, FilterChainExceptionHandler.class)
+                .exceptionHandling(exceptions ->
+
+                        exceptions.authenticationEntryPoint((req, res, ex) ->
+                                        exceptionResolver.resolveException(req, res, null, ex)
+                                )
+                                .accessDeniedHandler((req, res, ex) ->
+                                        exceptionResolver.resolveException(req, res, null, ex)
+                                )
+                )
                 .authorizeHttpRequests(
                         auth ->
 
