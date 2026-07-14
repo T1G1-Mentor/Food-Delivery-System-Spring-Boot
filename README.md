@@ -2,73 +2,144 @@
 
 ## Overview
 
-A full-featured food delivery platform built with Spring Boot, following a feature-based architecture. The system allows
-customers to browse restaurants, place orders, and track deliveries in real time. Restaurant owners can manage their
-menus, monitor incoming orders, and view business reports. A system admin oversees the platform — managing users,
-restaurants, and generating operational reports.
+An enterprise-grade food delivery platform built with **Java 21** and **Spring Boot 3**, following a feature-based
+architecture grounded in **Domain-Driven Design (DDD)-Inspired Architecture**. The system supports three actors — *
+*Customers**, **Restaurant Admins**, and **System Admins** — covering the full delivery lifecycle: user registration
+with OTP-verified authentication, restaurant and menu management, cart operations, order placement via a Chain of
+Responsibility pipeline, order tracking, customer account management, restaurant ratings, and a discovery layer powered
+by PostgreSQL Full Text Search.
 
-The platform covers the full delivery lifecycle: user registration and authentication, restaurant and menu management,
-cart and order processing, customer account management, payment integration with third-party providers, and a reporting
-dashboard for both admins and restaurant owners.
-
----
-
-## Actors
-
-| Actor                | Description                                                                                                                                     |
-|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Customer**         | Registers, browses restaurants, manages a cart, places and tracks orders, and manages their account and payment preferences.                    |
-| **Restaurant Owner** | Registers and manages their restaurant, creates and maintains menus, processes incoming orders, and views restaurant-level reports.             |
-| **System Admin**     | Manages the entire platform — enables/disables accounts and restaurants, monitors system-wide statistics, and generates platform-level reports. |
+The codebase enforces strict architectural boundaries: rich domain entities manage their own state mutations, services
+follow aggregate-root delegation patterns, and cross-cutting concerns (logging, security, exception handling) are
+decoupled through AOP and Spring's filter chain. All integration tests run against a real PostgreSQL instance via
+Singleton Testcontainers — no in-memory substitutes.
 
 ---
 
-## Features & API Endpoints
+## Architecture & Design
 
-### 1. User Registration & Authentication
+### Tech Stack
 
-Handles all identity and access concerns: sign-up flows for customers and restaurants, authentication, OTP verification,
-social login, and role-based permissions.
+| Layer        | Technology                                        |
+|--------------|---------------------------------------------------|
+| Language     | Java 21                                           |
+| Framework    | Spring Boot 3, Spring Security 6, Spring Data JPA |
+| Database     | PostgreSQL                                        |
+| Architecture | Feature-based packaging with strict DDD           |
 
-| Method    | Endpoint                | Description                  |
-|-----------|-------------------------|------------------------------|
-| POST      | `/auth/signup`          | Sign up                      |
-| POST      | `/auth/login`           | Login                        |
-| POST      | `/auth/logout`          | Logout                       |
-| POST      | `/auth/forget-password` | Forget password              |
-| POST      | `/auth/verify-otp`      | Email / SMS OTP verification |
-| GET / PUT | `/users/{id}/profile`   | View / update user profile   |
-| POST      | `/auth/social-login`    | Social media authentication  |
-| PATCH     | `/users/{id}/status`    | Enable or disable account    |
+### Domain-Driven Design
+
+Entities are **rich domain models** that encapsulate their own business logic and state mutations. For example, updating
+a menu item calls `menuItem.applyModifications(name, description, price)` rather than exposing setters. Services are
+layered following DDD aggregate boundaries:
+
+```
+RestaurantService (Aggregate Root)
+  └── RestaurantMenuService
+        └── MenuItemService
+```
+
+Every write operation enters through the aggregate root, which first validates the branch before delegating downstream.
+
+### Design Patterns
+
+| Pattern                               | Where & Why                                                                                                                                                                                          |
+|---------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Chain of Responsibility**           | Order placement pipeline — five handlers (Cart Validation → Open Time Validation → Menu Item Validation → Order Finalization → Payment Processing) execute sequentially within a single transaction. |
+| **AOP (Aspect-Oriented Programming)** | Centralized request/response/exception logging across all controllers and services, keeping business logic clean.                                                                                    |
+| **Event-Driven**                      | Spring Application Events trigger asynchronous post-commit operations (e.g., order confirmation emails) without coupling the order transaction to email delivery.                                    |
 
 ---
 
-### 2. Restaurant & Menu Management
+## Security Model
 
-Allows restaurant owners to register and manage their restaurant, maintain menus, and lets customers search and discover
-restaurants.
+### JWT Authentication
 
-| Method | Endpoint                                                                                     | Description                 |
-|--------|----------------------------------------------------------------------------------------------|-----------------------------|
-| POST   | `/restaurants`                                                                               | Register restaurant         |
-| PUT    | `/restaurants/{id}`                                                                          | Update restaurant           |
-| PATCH  | `/restaurants/{id}/status`                                                                   | Enable / disable restaurant |
-| GET    | `/restaurants`                                                                               | View all restaurants        |
-| GET    | `/restaurants/top-rated`                                                                     | Top rating restaurants      |
-| GET    | `/restaurants/recommendations`                                                               | Restaurant recommendations  |
-| GET    | `/restaurants/search`                                                                        | Search restaurants          |
-| POST   | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Create a new menu           |
-| PUT    | `/restaurants/branchs/{branchId}/restaurant-menus`                                           | Update menu                 |
-| DELETE | `/restaurants/branchs/{branchId}/restaurant-menus/{menuId}`                                  | Delete menu                 |
-| DELETE | `/public/restaurants/branchs/{branchId}/restaurant-menus`                                    | Get all menus by branch id  |
-| PATCH  | `/restaurants/branches/{branchId}/restaurant-menus/{menuId}/status`                          | Enable / Disable menu       |
-| GET    | `/restaurants/{id}/menus/history`                                                            | View history list of menus  |
-| GET    | `public/discover/menu-items?query=...`                                                       | Search menu items           |
-| POST   | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items`            | Create menu item            |
-| PUT    | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items`            | Update menu item            |
-| DELETE | `/restaurants/branches/{branchId}/restaurant-menus/{restaurantMenuId}/menu-items/menuItemId` | Delete menu item            |
+The system uses **stateless JWT-based authentication**. Every authenticated request carries a Bearer token in the
+`Authorization` header. Tokens are validated by a custom `JwtAuthenticationFilter` in the Spring Security filter chain.
+There are no server-side sessions.
 
-#### 2.2.1 Create menu item sequence diagram
+### OTP Email Verification
+
+Before a customer account becomes active, the user must verify their email through a **one-time password (OTP)** flow:
+
+1. Customer registers → account created in a pending state.
+2. System sends an OTP code to the registered email.
+3. Customer submits the OTP via `/api/v1/public/auth/otp/verify`.
+4. Upon successful verification, the account is activated and a JWT is issued.
+
+### Role-Based Access Control
+
+Two roles govern endpoint access:
+
+- **`ROLE_CUSTOMER`** — Cart, order placement, addresses, ratings, account management.
+- **`ROLE_ADMIN`** — Restaurant/branch/menu CRUD, order status management, admin creation.
+
+Public endpoints (discovery, login, registration) require no authentication.
+
+### Centralized Exception Handling
+
+All application exceptions route through a **global `@RestControllerAdvice`** that returns a standardized JSON error
+response. The security layer integrates tightly with this:
+
+- A custom **`FilterChainExceptionHandler`** wraps the `JwtAuthenticationFilter` to catch token parsing/validation
+  errors and forward them to the global handler.
+- Spring Security's **`ExceptionTranslationFilter`** is explicitly mapped to the `HandlerExceptionResolver`, ensuring
+  `401 Unauthorized` (missing/invalid tokens) and `403 Forbidden` (insufficient roles) responses flow through the same
+  global handler — producing consistent error structures across the entire API.
+
+### JPA Auditing
+
+The `ApplicationAuditAware` bean is configured to extract the auditor's `UUID` by casting the `SecurityContext`
+authentication to our custom `UserPrincipal` — avoiding `ClassCastException` issues that arise when Spring's default
+auditing tries to cast JPA entity types.
+
+---
+
+## Implemented Features
+
+### 1. Authentication & Authorization
+
+Handles customer registration, admin creation, login, and OTP-based email verification. All authentication endpoints are
+public and return JWT tokens upon successful login or verification.
+
+- **Customer Registration** — Validates input (phone, email format, password 8–64 chars etc.), persists the customer,
+  and triggers the OTP flow.
+- **Admin Creation** — Restricted to existing admins. Supports assigning `ROLE_CUSTOMER`, `ROLE_ADMIN` currently
+  hardcoded.
+- **Login** — Authenticates via email/password and returns a signed JWT.
+- **OTP Request & Verification** — Sends a 6-digit OTP to the user's email; verifies it to activate the account.
+
+### 2. Restaurant & Branch Management
+
+Admins can create, update, and delete restaurants and their branches. Each restaurant can have multiple branches, and
+each branch operates independently with its own delivery fee, minimum order, operating hours, phone number, and
+estimated delivery time.
+
+- **Restaurant CRUD** — Name (2–100 chars), description (5–255 chars), and category associations.
+- **Branch CRUD** — City, open/close times, delivery fee, minimum order, phone, estimated delivery time.
+- **Branch Validation (Gatekeeper Pattern)** — Every menu or item operation first validates that the target branch
+  exists and is enabled via an optimized `isEnabledById()` boolean query — not a full entity fetch.
+
+### 3. Menu & Menu Item Management
+
+Admins manage menus and menu items scoped to a specific restaurant branch. All operations follow the DDD delegation
+chain: `RestaurantService → RestaurantMenuService → MenuItemService`. Menus and items support soft deletes via
+Hibernate's `@SQLDelete`, and status toggling is idempotent — the service checks current state and returns early if
+already in the desired state.
+
+- **Menu CRUD** — Create, update (via `applyModifications()`), and soft-delete menus tied to a branch.
+- **Menu Item CRUD** — Create, update, and soft-delete items within a menu. Items use static factory methods for
+  construction.
+- **Menu Status Toggle** — Enable/disable a menu via an idempotent `@Modifying` JPQL UPDATE query.
+- **Public Access** — Customers can browse menus by branch and items by menu through unauthenticated public endpoints.
+- **Menu Item Search** — Full Text Search powered by a PostgreSQL vector index with an optimized native query that
+  filters first, then joins using PK indexes.
+
+<details>
+<summary><b>View Menu Item Management Diagrams</b></summary>
+
+#### 3.1 Create Menu Item
 
 ```mermaid
 sequenceDiagram
@@ -166,7 +237,7 @@ sequenceDiagram
     deactivate Controller
 ```
 
-#### 2.2.2 Update menu item sequence diagram
+#### 3.2 Update Menu Item
 
 ```mermaid
 sequenceDiagram
@@ -271,7 +342,7 @@ sequenceDiagram
     deactivate Controller
 ```
 
-#### 2.2.3 Delete menu item sequence diagram
+#### 3.3 Delete Menu Item
 
 ```mermaid
 sequenceDiagram
@@ -371,7 +442,7 @@ sequenceDiagram
     deactivate Controller
 ```
 
-#### 2.2.4 Get all menu items by menu id sequence diagram
+#### 3.4 Get All Menu Items by Menu ID
 
 ```mermaid
 sequenceDiagram
@@ -453,7 +524,7 @@ sequenceDiagram
     deactivate Controller
 ```
 
-#### 2.2.5 Search menu item
+#### 3.5 Search Menu Items
 
 ```mermaid
 sequenceDiagram
@@ -494,22 +565,16 @@ sequenceDiagram
     deactivate Controller
 ```
 
-##### Decision what & why
+> **Design Decision:** The Discovery service interacts directly with the repository — bypassing the aggregate-root
+> delegation chain. Public search operations require no aggregate protection, business rule enforcement, or transactional
+> orchestration, so the DDD overhead is intentionally skipped. Interface-based projections retrieve only the required
+> fields, eliminating over-fetching and in-app mapping.
+</details>
 
-- Database and Full Text Search Index
-    - A FULL TEXT SEARCH index on the menu items table creating a vector to search in. while writing an optimized query
-      that first filters out the items we need then joins the tables utilizing PK indexes on those tables
-- Service and Controller designs
-    - Discovery service that interacts directly with the repository?
-        - Yup: The separation we relied on earlier was about restricting the access to the aggregates (following DDD)
-          protecting the system ,applying business roles, and managing transactions
-          the public search operation does not require any of these restrictions overhead.
-        - Projections: Creating an interface that includes the fields or the data we need to return to our customers and
-          retrieving only the data we need from our DB increases our application performance.
-            - reduces the network overhead (no over fetching)
-            - no mapping inside our application (more processing and resource consuming)
+<details>
+<summary><b>View Menu Management Diagrams</b></summary>
 
-#### 2.2.6 Create new menu sequence diagram
+#### 3.6 Create Menu
 
 ```mermaid
 sequenceDiagram
@@ -578,7 +643,7 @@ sequenceDiagram
     deactivate Controller
 ```
 
-#### 2.2.7 Update menu sequence diagram
+#### 3.7 Update Menu
 
 ```mermaid
 sequenceDiagram
@@ -648,7 +713,7 @@ sequenceDiagram
     deactivate Controller
 ```
 
-#### 2.2.8 Delete menu sequence diagram
+#### 3.8 Delete Menu
 
 ```mermaid
 sequenceDiagram
@@ -717,7 +782,7 @@ sequenceDiagram
     deactivate Controller
 ```
 
-#### 2.2.9 Toggle menu status Enable/Disable sequence diagram
+#### 3.9 Toggle Menu Status (Enable / Disable)
 
 ```mermaid
 sequenceDiagram
@@ -790,7 +855,7 @@ sequenceDiagram
     deactivate Controller
 ```
 
-#### 2.2.10 Get all menus by branch id sequence diagram
+#### 3.10 Get All Menus by Branch ID
 
 ```mermaid
 sequenceDiagram
@@ -848,23 +913,26 @@ sequenceDiagram
     deactivate Controller
 ```
 
+</details>
+
 ---
 
-### 3. Cart Management
+### 4. Cart Management
 
-Manages a customer's shopping cart — adding and modifying items, viewing cart contents, and proceeding to checkout.
+Manages the customer's shopping cart with strict business rules: all items in a cart must belong to the same restaurant
+branch, adding a duplicate item increments its quantity instead of creating a duplicate entry, and decreasing quantity
+to zero automatically removes the item.
 
-| Method | Endpoint                        | Description           |
-|--------|---------------------------------|-----------------------|
-| POST   | `/cart/items`                   | Add to cart           |
-| PUT    | `/cart/items/{itemId}`          | Modify cart item      |
-| GET    | `/cart`                         | View cart             |
-| DELETE | `/cart`                         | Clear cart            |
-| DELETE | `/cart/items/{itemId}`          | Remove item from cart |
-| POST   | `/cart/checkout`                | Checkout              |
-| PATCH  | `/cart/items/{itemId}/quantity` | Update item quantity  |
+- **Add to Cart** — Validates restaurant consistency, item availability, and handles duplicate detection.
+- **Modify Cart Item** — Updates quantity and/or note for an existing cart item.
+- **Remove Cart Item** — Removes a specific item and recalculates the cart total.
+- **Clear Cart** — Removes all items from the cart.
+- **View Cart** — Returns all cart items with individual subtotals and the cart total.
 
-#### 3.1 Add to cart flowchart
+<details>
+<summary><b>View Cart Management Diagrams</b></summary>
+
+#### 4.1 Add to Cart
 
 ```mermaid
 flowchart TB
@@ -887,7 +955,7 @@ flowchart TB
     n15 --> n16
 ```
 
-### 3.2 Increase item quantity flowchart
+#### 4.2 Increase Item Quantity
 
 ```mermaid
 flowchart TB
@@ -903,7 +971,7 @@ flowchart TB
     n10 --> n11([Return])
 ```
 
-#### 3.3 Decrease item quantity flowchart
+#### 4.3 Decrease Item Quantity
 
 ```mermaid
 flowchart TB
@@ -922,7 +990,7 @@ flowchart TB
     n14 --> n13
 ```
 
-#### 3.4 View cart flowchart
+#### 4.4 View Cart
 
 ```mermaid
 flowchart TB
@@ -937,7 +1005,7 @@ flowchart TB
     n8 -- No --> n9([Return cart items with totals])
 ```
 
-#### 3.5 Clear all items flowchart
+#### 4.5 Clear All Items
 
 ```mermaid
 flowchart TB
@@ -948,7 +1016,7 @@ flowchart TB
     n5 --> n6([Return success message])
 ```
 
-#### 3.6 Remove item flowchart
+#### 4.6 Remove Item
 
 ```mermaid
 flowchart TB
@@ -963,28 +1031,29 @@ flowchart TB
 
 ```
 
+</details>
+
 ---
 
-### 4. Order Management
+### 5. Order Management
 
-Handles the full order lifecycle from placement to completion, including cancellations, status updates, and order
-history for restaurants.
+Handles the full order lifecycle from placement through delivery or cancellation. Orders follow a strict state machine,
+and placement is orchestrated through a **Chain of Responsibility** pipeline that validates, finalizes, and processes
+payment within a single transaction. Order status updates trigger asynchronous email notifications via Spring
+Application Events.
 
-| Method | Endpoint                   | Description                              |
-|--------|----------------------------|------------------------------------------|
-| POST   | `/orders`                  | Place order                              |
-| DELETE | `/orders/{id}`             | Cancel order (by customer or restaurant) |
-| PATCH  | `/orders/{id}/status`      | Update order status                      |
-| GET    | `/restaurants/{id}/orders` | Restaurant order history                 |
-| GET    | `/orders/{id}/summary`     | Order summary                            |
-| GET    | `/orders/{id}`             | Order details                            |
+- **Place Order** — Executes a 5-handler Chain of Responsibility pipeline (see diagram below).
+- **Order Details & History** — Customers can view individual order details or browse paginated order history filtered
+  by status.
+- **Order Tracking** — Full tracking history with timestamped status transitions.
+- **Status Advancement** — Admins advance orders through the state machine (
+  `PENDING → IN_PROGRESS → ON_THE_WAY → DELIVERED`).
+- **Order Cancellation** — Admins can cancel orders from any state (including `DELIVERED` as a refund).
 
-> **Notifications:** Order confirmation is sent via email / SMS upon placement. Customers are notified on every order
-> status change via push notification and SMS/email.
+<details>
+<summary><b>View Order Management Diagrams</b></summary>
 
-#### <div align="center"> Diagrams</div>
-
-##### Order State Diagram
+#### 5.1 Order State Machine
 
 ```mermaid
 
@@ -1012,7 +1081,7 @@ stateDiagram-v2
     CANCELLED --> [*]
 ```
 
-##### 4.2.1 Update order status flowchart
+#### 5.2 Update Order Status
 
 ```mermaid
 flowchart TB
@@ -1030,7 +1099,23 @@ flowchart TB
 
 ```
 
-##### 4.2.2 Place Order (Chain of Responsibility) Sequence Diagram
+#### 5.3 Place Order — Chain of Responsibility Pipeline
+
+The order placement is the most complex transactional workflow in the system. Instead of a monolithic service method, it
+uses a **Chain of Responsibility** pattern where five handlers execute sequentially, each performing a specific
+validation or action step. All handlers share an `OrderProcessingContext` object and participate in the same
+`@Transactional` boundary.
+
+**Pipeline Stages:**
+
+1. **CartValidation** — Fetches the cart with a pessimistic lock, validates restaurant branch match.
+2. **OpenTimeValidation** — Validates the restaurant branch is currently open.
+3. **MenuItemValidation** — Fetches cart items with `JOIN FETCH`, validates item availability.
+4. **FinalizeOrder** — Builds the complete order graph in memory, persists it, and maps the response DTO.
+5. **PaymentProcess** — Processes payment (currently COD).
+
+After the chain completes and the transaction commits, a Spring Application Event triggers an asynchronous email
+notification on a background thread.
 
 ```mermaid
 sequenceDiagram
@@ -1119,79 +1204,399 @@ sequenceDiagram
     Email -->> Email: Attempt SMTP send on background thread
     deactivate Email
 
+
 ```
 
----
-
-### 5. Customer Management
-
-Covers customer self-service features: order history, address book, payment preferences, ratings, order tracking, and
-account management.
-
-| Method                    | Endpoint                           | Description                              |
-|---------------------------|------------------------------------|------------------------------------------|
-| GET                       | `/customers/{id}/orders`           | Customer order history                   |
-| GET / PUT                 | `/customers/{id}/payment-settings` | View / update preferred payment settings |
-| GET / POST / PUT / DELETE | `/customers/{id}/addresses`        | Address management                       |
-| PATCH                     | `/customers/{id}/deactivate`       | Deactivate account                       |
-| POST                      | `/orders/{id}/rating`              | Submit rating & comments                 |
-| GET                       | `/orders/{id}/tracking`            | Track order status                       |
-
-> **Additional:** In-app customer support chat is available via chat integration.
+</details>
 
 ---
 
-### 6. Payment Integration
+### 6. Customer Management
 
-Handles payment processing through third-party providers, transaction history, receipt generation, and payment auditing
-and validation.
+Provides customer self-service capabilities for managing accounts, addresses, preferred payment methods, and order
+tracking.
 
-| Method | Endpoint                              | Description                              |
-|--------|---------------------------------------|------------------------------------------|
-| POST   | `/payments`                           | Initiate payment (3rd-party integration) |
-| GET    | `/payments/transactions`              | View payment transactions                |
-| GET    | `/payments/transactions/{id}/receipt` | Generate transaction receipt             |
+- **Address Management** — Full CRUD for delivery addresses with a default address designation. Customers can set any
+  address as default via a dedicated endpoint.
+- **Preferred Payment** — Customers can view and update their preferred payment method (currently COD).
+- **Account Deactivation** — Customers can deactivate their own accounts.
+- **Order Tracking History** — Timestamped log of all status transitions for a specific order.
 
-> **Additional:** Payment auditing, verification, and validation are applied on all transactions.
+### 7. Restaurant Discovery
+
+A public-facing discovery layer that allows unauthenticated users to search and browse the platform.
+
+- **Search Restaurants** — Filter by name and/or category.
+- **Top Restaurants** — Returns restaurants sorted by average rating and rating count.
+- **Search Menu Items** — PostgreSQL Full Text Search with a vector index on the `menu_items` table. The query first
+  filters using the FTS index, then joins related tables via primary key indexes for optimal performance. Results are
+  mapped directly to interface-based projections — no entity loading, no in-app transformation.
+
+### 8. Restaurant Ratings
+
+Customers can rate and review restaurants they've ordered from.
+
+- **Create Rating** — Title, rating (1–5), and optional comment.
+- **Update Rating** — Partial updates via PATCH.
+- **Delete Rating** — Removes the customer's rating for a restaurant.
+- **View Ratings** — Lists all ratings for a specific restaurant.
+
+### 9. Admin Management
+
+System administrators can create new admin accounts with specific role assignments (`ROLE_ADMIN`, `ROLE_CUSTOMER`, or
+both).
 
 ---
 
-### 7. Dashboard & Reports
+## Testing Strategy
 
-Provides statistical endpoints and downloadable reports for both system admins and individual restaurants.
+### Singleton Testcontainers
 
-#### System Admin
+All integration tests run against a **real PostgreSQL instance** managed by Testcontainers. We explicitly avoid H2 or
+any in-memory database to ensure tests validate real SQL behavior, constraints, and PostgreSQL-specific features (e.g.,
+Full Text Search).
 
-| Method | Endpoint                                | Description                            |
-|--------|-----------------------------------------|----------------------------------------|
-| GET    | `/admin/stats/restaurants/count`        | Count restaurants                      |
-| GET    | `/admin/stats/customers/count`          | Count customers                        |
-| GET    | `/admin/stats/customers/active/count`   | Count active customers                 |
-| GET    | `/admin/stats/orders/daily`             | Daily orders count                     |
-| GET    | `/admin/stats/orders/monthly`           | Monthly total orders                   |
-| GET    | `/admin/stats/orders/cancelled/daily`   | Daily cancelled orders                 |
-| GET    | `/admin/stats/orders/cancelled/monthly` | Monthly cancelled orders               |
-| GET    | `/admin/stats/transactions/daily`       | Daily transactions (count & revenue)   |
-| GET    | `/admin/stats/transactions/monthly`     | Monthly transactions (count & revenue) |
-| GET    | `/admin/reports/transactions/daily`     | Generate daily transactions report     |
-| GET    | `/admin/reports/transactions/monthly`   | Generate monthly transactions report   |
+The Testcontainers instance follows the **Singleton pattern** — a single PostgreSQL container is started once and shared
+across the entire test suite. This eliminates the overhead of spinning up a new container per test class while still
+providing a production-grade database.
 
-#### Restaurant Owner
+### Custom Security Mocking (`@WithMockPrincipal`)
 
-| Method | Endpoint                                             | Description                            |
-|--------|------------------------------------------------------|----------------------------------------|
-| GET    | `/restaurants/{id}/stats/orders/daily`               | Daily orders count                     |
-| GET    | `/restaurants/{id}/stats/orders/not-delivered/daily` | Daily orders not delivered count       |
-| GET    | `/restaurants/{id}/stats/orders/monthly`             | Monthly total orders count             |
-| GET    | `/restaurants/{id}/stats/orders/cancelled/daily`     | Daily cancelled orders                 |
-| GET    | `/restaurants/{id}/stats/orders/cancelled/monthly`   | Monthly cancelled orders               |
-| GET    | `/restaurants/{id}/stats/transactions/daily`         | Daily transactions (count & revenue)   |
-| GET    | `/restaurants/{id}/stats/transactions/monthly`       | Monthly transactions (count & revenue) |
-| GET    | `/restaurants/{id}/reports/transactions/daily`       | Generate daily transactions report     |
-| GET    | `/restaurants/{id}/reports/transactions/monthly`     | Generate monthly transactions report   |
+We do not use Spring's standard `@WithMockUser`. Instead, a custom `@WithMockPrincipal` annotation paired with a
+`WithSecurityContextFactory` injects a fully hydrated `UserPrincipal` object into the test `SecurityContext`. This
+ensures that:
+
+- JPA Auditing (`@CreatedBy`, `@LastModifiedBy`) works correctly during tests.
+- Role-based access control behaves identically to production.
+- The `SecurityContext` contains the actual principal type the application expects.
+
+### Full Round-Trip Assertions
+
+Controller integration tests using `MockMvc` go beyond HTTP status code assertions. After every request, the test *
+*queries the database via Repositories** to verify that:
+
+- Entities were created, updated, or deleted as expected.
+- Foreign key relationships are correctly established.
+- Computed fields (totals, timestamps) have the correct values.
+
+This ensures the entire stack — from HTTP request through security, validation, service logic, and persistence — is
+verified in a single test.
+
+### Idempotency & State Verification
+
+For idempotent endpoints (e.g., menu status toggle), we verify correctness through **pure state verification**:
+
+- Capture the entity's `@LastModifiedDate` before the operation.
+- Execute the idempotent request.
+- Assert that `@LastModifiedDate` did **not** change (proving the early return path was taken).
+
+This approach avoids `@SpyBean`, which can cause `UnsatisfiedDependencyException` and `ApplicationContext` pollution
+across test suites.
 
 ---
 
 ## ER Diagram
 
-![ER Diagram](resources/Food_Delivery_Schema.png)
+## Full Consolidated ER Diagram
+
+> Audit columns (`created_by`, `modified_by`, `admin_id`) reference `users(user_id)` but are not linked to keep the
+> diagram clean.
+
+```mermaid
+erDiagram
+
+%% ── MODULE 1: USER & AUTH ──
+    system_config {
+        DECIMAL service_fee
+        DECIMAL small_order_fee
+    }
+
+    permission {
+        INT permission_id PK
+        VARCHAR permission
+    }
+
+    role {
+        INT role_id PK
+        VARCHAR role_name
+    }
+
+    role_permission {
+        INT permission_id FK
+        INT role_id FK
+    }
+
+    user_type {
+        VARCHAR user_type_name PK
+    }
+
+    users {
+        UUID user_id PK
+        VARCHAR user_type_name FK
+        VARCHAR user_first_name
+        VARCHAR user_last_name
+        DATE user_birth_date
+        VARCHAR user_phone
+        VARCHAR user_email UK
+        VARCHAR user_password
+        TIMESTAMP joined_at
+        TIMESTAMP last_login
+        BOOLEAN is_enabled
+    }
+
+    user_role {
+        INT role_id FK
+        UUID user_id FK
+    }
+
+    customer {
+        UUID customer_id PK
+        UUID customer_user_id FK "UNIQUE"
+        UUID customer_default_address_id FK
+        VARCHAR customer_preferred_payment_method FK
+    }
+
+    customer_address {
+        UUID customer_address_id PK
+        UUID customer_address_customer_id FK
+        VARCHAR customer_address_label
+        VARCHAR customer_address_city
+        VARCHAR customer_address_street
+        VARCHAR customer_address_building
+        VARCHAR customer_address_apartment
+        VARCHAR customer_address_phone_number
+        VARCHAR customer_address_note
+    }
+
+    user_otp {
+        UUID user_otp_id PK
+        UUID user_otp_user_id FK
+        VARCHAR user_otp_user_email
+        VARCHAR otp_code
+        TIMESTAMP user_otp_expiration
+        BOOLEAN user_otp_revoked
+    }
+
+%% ── MODULE 2: RESTAURANT ──
+
+    restaurant {
+        UUID restaurant_id PK
+        VARCHAR restaurant_name
+        VARCHAR restaurant_description
+        BOOLEAN is_deleted
+    }
+
+    restaurant_branch {
+        UUID branch_id PK
+        UUID branch_rest_id FK
+        DECIMAL branch_delivery_fee
+        DECIMAL branch_min_order
+        VARCHAR branch_city
+        TIME branch_open_time
+        TIME branch_close_time
+        VARCHAR branch_phone_number
+        INT branch_estimated_delivery_time
+        BOOLEAN is_enabled
+        BOOLEAN is_deleted
+        TIMESTAMP created_at
+        TIMESTAMP last_modified
+        UUID created_by FK "audit - users"
+        UUID modified_by FK "audit - users"
+        UUID admin_id FK "audit - users"
+    }
+
+    category {
+        INT category_id PK
+        VARCHAR category_name
+    }
+
+    restaurant_category {
+        INT category_id FK
+        UUID restaurant_id FK
+    }
+
+    restaurant_menu {
+        UUID restaurant_menu_id PK
+        UUID restaurant_menu_rest_branch_id FK
+        VARCHAR restaurant_menu_name
+        BOOLEAN is_enabled
+        BOOLEAN is_deleted
+        TIMESTAMP created_at
+        TIMESTAMP last_modified
+        UUID created_by FK "audit - users"
+        UUID modified_by FK "audit - users"
+    }
+
+    menu_item {
+        UUID menu_item_id PK
+        UUID restaurant_menu_id FK
+        VARCHAR menu_item_name
+        VARCHAR menu_item_description
+        DECIMAL menu_item_price
+        BOOLEAN is_available
+        BOOLEAN is_deleted
+        TIMESTAMP created_at
+        TIMESTAMP last_modified
+        UUID created_by FK "audit - users"
+        UUID modified_by FK "audit - users"
+    }
+
+    restaurant_rate {
+        UUID restaurant_rate_id PK
+        UUID restaurant_rate_restaurant_id FK
+        UUID restaurant_rate_customer_id FK
+        VARCHAR restaurant_rate_title
+        INT restaurant_rate_rating
+        VARCHAR restaurant_rate_comment
+        TIMESTAMP restaurant_rate_created_at
+    }
+
+    coupon {
+        UUID coupon_id PK
+        UUID coupon_restaurant_id FK
+        DECIMAL coupon_amount
+        TIMESTAMP coupon_available_from
+        TIMESTAMP coupon_available_to
+        BOOLEAN coupon_is_active
+        TIMESTAMP coupon_created_at
+        TIMESTAMP coupon_last_modified
+    }
+
+%% ── MODULE 3: CART ──
+
+    cart {
+        UUID cart_id PK
+        UUID cart_customer_id FK
+        BOOLEAN is_locked
+        UUID cart_current_rest_id FK
+    }
+
+    cart_item {
+        BIGINT cart_item_id PK
+        UUID cart_item_cart_id FK
+        UUID menu_item_id FK
+        INT cart_item_quantity
+        VARCHAR cart_item_note
+    }
+
+%% ── MODULE 4: ORDER ──
+
+    order_status {
+        VARCHAR order_status PK
+    }
+
+    orders {
+        UUID order_id PK
+        VARCHAR order_delivery_city
+        VARCHAR order_delivery_street
+        VARCHAR order_delivery_building
+        VARCHAR order_delivery_apartment
+        VARCHAR order_delivery_phone_number
+        VARCHAR order_delivery_note
+        UUID order_customer_id FK
+        UUID order_restaurant_branch_id FK
+        UUID order_coupon_id FK
+        DECIMAL order_discount_value
+        DECIMAL order_subtotal
+        DECIMAL order_fee
+        DECIMAL order_total
+        TIMESTAMP order_date
+        VARCHAR order_note
+        VARCHAR order_status FK
+    }
+
+    order_item {
+        UUID order_item_id PK
+        UUID order_item_order_id FK
+        UUID order_item_menu_item_id FK
+        DECIMAL order_item_unit_price
+        INT order_item_quantity
+        DECIMAL order_item_subtotal
+        VARCHAR order_item_note
+    }
+
+    order_tracking {
+        UUID order_tracking_id PK
+        VARCHAR order_tracking_status FK
+        UUID order_tracking_order_id FK
+        VARCHAR order_tracking_description
+        TIMESTAMP order_tracking_created_at
+    }
+
+%% ── MODULE 5: PAYMENT ──
+
+    payment_provider {
+        VARCHAR payment_provider_name PK
+    }
+
+    payment_method {
+        VARCHAR payment_method_name PK
+    }
+
+    payment_provider_config {
+        INT payment_provider_config_id PK
+        VARCHAR payment_provider_name FK
+        TEXT config_details
+    }
+
+    transaction_status {
+        VARCHAR status PK
+    }
+
+    transactions {
+        UUID transaction_id PK
+        VARCHAR transaction_status FK
+        UUID transaction_order_id FK
+        VARCHAR transaction_payment_provider FK
+        UUID transaction_customer_id FK
+        UUID transaction_rest_branch_id FK
+        VARCHAR transaction_payment_method FK
+        DECIMAL transaction_amount
+        TIMESTAMP transaction_time
+    }
+
+%% ── RELATIONSHIPS: USER & AUTH ──
+    permission ||--o{ role_permission: "granted_to"
+    role ||--o{ role_permission: "has"
+    user_type ||--o{ users: "categorizes"
+    users ||--o{ user_role: "holds"
+    role ||--o{ user_role: "assigned_via"
+    users ||--|| customer: "extends_to"
+    customer ||--o{ customer_address: "has"
+    customer_address |o--|| customer: "default_for"
+    payment_method |o--o{ customer: "preferred_by"
+    users ||--o{ user_otp: "verifies_via"
+%% ── RELATIONSHIPS: RESTAURANT ──
+%% Note: audit FKs (created_by, modified_by, admin_id) -> users are NOT linked
+    restaurant ||--o{ restaurant_branch: "operates"
+    restaurant ||--o{ restaurant_category: "tagged_with"
+    category ||--o{ restaurant_category: "classifies"
+    restaurant_branch ||--o{ restaurant_menu: "offers"
+    restaurant_menu ||--o{ menu_item: "contains"
+    restaurant ||--o{ restaurant_rate: "reviewed_in"
+    customer ||--o{ restaurant_rate: "submits"
+    restaurant ||--o{ coupon: "provides"
+%% ── RELATIONSHIPS: CART ──
+    customer ||--o| cart: "owns"
+    restaurant_branch |o--o| cart: "selected_in"
+    cart ||--o{ cart_item: "holds"
+    menu_item ||--o{ cart_item: "added_as"
+%% ── RELATIONSHIPS: ORDER ──
+    customer ||--o{ orders: "places"
+    restaurant_branch ||--o{ orders: "fulfills"
+    coupon |o--o{ orders: "discounts"
+    order_status ||--o{ orders: "describes"
+    orders ||--o{ order_item: "includes"
+    menu_item ||--o{ order_item: "ordered_in"
+    orders ||--o{ order_tracking: "tracked_via"
+    order_status ||--o{ order_tracking: "logs"
+%% ── RELATIONSHIPS: PAYMENT ──
+    payment_provider ||--o{ payment_provider_config: "configured_with"
+    transaction_status ||--o{ transactions: "has"
+    orders ||--o{ transactions: "settled_via"
+    payment_provider ||--o{ transactions: "processed_by"
+    customer ||--o{ transactions: "pays"
+    restaurant_branch ||--o{ transactions: "receives_via"
+    payment_method ||--o{ transactions: "used_in"
+```
+ 
