@@ -1297,15 +1297,14 @@ across test suites.
 
 ## ER Diagram
 
-## Full Consolidated ER Diagram
 
-> Audit columns (`created_by`, `modified_by`, `admin_id`) reference `users(user_id)` but are not linked to keep the
-> diagram clean.
+<details>
+<summary>Modular Diagram</summary>
+
+## Module 1 — User & Auth
 
 ```mermaid
 erDiagram
-
-%% ── MODULE 1: USER & AUTH ──
     system_config {
         DECIMAL service_fee
         DECIMAL small_order_fee
@@ -1377,8 +1376,31 @@ erDiagram
         BOOLEAN user_otp_revoked
     }
 
-%% ── MODULE 2: RESTAURANT ──
+    payment_method {
+        VARCHAR payment_method_name PK
+    }
 
+    permission ||--o{ role_permission: "granted_to"
+    role ||--o{ role_permission: "has"
+    user_type ||--o{ users: "categorizes"
+    users ||--o{ user_role: "holds"
+    role ||--o{ user_role: "assigned_via"
+    users ||--|| customer: "extends_to"
+    customer ||--o{ customer_address: "has"
+    customer_address |o--|| customer: "default_for"
+    payment_method |o--o{ customer: "preferred_by"
+    users ||--o{ user_otp: "verifies_via"
+```
+
+---
+
+## Module 2 — Restaurant
+
+> Audit columns (`created_by`, `modified_by`, `admin_id`) reference `users(user_id)` but are not linked to keep the
+> diagram clean.
+
+```mermaid
+erDiagram
     restaurant {
         UUID restaurant_id PK
         VARCHAR restaurant_name
@@ -1462,7 +1484,37 @@ erDiagram
         TIMESTAMP coupon_last_modified
     }
 
-%% ── MODULE 3: CART ──
+    customer {
+        UUID customer_id PK
+    }
+
+    restaurant ||--o{ restaurant_branch: "operates"
+    restaurant ||--o{ restaurant_category: "tagged_with"
+    category ||--o{ restaurant_category: "classifies"
+    restaurant_branch ||--o{ restaurant_menu: "offers"
+    restaurant_menu ||--o{ menu_item: "contains"
+    restaurant ||--o{ restaurant_rate: "reviewed_in"
+    customer ||--o{ restaurant_rate: "submits"
+    restaurant ||--o{ coupon: "provides"
+```
+
+---
+
+## Module 3 — Cart
+
+```mermaid
+erDiagram
+    customer {
+        UUID customer_id PK
+    }
+
+    restaurant_branch {
+        UUID branch_id PK
+    }
+
+    menu_item {
+        UUID menu_item_id PK
+    }
 
     cart {
         UUID cart_id PK
@@ -1479,7 +1531,33 @@ erDiagram
         VARCHAR cart_item_note
     }
 
-%% ── MODULE 4: ORDER ──
+    customer ||--o| cart: "owns"
+    restaurant_branch |o--o| cart: "selected_in"
+    cart ||--o{ cart_item: "holds"
+    menu_item ||--o{ cart_item: "added_as"
+```
+
+---
+
+## Module 4 — Order
+
+```mermaid
+erDiagram
+    customer {
+        UUID customer_id PK
+    }
+
+    restaurant_branch {
+        UUID branch_id PK
+    }
+
+    menu_item {
+        UUID menu_item_id PK
+    }
+
+    coupon {
+        UUID coupon_id PK
+    }
 
     order_status {
         VARCHAR order_status PK
@@ -1523,7 +1601,33 @@ erDiagram
         TIMESTAMP order_tracking_created_at
     }
 
-%% ── MODULE 5: PAYMENT ──
+    customer ||--o{ orders: "places"
+    restaurant_branch ||--o{ orders: "fulfills"
+    coupon |o--o{ orders: "discounts"
+    order_status ||--o{ orders: "describes"
+    orders ||--o{ order_item: "includes"
+    menu_item ||--o{ order_item: "ordered_in"
+    orders ||--o{ order_tracking: "tracked_via"
+    order_status ||--o{ order_tracking: "logs"
+```
+
+---
+
+## Module 5 — Payment
+
+```mermaid
+erDiagram
+    orders {
+        UUID order_id PK
+    }
+
+    customer {
+        UUID customer_id PK
+    }
+
+    restaurant_branch {
+        UUID branch_id PK
+    }
 
     payment_provider {
         VARCHAR payment_provider_name PK
@@ -1555,42 +1659,6 @@ erDiagram
         TIMESTAMP transaction_time
     }
 
-%% ── RELATIONSHIPS: USER & AUTH ──
-    permission ||--o{ role_permission: "granted_to"
-    role ||--o{ role_permission: "has"
-    user_type ||--o{ users: "categorizes"
-    users ||--o{ user_role: "holds"
-    role ||--o{ user_role: "assigned_via"
-    users ||--|| customer: "extends_to"
-    customer ||--o{ customer_address: "has"
-    customer_address |o--|| customer: "default_for"
-    payment_method |o--o{ customer: "preferred_by"
-    users ||--o{ user_otp: "verifies_via"
-%% ── RELATIONSHIPS: RESTAURANT ──
-%% Note: audit FKs (created_by, modified_by, admin_id) -> users are NOT linked
-    restaurant ||--o{ restaurant_branch: "operates"
-    restaurant ||--o{ restaurant_category: "tagged_with"
-    category ||--o{ restaurant_category: "classifies"
-    restaurant_branch ||--o{ restaurant_menu: "offers"
-    restaurant_menu ||--o{ menu_item: "contains"
-    restaurant ||--o{ restaurant_rate: "reviewed_in"
-    customer ||--o{ restaurant_rate: "submits"
-    restaurant ||--o{ coupon: "provides"
-%% ── RELATIONSHIPS: CART ──
-    customer ||--o| cart: "owns"
-    restaurant_branch |o--o| cart: "selected_in"
-    cart ||--o{ cart_item: "holds"
-    menu_item ||--o{ cart_item: "added_as"
-%% ── RELATIONSHIPS: ORDER ──
-    customer ||--o{ orders: "places"
-    restaurant_branch ||--o{ orders: "fulfills"
-    coupon |o--o{ orders: "discounts"
-    order_status ||--o{ orders: "describes"
-    orders ||--o{ order_item: "includes"
-    menu_item ||--o{ order_item: "ordered_in"
-    orders ||--o{ order_tracking: "tracked_via"
-    order_status ||--o{ order_tracking: "logs"
-%% ── RELATIONSHIPS: PAYMENT ──
     payment_provider ||--o{ payment_provider_config: "configured_with"
     transaction_status ||--o{ transactions: "has"
     orders ||--o{ transactions: "settled_via"
@@ -1599,4 +1667,6 @@ erDiagram
     restaurant_branch ||--o{ transactions: "receives_via"
     payment_method ||--o{ transactions: "used_in"
 ```
+
+</details>
  
