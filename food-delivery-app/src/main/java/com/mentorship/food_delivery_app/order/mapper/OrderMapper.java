@@ -40,28 +40,28 @@ public class OrderMapper {
                 order.getRestaurantBranchName());
     }
 
-    public OrderListItemDto toHistoryItem(Order order) {
+    public OrderListItemDto toHistoryItem(Order order, String customerFullName) {
         return new OrderListItemDto(
                 order.getOrderId(),
                 order.getStatus(),
                 order.getOrderDate(),
                 order.getTotal(),
-                order.getCustomerFullName(),
+                customerFullName,
                 order.getRestaurantBranchName());
     }
 
-    public OrderDetailsDto toDetails(Order order) {
+    public OrderDetailsDto toDetails(Order order, List<OrderItem> orderItems, List<OrderTracking> orderTrackings, String customerFullName) {
         AddressDto address = new AddressDto(
                 order.getDeliveryCity(),
                 order.getDeliveryStreet(),
                 order.getDeliveryBuilding(),
                 order.getDeliveryApartment());
 
-        List<OrderItemDto> items = order.getItems().stream()
+        List<OrderItemDto> items = orderItems.stream()
                 .map(this::toOrderItem)
                 .toList();
 
-        List<OrderTrackingDto> tracking = order.getTrackingHistory().stream()
+        List<OrderTrackingDto> tracking = orderTrackings.stream()
                 .sorted(Comparator.comparing(OrderTracking::getCreatedAt))
                 .map(orderTrackingMapper::toResponse)
                 .toList();
@@ -75,7 +75,7 @@ public class OrderMapper {
                 order.getDiscountValue(),
                 order.getTotal(),
                 order.getNote(),
-                order.getCustomerFullName(),
+                customerFullName,
                 order.getRestaurantBranchName(),
                 address,
                 order.getCouponAmount(),

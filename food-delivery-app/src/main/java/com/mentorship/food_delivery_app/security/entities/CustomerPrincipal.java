@@ -62,4 +62,8 @@ public class CustomerPrincipal implements UserDetails {
     public boolean isEnabled() {
         return this.isEnabled;
     }
+
+    public String getCustomerFullName() {
+        return firstName + " " + lastName;
+    }
 }

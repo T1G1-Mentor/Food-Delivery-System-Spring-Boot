@@ -2,7 +2,6 @@ package com.mentorship.food_delivery_app.services.order;
 
 import com.mentorship.food_delivery_app.common.dto.EmailEventRecord;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
-import com.mentorship.food_delivery_app.common.service.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
@@ -32,7 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -90,11 +88,10 @@ class UpdateOrderStatusTest {
     void updateOrderStatus_ShouldUpdateStatusAndSendEmail_WhenValid() {
         String exposableName = OrderStatus.IN_PROGRESS.getExposableName();
 
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        orderService.handlerOrderStatusUpdate(orderId);
+        orderService.handlerOrderStatusUpdate(orderId, userId);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.IN_PROGRESS);
 
@@ -125,11 +122,10 @@ class UpdateOrderStatusTest {
             THEN: OrderNotFoundException is thrown and no side effects occur
             """)
     void updateOrderStatus_ShouldThrowException_WhenOrderNotFoundOrUnauthorized() {
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId, userId))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_NOT_FOUND.getMessage());
 
@@ -146,11 +142,10 @@ class UpdateOrderStatusTest {
             """)
     void updateOrderStatus_ShouldThrowException_WhenTryingToUpdateOrderAlreadyDelivered() {
         order.setStatus(OrderStatus.DELIVERED);
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId, userId))
                 .isInstanceOf(DeliveredOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_DELIVERED.getMessage());
 
@@ -168,11 +163,10 @@ class UpdateOrderStatusTest {
     void updateOrderStatus_ShouldThrowException_WhenTryingToUpdateOrderAlreadyCancelled() {
         order.setStatus(OrderStatus.CANCELLED);
 
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId, userId))
                 .isInstanceOf(CancelledOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 

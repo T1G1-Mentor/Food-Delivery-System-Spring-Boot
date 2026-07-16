@@ -11,8 +11,14 @@ import java.util.concurrent.Executors;
 @Configuration
 public class AsyncConfig {
     @Bean
-    public ExecutorService emailExecutor(){
+    public ExecutorService emailExecutor() {
         return Executors.
                 newThreadPerTaskExecutor(Thread.ofVirtual().name("E-Mail-", 1).factory());
+    }
+
+    @Bean("dbExecuter")
+    public ExecutorService dbExecuter() {
+        return Executors.
+                newThreadPerTaskExecutor(Thread.ofVirtual().name("Database-", 1).factory());
     }
 }
