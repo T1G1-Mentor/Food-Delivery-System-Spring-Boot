@@ -1,5 +1,6 @@
 package com.mentorship.food_delivery_app.restaurant.controller;
 
+import com.mentorship.food_delivery_app.restaurant.dto.Pagination;
 import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.SearchMenuItemResponse;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.RestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.TopRestaurantDto;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/public/discover")
@@ -22,9 +24,11 @@ public class PublicDiscoveryController {
     private final DiscoveryService discoveryService;
 
     @GetMapping("/menu-items")
-    public ResponseEntity<List<SearchMenuItemResponse>> searchMenuIte(@RequestParam(name = "query") String query) {
+    public ResponseEntity<Pagination> searchMenuIte(@RequestParam(name = "query") String query,
+                                                    @RequestParam(defaultValue = "20") int pageSize,
+                                                    @RequestParam(required = false) UUID nextCursor ) {
         return ResponseEntity.ok(
-                discoveryService.searchMenuItem(query
+                discoveryService.searchMenuItem(query, pageSize, nextCursor
                 )
         );
     }

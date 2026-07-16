@@ -46,29 +46,23 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
     List<MenuItemDto> findAllByMenuId(UUID restaurantMenuId);
 
     @Query(value = """
-            SELECT
-                        mi.menuItemId,
-                        mi.menuItemName,
-                        mi.menuItemDescription,
-                        mi.menuItemPrice,
-                        m.restaurant_menu_id AS restaurantMenuId,
-                        m.restaurant_menu_name AS restaurantMenuName,
-                        b.branch_id AS branchId,
-                        r.restaurant_name AS restaurantName
-                    FROM (SELECT
-                        mi.menu_item_id AS menuItemId,
-                        mi.menu_item_name AS menuItemName,
-                        mi.menu_item_description AS menuItemDescription,
-                        mi.menu_item_price AS menuItemPrice,
-                        mi.restaurant_menu_id
-                          FROM menu_item mi
-                          WHERE mi.is_deleted = false
-                          AND mi.is_available = true
-                          AND mi.search_vector @@ to_tsquery('english', :query || ':*')
-                          ) mi
-                    JOIN restaurant_menu m ON mi.restaurant_menu_id = m.restaurant_menu_id
-                    JOIN restaurant_branch b ON m.restaurant_menu_rest_branch_id = b.branch_id
-                    JOIN restaurant r ON b.branch_rest_id = r.restaurant_id;
+            SELECT mi.menu_item_id, mi.menu_item_name, mi.menu_item_description, mi.menu_item_price,
+                   m.restaurant_menu_id, m.restaurant_menu_name, b.branch_id, r.restaurant_name
+            FROM (
+                SELECT menu_item_id, menu_item_name, menu_item_description, menu_item_price, restaurant_menu_id
+                FROM menu_item
+                WHERE is_deleted = false
+                  AND is_available = true
+                  AND search_vector @@ to_tsquery('english', :query)
+                  AND (:nextCursor is null or menu_item_id > :nextCursor)
+                ORDER BY  menu_item_id
+            
+                LIMIT :pageSize
+            ) mi
+            JOIN restaurant_menu m ON m.restaurant_menu_id = mi.restaurant_menu_id
+            JOIN restaurant_branch b ON b.branch_id = m.restaurant_menu_rest_branch_id
+            JOIN restaurant r ON r.restaurant_id = b.branch_rest_id
+            ORDER BY mi.menu_item_id;
             """, nativeQuery = true)
-    List<SearchMenuItemResponse> searchMenuItem(String query);
+    List<SearchMenuItemResponse> searchMenuItem(String query, int pageSize, UUID nextCursor);
 }
