@@ -7,7 +7,9 @@ import com.mentorship.food_delivery_app.security.service.utils.KeyUtils;
 import com.mentorship.food_delivery_app.user.entity.enums.UserType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
@@ -63,13 +66,7 @@ public class JwtService {
     }
 
     private UserDetails buildSecurityUser(Claims claims) {
-
-        List<?> roleStrings = getRequiredClaim(claims,
-                ClaimConstants.ROLES, List.class);
-
-        Collection<SimpleGrantedAuthority> authorities =
-                roleStrings.stream().map(Object::toString)
-                        .map(SimpleGrantedAuthority::new).toList();
+        Collection<SimpleGrantedAuthority> authorities =getAuthorities(claims);
 
         Boolean isEnabled = getRequiredClaim(claims,
                 ClaimConstants.IS_ENABLED, Boolean.class);
@@ -89,12 +86,7 @@ public class JwtService {
     }
 
     private UserDetails buildSecurityCustomer(Claims claims) {
-        List<?> roleStrings = getRequiredClaim(claims,
-                ClaimConstants.ROLES, List.class);
-
-        Collection<SimpleGrantedAuthority> authorities =
-                roleStrings.stream().map(Object::toString)
-                        .map(SimpleGrantedAuthority::new).toList();
+        Collection<SimpleGrantedAuthority> authorities = getAuthorities(claims);
 
         Boolean isEnabled = getRequiredClaim(claims,
                 ClaimConstants.IS_ENABLED, Boolean.class);
@@ -112,6 +104,15 @@ public class JwtService {
                 authorities,
                 isEnabled // Defaults to false if null
         );
+    }
+
+    private @NonNull Collection<SimpleGrantedAuthority> getAuthorities(Claims claims) {
+        List<Map<String, String>> roleStrings = getRequiredClaim(claims,
+                ClaimConstants.ROLES, List.class);
+
+        return
+                roleStrings.stream().map(roles->roles.get("authority"))
+                        .map(SimpleGrantedAuthority::new).toList();
     }
 
     private <T> T getRequiredClaim(Claims claims, ClaimConstants claimName, Class<T> requiredType) {
