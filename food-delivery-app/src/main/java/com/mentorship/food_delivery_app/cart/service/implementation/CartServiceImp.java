@@ -5,9 +5,7 @@ import com.mentorship.food_delivery_app.cart.dto.request.CartItemRequestDto;
 import com.mentorship.food_delivery_app.cart.dto.response.CartResponseDto;
 import com.mentorship.food_delivery_app.cart.entity.Cart;
 import com.mentorship.food_delivery_app.cart.entity.CartItem;
-import com.mentorship.food_delivery_app.cart.exceptions.CartLockedException;
-import com.mentorship.food_delivery_app.cart.exceptions.ItemNotAvailableException;
-import com.mentorship.food_delivery_app.cart.exceptions.RestaurantMismatchException;
+import com.mentorship.food_delivery_app.cart.exceptions.*;
 import com.mentorship.food_delivery_app.cart.mapper.CartMapper;
 import com.mentorship.food_delivery_app.cart.repository.CartItemRepository;
 import com.mentorship.food_delivery_app.cart.repository.CartRepository;
@@ -18,8 +16,6 @@ import com.mentorship.food_delivery_app.customer.service.contract.CustomerServic
 import com.mentorship.food_delivery_app.restaurant.entity.MenuItem;
 import com.mentorship.food_delivery_app.restaurant.entity.RestaurantBranch;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
-import com.mentorship.food_delivery_app.cart.exceptions.CartItemNotFoundException;
-import com.mentorship.food_delivery_app.cart.exceptions.CartNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -55,13 +51,15 @@ public class CartServiceImp implements CartService {
         Set<CartItem> cartItems = this.getCartItemsWithMenuItemsByCartId(cart.getCartId());
         Optional<CartItem> existingItem = searchExistingItem(cartItems, menuItem.getMenuItemId());
 
+        if (!menuItem.isAvailable())
+            throw new ItemNotAvailableException(ErrorMessage.MENU_ITEM_NOT_AVAILABLE.getMessage());
 
         existingItem.
                 ifPresentOrElse(item ->
                                 item.setQuantity(cartItemRequest.quantity()
                                 ),
                         () ->
-                                validateAndCreateNewCartItem(cart, cartItemRequest, menuItem
+                                createNewCartItem(cart, cartItemRequest, menuItem
                                 ));
 
 
@@ -157,12 +155,13 @@ public class CartServiceImp implements CartService {
     @Override
     public Cart getCartByIdAndCustomerId(UUID cartId, UUID customerId) {
         return cartRepository.findCarWithRestaurantBranchByIdAndCustomerId(cartId, customerId)
-                .orElseThrow(()->new CartNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new CartNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage()));
     }
 
     @Override
     public Cart getCartByIdAndCustomerIdWithLock(UUID cartId, UUID customerId) {
-        return cartRepository.findAndLockWithRestBranchByIdAndCustomerId(cartId, customerId);
+        return cartRepository.findAndLockWithRestBranchByIdAndCustomerId(cartId, customerId)
+                .orElseThrow(() -> new CartNotFoundException(ErrorMessage.CART_NOT_FOUND.getMessage()));
     }
 
     private Cart validateAndGetLoggedInCustomerCart(UUID customerId) {
@@ -194,16 +193,14 @@ public class CartServiceImp implements CartService {
                         });
     }
 
-    private void validateAndCreateNewCartItem(Cart cart, CartItemRequestDto cartItemRequest, MenuItem menuItem) {
-        if (!menuItem.isAvailable())
-            throw new ItemNotAvailableException(ErrorMessage.MENU_ITEM_NOT_AVAILABLE.getMessage());
-        CartItem newItem = CartItem.builder()
+    private void createNewCartItem(Cart cart, CartItemRequestDto cartItemRequest, MenuItem menuItem) {
+        CartItem cartItem = CartItem.builder()
                 .cart(cart)
                 .menuItem(menuItem)
                 .quantity(cartItemRequest.quantity())
                 .note(cartItemRequest.note())
                 .build();
-        cart.getCartItems().add(newItem);
+        cartItemRepository.save(cartItem);
 
         if (cart.getCurrentRestaurant() == null) {
             cart.setCurrentRestaurant(menuItem.getRestaurantBranch());
