@@ -5,12 +5,8 @@ import com.mentorship.food_delivery_app.common.dto.EmailEventRecord;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
 import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto;
+import com.mentorship.food_delivery_app.order.dto.response.*;
 import com.mentorship.food_delivery_app.order.entity.Order;
-import com.mentorship.food_delivery_app.order.entity.OrderItem;
 import com.mentorship.food_delivery_app.order.entity.OrderTracking;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
 import com.mentorship.food_delivery_app.order.exceptions.CancelledOrderException;
@@ -136,11 +132,11 @@ public class OrderServiceImp implements OrderService {
         Order order = getOrderWithRestaurantById(orderId, customerPrincipal);
 
         List<OrderTracking> orderTracking;
-        List<OrderItem> orderItems;
+        List<OrderItemDto> orderItems;
 
         CompletableFuture<List<OrderTracking>> orderTrackingListFuture = supplyFuture(getOrderTrackingByOrderId(orderId));
 
-        CompletableFuture<List<OrderItem>> orderItemListFuture = supplyFuture(orderItemRepository.findByOrderId(orderId));
+        CompletableFuture<List<OrderItemDto>> orderItemListFuture = supplyFuture(orderItemRepository.findByOrderId(orderId));
 
         handleFutures(orderTrackingListFuture, orderItemListFuture);
 
@@ -148,8 +144,7 @@ public class OrderServiceImp implements OrderService {
         orderItems = orderItemListFuture.join();
 
         log.info("Successfully fetched details for Order ID: {}", orderId);
-        return orderMapper.toDetails(order, orderItems, orderTracking,
-                customerPrincipal.getCustomerFullName());
+        return orderMapper.toDetails(order, orderItems, orderTracking, customerPrincipal.getCustomerFullName());
 
     }
 
@@ -184,7 +179,7 @@ public class OrderServiceImp implements OrderService {
     }
 
     private void handleFutures(CompletableFuture<List<OrderTracking>> orderTrackingListFuture,
-                               CompletableFuture<List<OrderItem>> orderItemListFuture) {
+                               CompletableFuture<List<OrderItemDto>> orderItemListFuture) {
         try {
             CompletableFuture.allOf(orderTrackingListFuture, orderItemListFuture).join();
         } catch (CompletionException e) {

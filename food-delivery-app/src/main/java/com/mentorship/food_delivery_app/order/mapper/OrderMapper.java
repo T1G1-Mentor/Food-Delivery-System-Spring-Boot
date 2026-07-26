@@ -3,7 +3,6 @@ package com.mentorship.food_delivery_app.order.mapper;
 import com.mentorship.food_delivery_app.order.dto.request.DeliveryAddressDto;
 import com.mentorship.food_delivery_app.order.dto.response.*;
 import com.mentorship.food_delivery_app.order.entity.Order;
-import com.mentorship.food_delivery_app.order.entity.OrderItem;
 import com.mentorship.food_delivery_app.order.entity.OrderTracking;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -18,7 +17,8 @@ public class OrderMapper {
     private final OrderItemMapper orderItemMapper;
 
     public OrderResponseDto toResponse(Order order) {
-        List<OrderItemResponseDto> orderItems= order.getItems().stream().map(orderItemMapper::toResponse).toList();
+        List<OrderItemResponseDto> orderItems = order.getItems().stream().map(orderItemMapper::toResponse).toList();
+
         return OrderResponseDto.builder().orderId(order.getOrderId())
                 .restaurantBranchId(order.getBranch().getRestaurantBranchId())
                 .restaurantName(order.getRestaurantBranchName())
@@ -50,16 +50,13 @@ public class OrderMapper {
                 order.getRestaurantBranchName());
     }
 
-    public OrderDetailsDto toDetails(Order order, List<OrderItem> orderItems, List<OrderTracking> orderTrackings, String customerFullName) {
+    public OrderDetailsDto toDetails(Order order, List<OrderItemDto> orderItems,
+                                     List<OrderTracking> orderTrackings, String customerFullName) {
         AddressDto address = new AddressDto(
                 order.getDeliveryCity(),
                 order.getDeliveryStreet(),
                 order.getDeliveryBuilding(),
                 order.getDeliveryApartment());
-
-        List<OrderItemDto> items = orderItems.stream()
-                .map(this::toOrderItem)
-                .toList();
 
         List<OrderTrackingDto> tracking = orderTrackings.stream()
                 .sorted(Comparator.comparing(OrderTracking::getCreatedAt))
@@ -79,19 +76,8 @@ public class OrderMapper {
                 order.getRestaurantBranchName(),
                 address,
                 order.getCouponAmount(),
-                items,
+                orderItems,
                 tracking);
     }
-
-    private OrderItemDto toOrderItem(OrderItem item) {
-        return new OrderItemDto(
-                item.getOrderItemId(),
-                item.getMenuItem().getName(),
-                item.getQuantity(),
-                item.getUnitPrice(),
-                item.getSubtotal(),
-                item.getNote());
-    }
-
 
 }
