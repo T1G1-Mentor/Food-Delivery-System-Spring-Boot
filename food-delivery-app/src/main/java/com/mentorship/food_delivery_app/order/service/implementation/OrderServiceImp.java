@@ -5,10 +5,7 @@ import com.mentorship.food_delivery_app.common.dto.EmailEventRecord;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
 import com.mentorship.food_delivery_app.customer.service.contract.CustomerService;
 import com.mentorship.food_delivery_app.order.dto.request.PlaceOrderRequestDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderDetailsDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderListItemDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderResponseDto;
-import com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto;
+import com.mentorship.food_delivery_app.order.dto.response.*;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.entity.OrderTracking;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
@@ -17,15 +14,17 @@ import com.mentorship.food_delivery_app.order.exceptions.DeliveredOrderException
 import com.mentorship.food_delivery_app.order.exceptions.OrderNotFoundException;
 import com.mentorship.food_delivery_app.order.handler.*;
 import com.mentorship.food_delivery_app.order.mapper.OrderMapper;
+import com.mentorship.food_delivery_app.order.repository.OrderItemRepository;
 import com.mentorship.food_delivery_app.order.repository.OrderRepository;
 import com.mentorship.food_delivery_app.order.service.contract.OrderService;
 import com.mentorship.food_delivery_app.order.service.contract.OrderTrackingService;
 import com.mentorship.food_delivery_app.payment.service.PaymentService;
 import com.mentorship.food_delivery_app.restaurant.service.contract.RestaurantService;
-import com.mentorship.food_delivery_app.user.entity.User;
-import com.mentorship.food_delivery_app.user.service.contract.UserService;
+import com.mentorship.food_delivery_app.security.entities.CustomerPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,13 +33,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class OrderServiceImp implements OrderService {
+    private final OrderItemRepository orderItemRepository;
+    @Qualifier("dbExecuter")
+    private final Executor dbExecuter;
     private final OrderRepository orderRepository;
-    private final UserService userService;
     private final ApplicationEventPublisher publisher;
     private final CustomerService customerService;
     private final PaymentService paymentService;
@@ -48,6 +52,7 @@ public class OrderServiceImp implements OrderService {
     private final CartService cartService;
     private final OrderTrackingService orderTrackingService;
     private final OrderMapper orderMapper;
+
 
     @Transactional
     @Override
@@ -78,8 +83,8 @@ public class OrderServiceImp implements OrderService {
 
     @Transactional
     @Override
-    public void cancelOrder(UUID orderId) {
-        Order order = getAndValidateOrder(orderId);
+    public void cancelOrder(UUID orderId, UUID userId) {
+        Order order = getAndValidateOrder(orderId, userId);
 
         if (order.isCancelled())
             throw new CancelledOrderException(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
@@ -95,9 +100,9 @@ public class OrderServiceImp implements OrderService {
 
     @Transactional
     @Override
-    public void handlerOrderStatusUpdate(UUID orderId) {
+    public void handlerOrderStatusUpdate(UUID orderId, UUID userId) {
 
-        Order order = getAndValidateOrder(orderId);
+        Order order = getAndValidateOrder(orderId, userId);
         OrderStatus newStatus = getNextStatus(order.getStatus());
 
         OrderTracking.createNewOrderTracking(newStatus, newStatus.getDescription(), order);
@@ -119,34 +124,48 @@ public class OrderServiceImp implements OrderService {
         return orders.map(orderMapper::toListItem);
     }
 
-    @Transactional(readOnly = true)
     @Override
-    public OrderDetailsDto getOrderDetails(UUID orderId) {
-        UUID userId = userService.getDummyLoggedInUser().getUserId();
-        log.debug("Fetching order details for Order ID: {} by customer user ID: {}", orderId, userId);
+    public OrderDetailsDto getOrderDetails(UUID orderId, CustomerPrincipal customerPrincipal) {
 
-        Order order = orderRepository.fetchOrderDetailsForCustomer(orderId, userId)
-                .orElseThrow(() -> {
-                    log.warn("Order details not found. Order ID: {} for user ID: {}", orderId, userId);
-                    return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
-                });
+        log.debug("Fetching order details for Order ID: {} by customer user ID: {}", orderId, customerPrincipal.getUserId());
+//        Ownership check
+        Order order = getOrderWithRestaurantById(orderId, customerPrincipal);
+
+        List<OrderTracking> orderTracking;
+        List<OrderItemDto> orderItems;
+
+        CompletableFuture<List<OrderTracking>> orderTrackingListFuture = supplyFuture(getOrderTrackingByOrderId(orderId));
+
+        CompletableFuture<List<OrderItemDto>> orderItemListFuture = supplyFuture(orderItemRepository.findByOrderId(orderId));
+
+        handleFutures(orderTrackingListFuture, orderItemListFuture);
+
+        orderTracking = orderTrackingListFuture.join();
+        orderItems = orderItemListFuture.join();
 
         log.info("Successfully fetched details for Order ID: {}", orderId);
-        return orderMapper.toDetails(order);
+        return orderMapper.toDetails(order, orderItems, orderTracking, customerPrincipal.getCustomerFullName());
+
+    }
+
+    private @NonNull Order getOrderWithRestaurantById(UUID orderId, CustomerPrincipal customerPrincipal) {
+        return orderRepository.findOrderWithRestaurantBranchByIdAndCustomerId(orderId, customerPrincipal.getCustomerId())
+                .orElseThrow(() ->
+                        new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage()));
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable) {
-        UUID userId = userService.getDummyLoggedInUser().getUserId();
-        log.debug("Fetching order history for user ID: {} with status filter: {}", userId, status);
+    public Page<OrderListItemDto> getCustomerOrderHistory(OrderStatus status, Pageable pageable, CustomerPrincipal customerPrincipal) {
+
+        log.debug("Fetching order history for customer ID: {} with status filter: {}", customerPrincipal.getCustomerId(), status);
 
         Page<Order> orders = (status != null)
-                ? orderRepository.findOrdersByUserIdAndStatus(userId, status, pageable)
-                : orderRepository.findOrdersByUserId(userId, pageable);
+                ? orderRepository.findOrdersByCustomerIdAndStatus(customerPrincipal.getCustomerId(), status, pageable)
+                : orderRepository.findOrdersByCustomerId(customerPrincipal.getCustomerId(), pageable);
 
-        log.info("Fetched {} orders in history for user ID: {}", orders.getTotalElements(), userId);
-        return orders.map(orderMapper::toHistoryItem);
+        log.info("Fetched {} orders in history for user ID: {}", orders.getTotalElements(), customerPrincipal.getCustomerId());
+        return orders.map(order -> orderMapper.toHistoryItem(order, customerPrincipal.getCustomerFullName()));
     }
 
     @Transactional(readOnly = true)
@@ -155,13 +174,34 @@ public class OrderServiceImp implements OrderService {
         return orderTrackingService.getTrackingHistory(customerId, orderId);
     }
 
-    private Order getAndValidateOrder(UUID orderId) {
-        User user = userService.getDummyLoggedInUser();
-        log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, user.getUserId());
+    private <T> CompletableFuture<T> supplyFuture(T process) {
+        return CompletableFuture.supplyAsync(() -> process, dbExecuter);
+    }
 
-        return orderRepository.findOrderByIdAndAdminId(orderId, user.getUserId())
+    private void handleFutures(CompletableFuture<List<OrderTracking>> orderTrackingListFuture,
+                               CompletableFuture<List<OrderItemDto>> orderItemListFuture) {
+        try {
+            CompletableFuture.allOf(orderTrackingListFuture, orderItemListFuture).join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalStateException("Unexpected error fetching order details", e.getCause());
+        }
+
+
+    }
+
+    private List<OrderTracking> getOrderTrackingByOrderId(UUID orderId) {
+        return orderTrackingService.getByOrderId(orderId);
+    }
+
+    private Order getAndValidateOrder(UUID orderId, UUID userId) {
+        log.debug("Validating authorization and fetching Order ID: {} for User ID: {}", orderId, userId);
+
+        return orderRepository.findOrderByIdAndAdminId(orderId, userId)
                 .orElseThrow(() -> {
-                    log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, user.getUserId());
+                    log.warn("Order validation failed. Order ID: {} not found or User ID: {} is not authorized", orderId, userId);
                     return new OrderNotFoundException(ErrorMessage.ORDER_NOT_FOUND.getMessage());
                 });
     }

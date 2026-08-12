@@ -240,6 +240,21 @@ CREATE TABLE IF NOT EXISTS user_otp(
     user_otp_expiration TIMESTAMP NOT NULL ,
     user_otp_revoked BOOLEAN DEFAULT FALSE
     );
+-- INITIAL INDEXES (FKs)
+CREATE INDEX IF NOT EXISTS idx_cart_item_cart_id ON cart_item(cart_item_cart_id);
+CREATE INDEX IF NOT EXISTS idx_cart_item_menu_item_id ON cart_item(menu_item_id);
+CREATE INDEX IF NOT EXISTS idx_cart_customer_id ON cart(cart_customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_address_customer_id ON customer_address(customer_address_customer_id);
+CREATE INDEX IF NOT EXISTS idx_order_tracking_order_id ON order_tracking(order_tracking_order_id);
+CREATE INDEX IF NOT EXISTS idx_order_tracking_created_at ON order_tracking(order_tracking_created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_order_date ON orders(order_date);
+CREATE INDEX IF NOT EXISTS idx_order_restaurant_branch_id ON orders(order_restaurant_branch_id);
+CREATE INDEX IF NOT EXISTS idx_menu_item_restaurant_menu_id ON menu_item(restaurant_menu_id);
+CREATE INDEX IF NOT EXISTS idx_branch_restaurant_id ON restaurant_branch(branch_rest_id);
+CREATE INDEX IF NOT EXISTS idx_menu_restaurant_branch_id ON restaurant_menu(restaurant_menu_rest_branch_id);
+CREATE INDEX IF NOT EXISTS idx_restaurant_rate_restaurant_id ON restaurant_rate(restaurant_rate_restaurant_id);
+CREATE INDEX IF NOT EXISTS idx_restaurant_rate_customer_id ON restaurant_rate(restaurant_rate_customer_id);
+
 INSERT INTO order_status  (order_status)
     VALUES
          ('PENDING'),

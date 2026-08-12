@@ -2,7 +2,6 @@ package com.mentorship.food_delivery_app.services.order;
 
 import com.mentorship.food_delivery_app.common.dto.EmailEventRecord;
 import com.mentorship.food_delivery_app.common.enums.ErrorMessage;
-import com.mentorship.food_delivery_app.common.service.contract.EmailService;
 import com.mentorship.food_delivery_app.customer.entity.Customer;
 import com.mentorship.food_delivery_app.order.entity.Order;
 import com.mentorship.food_delivery_app.order.enums.OrderStatus;
@@ -30,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -84,11 +82,11 @@ class CancelOrderTest {
     void cancelOrder_ShouldCancelOrderAndSendEmail_WhenStatusIsPending() {
         order.setStatus(OrderStatus.PENDING);
 
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
+
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        orderService.cancelOrder(orderId);
+        orderService.cancelOrder(orderId, userId);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
 
@@ -124,11 +122,10 @@ class CancelOrderTest {
     void cancelOrder_ShouldCancelOrderAndSendEmail_WhenStatusIsInProgress() {
         order.setStatus(OrderStatus.IN_PROGRESS);
 
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        orderService.cancelOrder(orderId);
+        orderService.cancelOrder(orderId, userId);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
 
@@ -164,11 +161,10 @@ class CancelOrderTest {
     void cancelOrder_ShouldCancelOrderAndSendEmail_WhenStatusIsOnTheWay() {
         order.setStatus(OrderStatus.ON_THE_WAY);
 
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        orderService.cancelOrder(orderId);
+        orderService.cancelOrder(orderId, userId);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
 
@@ -204,11 +200,10 @@ class CancelOrderTest {
     void cancelOrder_ShouldCancelOrderAndSendEmail_WhenStatusIsDelivered() {
         order.setStatus(OrderStatus.DELIVERED);
 
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
 
-        orderService.cancelOrder(orderId);
+        orderService.cancelOrder(orderId, userId);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
 
@@ -243,10 +238,9 @@ class CancelOrderTest {
     void cancelOrder_ShouldThrowException_WhenTryingToCancelACancelledOrder() {
         order.setStatus(OrderStatus.CANCELLED);
 
-        when(userService.getDummyLoggedInUser()).thenReturn(dummyUser);
         when(orderRepository.findOrderByIdAndAdminId(orderId, userId))
                 .thenReturn(Optional.of(order));
-        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId))
+        assertThatThrownBy(() -> orderService.handlerOrderStatusUpdate(orderId, userId))
                 .isInstanceOf(CancelledOrderException.class)
                 .hasMessageContaining(ErrorMessage.ORDER_ALREADY_CANCELLED.getMessage());
 

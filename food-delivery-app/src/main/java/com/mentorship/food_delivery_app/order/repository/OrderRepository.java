@@ -66,27 +66,25 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             value = """
                     SELECT o FROM Order o
                     JOIN FETCH o.customer c
-                    JOIN FETCH c.user
                     JOIN FETCH o.branch b
                     JOIN FETCH b.restaurant
-                    WHERE o.customer.user.userId = :userId
+                    WHERE o.customer.customerId = :customerId
                     """,
-            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.customer.user.id = :userId"
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.customer.customerId = :customerId"
     )
-    Page<Order> findOrdersByUserId(@Param("userId") UUID userId, Pageable pageable);
+    Page<Order> findOrdersByCustomerId(@Param("customerId") UUID customerId, Pageable pageable);
 
     @Query(
             value = """
                     SELECT o FROM Order o
                     JOIN FETCH o.customer c
-                    JOIN FETCH c.user
                     JOIN FETCH o.branch b
                     JOIN FETCH b.restaurant
-                    WHERE o.customer.user.userId = :userId AND o.status = :status
+                    WHERE o.customer.customerId = :userId AND o.status = :status
                     """,
-            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.customer.user.id = :userId AND o.status = :status"
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.customer.customerId = :customerId AND o.status = :status"
     )
-    Page<Order> findOrdersByUserIdAndStatus(@Param("userId") UUID userId, @Param("status") OrderStatus status, Pageable pageable);
+    Page<Order> findOrdersByCustomerIdAndStatus(@Param("customerId") UUID customerId, @Param("status") OrderStatus status, Pageable pageable);
 
 
     @Query("""
@@ -96,4 +94,12 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
           AND o.status = :status
     """)
     long countByCustomerIdAndBranchRestaurantIdAndStatus(UUID customerId, UUID restaurantId, OrderStatus status);
+
+    @Query("""
+   SELECT o FROM Order o
+   JOIN FETCH o.branch b
+   JOIN FETCH b.restaurant
+   WHERE o.orderId = :orderId AND o.customer.customerId = :customerId
+""")
+    Optional<Order> findOrderWithRestaurantBranchByIdAndCustomerId(UUID orderId, UUID customerId);
 }

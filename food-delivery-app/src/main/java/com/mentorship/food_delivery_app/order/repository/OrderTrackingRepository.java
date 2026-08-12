@@ -21,4 +21,10 @@ public interface OrderTrackingRepository extends CrudRepository<OrderTracking, U
 """)
     List<OrderTrackingDto> findAllByCustomerIdAndOrderId(UUID customerId, UUID orderId);
 
+    @Query("""
+    SELECT ot FROM OrderTracking ot
+    WHERE ot.order.orderId = :orderId
+""")
+    List<OrderTracking> findByOrderId(UUID orderId);
+
 }

@@ -2,7 +2,6 @@ package com.mentorship.food_delivery_app.restaurant.repository;
 
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.TopRestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.entity.Restaurant;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -21,15 +20,24 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
             """)
     List<Restaurant> searchRestaurants(String name, String categoryName);
 
-    @Query("""
-            SELECT new com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.TopRestaurantDto(
-                r.restaurantId, r.name, r.description, COALESCE(AVG(rr.rating), 0.0), COUNT(rr)
-            )
-            FROM Restaurant r
-            LEFT JOIN r.ratings rr
-            GROUP BY r.restaurantId, r.name, r.description
-            ORDER BY COALESCE(AVG(rr.rating), 0.0) DESC, COUNT(rr) DESC
-            """)
-    List<TopRestaurantDto> findTopByAverageRating(Pageable pageable);
+    @Query(value = """
+       SELECT r.restaurant_id          AS restaurantId,
+               r.restaurant_name        AS restaurantName,
+               r.restaurant_description AS restaurantDescription,
+               rr.avg_rating            AS averageRating,
+               rr.rating_count          AS ratingCount
+        FROM (
+            SELECT restaurant_rate_restaurant_id,
+                   COALESCE(AVG(restaurant_rate_rating), 0.0)::DECIMAL(3,2) AS avg_rating,
+                   COUNT(restaurant_rate_id) AS rating_count
+            FROM restaurant_rate
+            GROUP BY restaurant_rate_restaurant_id
+            ORDER BY avg_rating DESC, rating_count DESC
+            LIMIT :limit
+        ) rr
+        JOIN restaurant r ON rr.restaurant_rate_restaurant_id = r.restaurant_id
+        ORDER BY rr.avg_rating DESC, rr.rating_count DESC
+       """, nativeQuery = true)
+    List<TopRestaurantDto> findTopNByAverageRating(int limit);
 }
 

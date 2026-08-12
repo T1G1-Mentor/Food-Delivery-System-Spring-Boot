@@ -566,7 +566,8 @@ sequenceDiagram
 ```
 
 > **Design Decision:** The Discovery service interacts directly with the repository — bypassing the aggregate-root
-> delegation chain. Public search operations require no aggregate protection, business rule enforcement, or transactional
+> delegation chain. Public search operations require no aggregate protection, business rule enforcement, or
+> transactional
 > orchestration, so the DDD overhead is intentionally skipped. Interface-based projections retrieve only the required
 > fields, eliminating over-fetching and in-app mapping.
 </details>
@@ -1292,16 +1293,44 @@ For idempotent endpoints (e.g., menu status toggle), we verify correctness throu
 
 This approach avoids `@SpyBean`, which can cause `UnsatisfiedDependencyException` and `ApplicationContext` pollution
 across test suites.
+---
+
+## Performance Testing and & Optimization
+
+### Generated data
+
+- Just enough to enforce our DB to work hard on the execution plan.
+ 
+  | #  | Table                 |       Row Count | Basis                                                                                     |
+  |----|-----------------------|----------------:|-------------------------------------------------------------------------------------------|
+  | 1  | `system_config`       |               1 | fixed (singleton row)                                                                     |
+  | 2  | `category`            |              20 | fixed                                                                                     |
+  | 3  | `users`               |         503,000 | fixed — 3,000 admin + 500,000 customer                                                    |
+  | 4  | `user_role`           |         503,000 | fixed — 1 per user                                                                        |
+  | 5  | `restaurant`          |             300 | fixed                                                                                     |
+  | 6  | `restaurant_category` |            ~582 | approx — 1 to 3 categories per restaurant                                                 |
+  | 7  | `restaurant_branch`   |             900 | fixed — 3 branches per restaurant                                                         |
+  | 8  | `coupon`              |             450 | fixed                                                                                     |
+  | 9  | `restaurant_menu`     |           2,700 | fixed — 3 menus per branch                                                                |
+  | 10 | `menu_item`           |         148,500 | fixed — 55 items per menu                                                                 |
+  | 11 | `customer`            |         500,000 | fixed                                                                                     |
+  | 12 | `customer_address`    |      ~1,000,000 | approx — 1 to 3 addresses per customer                                                    |
+  | 13 | `cart`                |        ~250,000 | approx — ~50% of customers have an active cart                                            |
+  | 14 | `cart_item`           |        ~875,000 | approx — 1 to 6 items per cart                                                            |
+  | 15 | `orders`              |       1,300,000 | fixed                                                                                     |
+  | 16 | `order_item`          |      ~4,550,000 | approx — 1 to 6 items per order                                                           |
+  | 17 | `order_tracking`      |      ~4,615,000 | approx — trail length depends on final order status (1 for PENDING up to 4 for DELIVERED) |
+  | 18 | `restaurant_rate`     |         250,000 | fixed                                                                                     |
+  |    | **Total**             | **~14,500,000** |                                                                                           |
 
 ---
 
 ## ER Diagram
 
-
 <details>
 <summary>Modular Diagram</summary>
 
-## Module 1 — User & Auth
+### Module 1 — User & Auth
 
 ```mermaid
 erDiagram
@@ -1394,7 +1423,7 @@ erDiagram
 
 ---
 
-## Module 2 — Restaurant
+### Module 2 — Restaurant
 
 > Audit columns (`created_by`, `modified_by`, `admin_id`) reference `users(user_id)` but are not linked to keep the
 > diagram clean.
@@ -1500,7 +1529,7 @@ erDiagram
 
 ---
 
-## Module 3 — Cart
+### Module 3 — Cart
 
 ```mermaid
 erDiagram
@@ -1539,7 +1568,7 @@ erDiagram
 
 ---
 
-## Module 4 — Order
+### Module 4 — Order
 
 ```mermaid
 erDiagram
@@ -1613,7 +1642,7 @@ erDiagram
 
 ---
 
-## Module 5 — Payment
+### Module 5 — Payment
 
 ```mermaid
 erDiagram

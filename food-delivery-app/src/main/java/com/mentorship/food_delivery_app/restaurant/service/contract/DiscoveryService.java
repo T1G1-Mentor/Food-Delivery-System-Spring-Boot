@@ -1,13 +1,14 @@
 package com.mentorship.food_delivery_app.restaurant.service.contract;
 
-import com.mentorship.food_delivery_app.restaurant.dto.menuitem.response.SearchMenuItemResponse;
+import com.mentorship.food_delivery_app.restaurant.dto.Pagination;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.RestaurantDto;
 import com.mentorship.food_delivery_app.restaurant.dto.restaurant.response.TopRestaurantDto;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface DiscoveryService {
-    List<SearchMenuItemResponse> searchMenuItem(String query);
+    Pagination searchMenuItem(String query, int pageSize, UUID nextCursor);
 
     List<RestaurantDto> searchRestaurants(String name, String category);
 

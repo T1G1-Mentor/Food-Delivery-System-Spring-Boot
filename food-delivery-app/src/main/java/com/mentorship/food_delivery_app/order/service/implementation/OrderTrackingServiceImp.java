@@ -1,6 +1,7 @@
 package com.mentorship.food_delivery_app.order.service.implementation;
 
 import com.mentorship.food_delivery_app.order.dto.response.OrderTrackingDto;
+import com.mentorship.food_delivery_app.order.entity.OrderTracking;
 import com.mentorship.food_delivery_app.order.repository.OrderTrackingRepository;
 import com.mentorship.food_delivery_app.order.service.contract.OrderTrackingService;
 import lombok.RequiredArgsConstructor;
@@ -19,5 +20,10 @@ public class OrderTrackingServiceImp implements OrderTrackingService {
     @Override
     public List<OrderTrackingDto> getTrackingHistory(UUID customerId, UUID orderId) {
         return orderTrackingRepository.findAllByCustomerIdAndOrderId(customerId, orderId);
+    }
+
+    @Override
+    public List<OrderTracking> getByOrderId(UUID orderId) {
+        return orderTrackingRepository.findByOrderId(orderId);
     }
 }
